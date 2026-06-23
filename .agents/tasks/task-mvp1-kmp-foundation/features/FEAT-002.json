@@ -1,0 +1,36 @@
+{
+  "id": "FEAT-002",
+  "type": "feat",
+  "description": "Canvas Engine with LetterSwarm and SpriteIdle Scenes (Phases 2+3). Implement the shared Scene/SceneEngine abstraction, the ParticleEngine with LetterSwarmScene (letters with Nervous/Curious/Sleepy personalities), the SpriteSheet animator with SpriteIdleScene (placeholder rectangles), GameCanvas composable, and scene switching in WaitroomScreen.",
+  "status": "completed",
+  "steps": [
+    "Create composeApp/src/commonMain/kotlin/engine/Scene.kt - interface Scene with update(deltaTime: Float), draw(drawScope: DrawScope), onPointerMove(x: Float, y: Float), onPointerExit(), name: String",
+    "Create composeApp/src/commonMain/kotlin/engine/SceneEngine.kt - class managing current scene, scene switching, update loop",
+    "Create composeApp/src/commonMain/kotlin/engine/Particle.kt - data class with char, x, y, originX, originY, vx, vy, alpha, size, personality (enum: Nervous, Curious, Sleepy)",
+    "Create composeApp/src/commonMain/kotlin/engine/ParticleEngine.kt - manages list of Particles, applies physics per personality: Nervous zitters and dodges pointer strongly, Curious follows pointer lazily and grows slightly, Sleepy drifts slowly back to origin. Spring force returns all to origin when no pointer active. Must handle 500+ particles.",
+    "Create composeApp/src/commonMain/kotlin/engine/scenes/LetterSwarmScene.kt - splits text 'Thinking is happening. Please play responsibly.' into letter particles, assigns random personalities, implements Scene interface using ParticleEngine",
+    "Create composeApp/src/commonMain/kotlin/engine/SpriteSheet.kt - data class representing a sprite sheet: frame width, height, columns, rows, frame durations",
+    "Create composeApp/src/commonMain/kotlin/engine/SpriteAnimation.kt - data class SpriteFrame(index, duration). class SpriteAnimator managing current frame, elapsed time, looping",
+    "Create composeApp/src/commonMain/kotlin/engine/scenes/SpriteIdleScene.kt - implements Scene, renders a placeholder colored rectangle cycling through frames (simulating sprite idle animation without real assets). Rectangle changes color per frame to show animation is working.",
+    "Create composeApp/src/commonMain/kotlin/ui/GameCanvas.kt - Composable wrapping Canvas with LaunchedEffect for frame loop (using withFrameNanos), pointer input detection, delegates to current Scene's draw/update/onPointerMove",
+    "Update composeApp/src/commonMain/kotlin/ui/WaitroomScreen.kt - add ScenePicker (buttons or dropdown to switch between LetterSwarmScene and SpriteIdleScene), integrate GameCanvas, wire scene switching to SceneEngine",
+    "Create composeApp/src/commonTest/kotlin/ParticleEngineTest.kt - test that particles return to origin when no pointer, test that personality affects velocity differently",
+    "Ensure the build still compiles for both Android and Desktop targets"
+  ],
+  "acceptance_criteria": [
+    "Running ./gradlew build compiles without errors",
+    "Running ./gradlew allTests passes all tests including new ParticleEngine tests",
+    "LetterSwarmScene creates particles from the text string with assigned personalities",
+    "ParticleEngine correctly applies different behaviors per personality type",
+    "SpriteIdleScene loops through placeholder frames",
+    "SceneEngine can switch between LetterSwarmScene and SpriteIdleScene",
+    "GameCanvas renders at 60fps using withFrameNanos loop",
+    "WaitroomScreen shows scene picker and canvas area"
+  ],
+  "verification": [
+    "Run: cd /projects/sandbox/GAIME && ./gradlew build",
+    "Run: cd /projects/sandbox/GAIME && ./gradlew allTests"
+  ],
+  "blocked_reason": null,
+  "findings": "Initial spring strength (2.0) was too weak for efficient convergence in tests. Increased to 8.0 with 0.9 damping for responsive particle movement. The Compose text drawing in LetterSwarmScene uses TextMeasurer which must be passed from the composable level (rememberTextMeasurer). Lint metadata version warnings from AGP 8.2.2 are non-blocking (same as FEAT-001). All 12 tests pass across desktop and Android unit test targets."
+}
