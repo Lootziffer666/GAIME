@@ -26,3 +26,12 @@ local.properties
 # OS
 Thumbs.db
 .DS_Store
+*.mp3
+*.mp4
+*.ogg
+*.png
+*.jpg
+*.jpeg
+*.svg
+*.zip
+*.rar
