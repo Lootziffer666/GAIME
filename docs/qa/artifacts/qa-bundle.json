@@ -1,0 +1,50 @@
+{
+  "intent": "qa",
+  "url": "http://127.0.0.1:8099/",
+  "capturedAt": "2026-06-23T16:21:26.997Z",
+  "viewport": {
+    "width": 1920,
+    "height": 1080
+  },
+  "flow": [
+    {
+      "step": "initial",
+      "action": "goto",
+      "screenshot": "00-initial.png",
+      "videoStart": 10.61,
+      "bbox": null,
+      "goal": null,
+      "narration": null,
+      "caption": null,
+      "focus": false
+    }
+  ],
+  "video": null,
+  "console": [
+    {
+      "type": "warning",
+      "text": "[.WebGL-0x12c400130e00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+    },
+    {
+      "type": "warning",
+      "text": "[.WebGL-0x12c400130e00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+    },
+    {
+      "type": "warning",
+      "text": "[.WebGL-0x12c400130e00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+    },
+    {
+      "type": "warning",
+      "text": "[.WebGL-0x12c400130e00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)"
+    }
+  ],
+  "network": [],
+  "a11y": null,
+  "metrics": {
+    "fcp": 28,
+    "domContentLoaded": 675,
+    "loadComplete": 675
+  },
+  "navOk": true,
+  "screenshotsDir": "screenshots"
+}
