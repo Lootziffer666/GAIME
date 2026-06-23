@@ -1,0 +1,42 @@
+{
+  "id": "FEAT-001",
+  "type": "feat",
+  "description": "KMP Project Foundation with State Machine (Phase 1). Create the complete Kotlin Multiplatform project structure with Compose Multiplatform, implement the core GameStateMachine with all states and transitions, build the WaitroomScreen with manual control buttons, and set up Android + Desktop source sets.",
+  "status": "in_progress",
+  "steps": [
+    "Create root settings.gradle.kts with project name 'GAIME' and include ':composeApp' module",
+    "Create root build.gradle.kts with Kotlin Multiplatform and Compose plugins (apply false)",
+    "Create gradle.properties with org.gradle.jvm.args=-Xmx2048M, kotlin.code.style=official, android.useAndroidX=true, compose.multiplatform version settings",
+    "Generate Gradle wrapper (gradlew, gradlew.bat, gradle/wrapper/) using 'gradle wrapper' command",
+    "Create composeApp/build.gradle.kts configuring: kotlin multiplatform plugin, compose plugin, androidTarget, jvm('desktop') target, commonMain dependencies (compose runtime, foundation, material3, ui), desktopMain dependencies (compose desktop currentOs), android configuration (compileSdk 34, minSdk 24, targetSdk 34)",
+    "Create composeApp/src/commonMain/kotlin/core/AiWorkState.kt - enum with Idle, Working, Finished",
+    "Create composeApp/src/commonMain/kotlin/core/GameSessionState.kt - enum with Idle, Thinking, ReadyButPlaying, RevealReady, Closed, Failed",
+    "Create composeApp/src/commonMain/kotlin/core/GameEvent.kt - sealed class with AiStartedThinking, AiFinishedThinking, GameStarted, GameOver, PlayerClosedGame, Reset",
+    "Create composeApp/src/commonMain/kotlin/core/GameStateMachine.kt - class holding current GameSessionState, kiIsReady flag, and transition function. Key rule: AiFinishedThinking sets kiIsReady=true and transitions to ReadyButPlaying (if currently Thinking). GameOver in ReadyButPlaying leads to RevealReady. GameOver in Thinking stays in Thinking (no premature reveal). PlayerClosedGame leads to Closed. Reset returns to Idle.",
+    "Create composeApp/src/commonMain/kotlin/signals/AiSignalSource.kt - interface with a Flow<GameEvent> for AI signals",
+    "Create composeApp/src/commonMain/kotlin/signals/ManualSignalSource.kt - implementation that exposes functions to manually trigger events",
+    "Create composeApp/src/commonMain/kotlin/ui/WaitroomScreen.kt - Compose screen showing: current state text, 'Start Thinking' button, 'Finish Thinking' button, 'Reset' button, a placeholder Box for future canvas",
+    "Create composeApp/src/commonMain/kotlin/app/App.kt - top-level @Composable App() function wrapping WaitroomScreen with MaterialTheme",
+    "Create composeApp/src/androidMain/kotlin/com/aiundb/gaime/MainActivity.kt - ComponentActivity with setContent { App() }",
+    "Create composeApp/src/androidMain/AndroidManifest.xml with package, activity declaration, internet permission",
+    "Create composeApp/src/desktopMain/kotlin/main.kt - fun main() with application { Window(title='GAIME - AI Waitroom', size 900x600) { App() } }",
+    "Create composeApp/src/commonTest/kotlin/GameStateMachineTest.kt - tests covering: Idle->Thinking on AiStartedThinking, Thinking->ReadyButPlaying on AiFinishedThinking (and kiIsReady becomes true), ReadyButPlaying->RevealReady on GameOver, Thinking stays Thinking on GameOver (no premature reveal), RevealReady->Closed on PlayerClosedGame, any state->Idle on Reset",
+    "Create README.md with title 'GAIME - Game-Aware AI Micro-Experience', subtitle 'A Kotlin Multiplatform waitroom for AI work.', brief architecture description, build instructions",
+    "Create .gitignore for Kotlin/Gradle/Android/IntelliJ"
+  ],
+  "acceptance_criteria": [
+    "Running ./gradlew build compiles all source sets without errors",
+    "Running ./gradlew allTests passes all GameStateMachine unit tests",
+    "State machine correctly transitions: Idle -> Thinking -> ReadyButPlaying -> RevealReady -> Closed",
+    "AiFinishedThinking does NOT end the game - it only sets kiIsReady=true and moves to ReadyButPlaying",
+    "GameOver during Thinking does NOT reveal the answer",
+    "Reset from any state returns to Idle with kiIsReady=false"
+  ],
+  "verification": [
+    "Run: cd /projects/sandbox/GAIME && ./gradlew build",
+    "Run: cd /projects/sandbox/GAIME && ./gradlew allTests",
+    "Run: cd /projects/sandbox/GAIME && ./gradlew :composeApp:desktopJar"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

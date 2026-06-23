@@ -1,0 +1,32 @@
+{
+  "id": "FEAT-003",
+  "type": "feat",
+  "description": "Android Shell and Desktop Shell finalization (Phases 4+5). Ensure Android Activity properly hosts the shared WaitroomScreen with lifecycle handling, and Desktop window is configured at 900x600 with title 'GAIME - AI Waitroom'. Wire state machine to scene activation (scene starts on Thinking, continues in ReadyButPlaying). Prepare always-on-top as a code option in desktop.",
+  "status": "pending",
+  "steps": [
+    "Update composeApp/src/androidMain/kotlin/com/aiundb/gaime/MainActivity.kt - ensure proper lifecycle handling: animation should pause/reduce when Activity is paused (use Lifecycle observer or DisposableEffect)",
+    "Verify composeApp/src/androidMain/AndroidManifest.xml has proper theme, configChanges for rotation, exported activity",
+    "Update composeApp/src/desktopMain/kotlin/main.kt - set window size to DpSize(900.dp, 600.dp), set title to 'GAIME - AI Waitroom', add a commented-out / prepared always-on-top option (window.isAlwaysOnTop property or equivalent)",
+    "Create composeApp/src/desktopMain/kotlin/desktop/AlwaysOnTopController.kt - simple object/class that can toggle always-on-top on the window (prepared but not forced active)",
+    "Wire the GameStateMachine state changes to SceneEngine: when state enters Thinking, start the current scene animation; when state enters Idle or Closed, stop/reset the scene",
+    "Update WaitroomScreen to show kiIsReady indicator (e.g., a banner or icon when KI is ready but game still running)",
+    "Ensure the app gracefully handles rapid state transitions without crashes",
+    "Final integration test: verify complete flow Idle->Thinking(scene starts)->ReadyButPlaying(scene continues, kiIsReady shown)->GameOver->RevealReady(scene stops) works in code"
+  ],
+  "acceptance_criteria": [
+    "Running ./gradlew build compiles Android and Desktop targets without errors",
+    "Running ./gradlew allTests passes all tests",
+    "Desktop jar can be built with ./gradlew :composeApp:desktopJar",
+    "State machine drives scene lifecycle: scene animates during Thinking and ReadyButPlaying, stops on Idle/Closed/RevealReady",
+    "WaitroomScreen displays kiIsReady indicator when AI has finished but game continues",
+    "Android lifecycle is handled (animation pauses when app backgrounded)",
+    "Desktop window is sized 900x600 with correct title"
+  ],
+  "verification": [
+    "Run: cd /projects/sandbox/GAIME && ./gradlew build",
+    "Run: cd /projects/sandbox/GAIME && ./gradlew allTests",
+    "Run: cd /projects/sandbox/GAIME && ./gradlew :composeApp:desktopJar"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}
