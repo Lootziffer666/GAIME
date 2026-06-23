@@ -18,25 +18,28 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import ui.WaitroomScreen
 import ui.rpg.RpgDemoScreen
+import ui.rpg.RpgWorldScreen
 
-private enum class Mode { RPG, WAITROOM }
+private enum class Mode { EXPLORE, RPG, WAITROOM }
 
 @Composable
 fun App(
     lifecycleActive: Boolean = true
 ) {
     MaterialTheme {
-        var mode by remember { mutableStateOf(Mode.RPG) }
+        var mode by remember { mutableStateOf(Mode.EXPLORE) }
 
         Column(modifier = Modifier.fillMaxWidth()) {
             Row(
                 modifier = Modifier.fillMaxWidth().padding(8.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
+                ModeButton("Explore", mode == Mode.EXPLORE) { mode = Mode.EXPLORE }
                 ModeButton("RPG Demo", mode == Mode.RPG) { mode = Mode.RPG }
                 ModeButton("Waitroom", mode == Mode.WAITROOM) { mode = Mode.WAITROOM }
             }
             when (mode) {
+                Mode.EXPLORE -> RpgWorldScreen()
                 Mode.RPG -> RpgDemoScreen()
                 Mode.WAITROOM -> WaitroomScreen(lifecycleActive = lifecycleActive)
             }
