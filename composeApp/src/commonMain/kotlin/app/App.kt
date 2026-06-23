@@ -5,8 +5,10 @@ import androidx.compose.runtime.Composable
 import ui.WaitroomScreen
 
 @Composable
-fun App() {
+fun App(
+    lifecycleActive: Boolean = true
+) {
     MaterialTheme {
-        WaitroomScreen()
+        WaitroomScreen(lifecycleActive = lifecycleActive)
     }
 }

@@ -12,13 +12,15 @@ import kotlinx.coroutines.isActive
 @Composable
 fun GameCanvas(
     scene: Scene?,
+    isActive: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     var lastFrameTime by remember { mutableStateOf(0L) }
 
-    // Frame loop
-    LaunchedEffect(scene) {
+    // Frame loop - only runs when isActive is true
+    LaunchedEffect(scene, isActive) {
         lastFrameTime = 0L
+        if (!isActive) return@LaunchedEffect
         while (isActive) {
             withFrameNanos { frameTimeNanos ->
                 if (lastFrameTime != 0L) {

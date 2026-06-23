@@ -1,24 +1,27 @@
 package ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import core.GameEvent
+import core.GameSessionState
 import core.GameStateMachine
 import engine.SceneEngine
 import engine.scenes.LetterSwarmScene
 import engine.scenes.SpriteIdleScene
 
 @Composable
-fun WaitroomScreen() {
+fun WaitroomScreen(
+    lifecycleActive: Boolean = true
+) {
     val stateMachine = remember { GameStateMachine() }
     var currentState by remember { mutableStateOf(stateMachine.currentState) }
     var kiIsReady by remember { mutableStateOf(stateMachine.kiIsReady) }
@@ -35,6 +38,12 @@ fun WaitroomScreen() {
         sceneEngine.register(spriteIdle)
         sceneEngine.switchTo("LetterSwarm")
     }
+
+    // Derive whether the scene should be running based on state and lifecycle
+    val sceneIsActive = lifecycleActive && (
+        currentState == GameSessionState.Thinking ||
+        currentState == GameSessionState.ReadyButPlaying
+    )
 
     fun processEvent(event: GameEvent) {
         stateMachine.transition(event)
@@ -58,7 +67,30 @@ fun WaitroomScreen() {
             style = MaterialTheme.typography.bodyLarge
         )
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Prominent "KI ist bereit!" banner - shown when KI is ready and game is still running
+        if (kiIsReady && currentState == GameSessionState.ReadyButPlaying) {
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = Color(0xFF4CAF50),
+                tonalElevation = 4.dp,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+            ) {
+                Text(
+                    text = "KI ist bereit! Spiel laeuft weiter...",
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    ),
+                    modifier = Modifier.padding(16.dp)
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
 
         Row(
             horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -119,9 +151,10 @@ fun WaitroomScreen() {
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Game Canvas
+        // Game Canvas - animation driven by state machine
         GameCanvas(
             scene = sceneEngine.currentScene,
+            isActive = sceneIsActive,
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f)
