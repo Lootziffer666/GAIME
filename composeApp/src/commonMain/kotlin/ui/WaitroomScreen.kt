@@ -15,6 +15,7 @@ import core.GameEvent
 import core.GameSessionState
 import core.GameStateMachine
 import engine.SceneEngine
+import engine.scenes.Hd2dDemoScene
 import engine.scenes.LetterSwarmScene
 import engine.scenes.SpriteIdleScene
 
@@ -34,9 +35,11 @@ fun WaitroomScreen(
     LaunchedEffect(textMeasurer) {
         val letterSwarm = LetterSwarmScene(textMeasurer)
         val spriteIdle = SpriteIdleScene()
+        val hd2dDemo = Hd2dDemoScene()
         sceneEngine.register(letterSwarm)
         sceneEngine.register(spriteIdle)
-        sceneEngine.switchTo("LetterSwarm")
+        sceneEngine.register(hd2dDemo)
+        sceneEngine.switchTo("HD2D-A")
     }
 
     // Derive whether the scene should be running based on state and lifecycle
@@ -146,6 +149,15 @@ fun WaitroomScreen(
                     ButtonDefaults.buttonColors(containerColor = Color.Gray)
             ) {
                 Text("SpriteIdle")
+            }
+            Button(
+                onClick = { sceneEngine.switchTo("HD2D-A") },
+                colors = if (currentSceneName == "HD2D-A")
+                    ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                else
+                    ButtonDefaults.buttonColors(containerColor = Color.Gray)
+            ) {
+                Text("HD-2D Demo")
             }
         }
 
