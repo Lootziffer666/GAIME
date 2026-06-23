@@ -23,6 +23,7 @@ kotlin {
                 implementation(compose.foundation)
                 implementation(compose.material3)
                 implementation(compose.ui)
+                implementation(compose.components.resources)
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
             }
         }
@@ -46,6 +47,12 @@ kotlin {
             }
         }
     }
+}
+
+compose.resources {
+    publicResClass = true
+    packageOfResClass = "gaime.resources"
+    generateResClass = always
 }
 
 android {
