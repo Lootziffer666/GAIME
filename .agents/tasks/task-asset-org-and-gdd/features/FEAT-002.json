@@ -1,0 +1,30 @@
+{
+  "id": "FEAT-002",
+  "type": "docs",
+  "description": "Create three game design documents for 'Quest Accepted: Unfortunately' in docs/ directory",
+  "status": "pending",
+  "steps": [
+    "Create docs/ directory at project root",
+    "Create docs/GAME_CONCEPT_LOCK.md with: Title, Elevator Pitch, Ton, Kernmechanik (Questbook reacts to BarkEvents not audio), Party (Nib, Brugg, Vellum), Questbook-Logik (bureaucratic misinterpretation), Quest Pressure (LOW/MEDIUM/HIGH), Kernbotschaft, Was NICHT gebaut wird. Max 1200 words. No new chapters, no new mechanics, no open-world, no audio recognition. Barks are internal events BarkEvent.X.",
+    "Create docs/VERTICAL_SLICE.md with: Buildable 10-15 minute demo covering Prolog + Chapter 1. Sections: 1) Taverne The Limping Cockatrice, 2) Fall in Kanalisation, 3) Sewers of Bad Decisions, 4) Mini-Dungeon, 5) Boss The Rat Accountant, 6) First Questbook page find, 7) Return/conclusion moment. Include: exact play sequence, required maps, NPCs, enemies, items, barks, UI states, questbook reactions, boss phases, win condition, fail condition, acceptance criteria. Constraints: only one town/tavern map + one sewer map, no ship/forest/dragon/market chapters, no complex inventory, no branched dialogue sim, no global quest sim, map-local triggers only.",
+    "Create docs/BARK_TRIGGER_TABLE.md with: Technical mapping table. Columns: Bark Key, Character, Audio Text, Bark Type, Trigger Scope, Effect, Quest Pressure Change, Cooldown, Safe/Failsafe Behavior, Used In Slice?. Bark Types: SAFE_BARK, TRIGGER_BARK, PRESSURE_BARK, UTILITY_BARK, DANGER_BARK. All bark keys as stable enum keys (e.g. NIB_SMELL_TREASURE, BRUGG_ATTACK, VELLUM_CALLS_FOR_FLAME). Every trigger needs scope, cooldown, and failsafe. No bark may change global world logic uncontrolled.",
+    "Design rule to embed in all docs: The Questbook is not a random generator. It is always understandably wrong. Humor comes from consistent, bureaucratic misinterpretation, not from random things happening."
+  ],
+  "acceptance_criteria": [
+    "docs/GAME_CONCEPT_LOCK.md exists and is under 1200 words",
+    "docs/VERTICAL_SLICE.md exists with all 7 sections and all required content categories",
+    "docs/BARK_TRIGGER_TABLE.md exists with proper table format and all required columns",
+    "All bark keys use stable UPPER_CASE_ENUM format",
+    "No new chapters, characters, or lore are invented",
+    "Documents are in German/English mix as appropriate to the game concept",
+    "No marketing language, no roadmap beyond the slice"
+  ],
+  "verification": [
+    "Run: ls /projects/sandbox/GAIME/docs/ -- should show GAME_CONCEPT_LOCK.md, VERTICAL_SLICE.md, BARK_TRIGGER_TABLE.md",
+    "Run: wc -w /projects/sandbox/GAIME/docs/GAME_CONCEPT_LOCK.md -- should be under 1200 words",
+    "Run: grep -c 'SAFE_BARK\\|TRIGGER_BARK\\|PRESSURE_BARK\\|UTILITY_BARK\\|DANGER_BARK' /projects/sandbox/GAIME/docs/BARK_TRIGGER_TABLE.md -- should be > 0",
+    "Run: grep -c 'NIB_\\|BRUGG_\\|VELLUM_' /projects/sandbox/GAIME/docs/BARK_TRIGGER_TABLE.md -- should show multiple enum keys"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

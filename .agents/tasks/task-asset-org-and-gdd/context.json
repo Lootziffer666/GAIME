@@ -1,0 +1,21 @@
+{
+  "project_type": "Kotlin Multiplatform (Compose) RPG game project",
+  "language": "Kotlin",
+  "build_system": "Gradle 8.14+ with Kotlin 2.1.21, Compose 1.7.3",
+  "test_framework": "Kotlin Test via ./gradlew allTests",
+  "build_command": "./gradlew build",
+  "test_command": "./gradlew allTests",
+  "verification_instructions": "1. Verify asset files are moved to correct subdirectories. 2. Verify docs/ contains the three GDD markdown files. 3. Verify no asset files remain in project root. 4. Verify project still builds with ./gradlew build.",
+  "snapshot_or_generated_files": null,
+  "setup_instructions": "JDK 17+ required. Run ./gradlew build to build.",
+  "environment_constraints": "OPEN_INTERNET network mode. Full access available.",
+  "contribution_requirements": "No CONTRIBUTING.md found. Follow existing conventions.",
+  "key_patterns": "State machine architecture in composeApp/src/commonMain/kotlin/core/. Current branch is feat/mvp1-kmp-foundation.",
+  "relevant_files": [
+    "README.md",
+    ".gitignore",
+    "build.gradle.kts",
+    "settings.gradle.kts"
+  ],
+  "directory_structure": "Root contains project files (gradle, composeApp/) plus many unorganized asset files (ZIPs, WAVs, PDF, Aseprite). Assets need to be moved into assets/ subdirectories. Game design docs need to be created in docs/."
+}

@@ -1,0 +1,39 @@
+{
+  "id": "FEAT-001",
+  "type": "chore",
+  "description": "Organize all asset files from project root into a structured assets/ directory hierarchy",
+  "status": "in_progress",
+  "steps": [
+    "Create directory structure: assets/sprites/characters/, assets/sprites/enemies/, assets/sprites/npcs/, assets/sprites/items/, assets/sprites/world/, assets/audio/music/, assets/audio/sfx/, assets/audio/voices/, assets/references/",
+    "Move character sprite ZIPs to assets/sprites/characters/: Meow Knight.zip, FREE_Cat 2D Pixel Art.zip, FreeCatCharacterAnimations.zip, cute-white-cat-character-different-poses.zip, set-funny-white-cats-cartoon-characters-set.zip, RPGMCharacter_v1.0.zip, Tiny RPG Character Asset Pack v1.03b -Free Soldier&Orc.zip",
+    "Move enemy sprite ZIPs to assets/sprites/enemies/: Knight & Monsters Sounds Pack.zip, Pixel Crawler - Free Pack 2.09.zip",
+    "Move NPC sprite ZIPs to assets/sprites/npcs/: NPC_Characters_v1.0.zip",
+    "Move item sprite ZIPs to assets/sprites/items/: 20.05b - Breakable Pots 1.1a.zip, Cute_Fantasy_Free.zip, Sprites.zip",
+    "Move world/tilemap ZIPs to assets/sprites/world/: Legacy Fantasy - Debug Map.zip, Legacy-Fantasy - High Forest 2.0.zip, Pixel Art Top Down - Basic v1.2.3.zip, RPG_Essentials_Free.zip, Sunny-land-files.zip, sunny-land-phaser-project.zip, Sunnyside_World_ARCHIVED_ASSETS.zip, Sunnyside_World_ASSET_PACK_V2.1.zip, Tiny Swords (Free Pack).zip, Tiny Swords.zip",
+    "Move music/ambience WAVs to assets/audio/music/: Ambience Day (Gj).wav",
+    "Move SFX WAVs to assets/audio/sfx/: Armor break.wav, Dagger Basic Attack Combo.wav, Footsteps Loop 1 (Rpg).wav, Footsteps Loop 2 (Rpg).wav, Footsteps Loop 3 (Rpg).wav, Footsteps Loop 4 (Rpg).wav, Footsteps Loop Together (Rpg).wav, Invisibility Smoke Sound.wav, Leap (Gj3).wav, Level up Pickup (Rpg).wav, Monster death (Rpg).wav, Monster roar (Rpg).wav, Plant type buff.wav, Rage up.wav, Sword Slash (Rpg).wav, UI Close.wav, UI Open.wav, Weapon Break.wav",
+    "Move voice WAVs to assets/audio/voices/: Calm NPC Voice.wav, Happi Npc Voice.wav",
+    "Move SFX/music ZIP packs to assets/audio/sfx/: Audio Files - Part 3.zip, Audio Files - Part 4.zip, Minifantasy_Dungeon_SFX.zip",
+    "Move reference files to assets/references/: Reference Sheet Audio Files Parts 1-5.pdf, sunnyside_world_chatacter_anim_human_v1.0.aseprite",
+    "Use git mv for all moves so git tracks the renames properly",
+    "Verify no asset files (ZIP, WAV, PDF, aseprite) remain in the project root"
+  ],
+  "acceptance_criteria": [
+    "All ZIP files are moved from root to appropriate assets/ subdirectories",
+    "All WAV files are moved from root to assets/audio/ subdirectories",
+    "PDF and Aseprite files are moved to assets/references/",
+    "No asset files remain in project root",
+    "Project files (gradle, composeApp, README, etc.) remain untouched in root",
+    "All moves use git mv so history is preserved"
+  ],
+  "verification": [
+    "Run: ls /projects/sandbox/GAIME/*.zip 2>/dev/null | wc -l  -- should be 0",
+    "Run: ls /projects/sandbox/GAIME/*.wav 2>/dev/null | wc -l  -- should be 0",
+    "Run: ls /projects/sandbox/GAIME/*.pdf 2>/dev/null | wc -l  -- should be 0",
+    "Run: ls /projects/sandbox/GAIME/assets/sprites/ -- should show characters/, enemies/, npcs/, items/, world/",
+    "Run: ls /projects/sandbox/GAIME/assets/audio/ -- should show music/, sfx/, voices/",
+    "Run: ls /projects/sandbox/GAIME/assets/references/ -- should show the PDF and Aseprite file"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

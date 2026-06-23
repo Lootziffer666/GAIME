@@ -1,0 +1,7 @@
+{
+  "task_id": "task-asset-org-and-gdd",
+  "task_description": "Organize asset files from project root into structured assets/ directory and create three game design documents for Quest Accepted: Unfortunately",
+  "status": "in_progress",
+  "feature_order": ["FEAT-001", "FEAT-002"],
+  "blocked_reason": null
+}
