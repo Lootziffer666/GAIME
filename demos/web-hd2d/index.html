@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GAIME - Variant C: True HD-2D (Three.js)</title>
+  <style>
+    :root { color-scheme: dark; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; background: #05030a; overflow: hidden; font-family: ui-monospace, monospace; }
+    #app { position: fixed; inset: 0; }
+    #hud {
+      position: fixed; left: 16px; top: 14px; z-index: 10;
+      color: #ffe9b0; text-shadow: 0 2px 6px #000; pointer-events: none;
+      max-width: 360px; line-height: 1.45;
+    }
+    #hud h1 { font-size: 15px; letter-spacing: 1px; color: #7be0ff; }
+    #hud p { font-size: 12px; opacity: 0.85; margin-top: 6px; }
+    #hud .keys { margin-top: 10px; font-size: 11px; opacity: 0.7; }
+    #panel {
+      position: fixed; right: 14px; top: 14px; z-index: 10;
+      background: rgba(10,8,18,0.7); border: 1px solid #3a8fe0;
+      border-radius: 8px; padding: 10px 12px; color: #cbe6ff; font-size: 12px;
+      backdrop-filter: blur(4px);
+    }
+    #panel label { display: flex; align-items: center; gap: 8px; margin: 5px 0; cursor: pointer; }
+    #loading {
+      position: fixed; inset: 0; z-index: 20; display: grid; place-items: center;
+      background: #05030a; color: #7be0ff; font-size: 14px; letter-spacing: 2px;
+    }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+  <div id="loading">SUMMONING THE QUESTBOOK&hellip;</div>
+  <div id="hud">
+    <h1>QUEST ACCEPTED: UNFORTUNATELY</h1>
+    <p>Variant C &mdash; <strong>true HD-2D</strong>: pixel-art sprites billboarded in a real
+       3D world, with depth-of-field, bloom, dynamic lighting and parallax depth.</p>
+    <div class="keys">WASD / Arrows: move Nib &nbsp;&bull;&nbsp; Mouse drag: orbit camera</div>
+  </div>
+  <div id="panel">
+    <strong style="color:#7be0ff">HD-2D POST-FX</strong>
+    <label><input type="checkbox" id="fx-bloom" checked /> Bloom (emissive glow)</label>
+    <label><input type="checkbox" id="fx-dof" checked /> Depth of Field (tilt-shift)</label>
+    <label><input type="checkbox" id="fx-vignette" checked /> Vignette</label>
+    <label><input type="checkbox" id="fx-pixel" /> Pixelation pass</label>
+  </div>
+
+  <!-- Three.js via import map (CDN, no build step) -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+
+  <script type="module" src="./hd2d.js"></script>
+</body>
+</html>
