@@ -2,7 +2,7 @@
   "id": "FEAT-001",
   "type": "feat",
   "description": "KMP Project Foundation with State Machine (Phase 1). Create the complete Kotlin Multiplatform project structure with Compose Multiplatform, implement the core GameStateMachine with all states and transitions, build the WaitroomScreen with manual control buttons, and set up Android + Desktop source sets.",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "Create root settings.gradle.kts with project name 'GAIME' and include ':composeApp' module",
     "Create root build.gradle.kts with Kotlin Multiplatform and Compose plugins (apply false)",
@@ -38,5 +38,5 @@
     "Run: cd /projects/sandbox/GAIME && ./gradlew :composeApp:desktopJar"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "Java 25 is incompatible with Gradle's embedded Kotlin compiler (JavaVersion.parse fails on version 25.0.2). Fixed by setting org.gradle.java.home to JDK 21 in gradle.properties. Android SDK was not pre-installed; downloaded command-line tools and installed platforms;android-34 and build-tools;34.0.0 to /opt/android-sdk. local.properties with sdk.dir=/opt/android-sdk is needed but excluded from git. The lint task shows kotlin-stdlib metadata version warnings (2.1.0 vs expected 1.9.0) from AGP 8.2.2's bundled lint which uses an older Kotlin; these are non-blocking warnings."
 }
