@@ -1,0 +1,39 @@
+GIDDYGUMDROP AUDIO LICENSE AGREEMENT
+
+By purchasing or downloading this product, you are granted a non-exclusive, perpetual license to use the included audio files under the following terms:
+
+PERMITTED USE
+You may:
+• Use the audio files in personal, educational, commercial, and client projects
+• Modify, edit, or process the audio for use within your projects
+• Distribute the audio only as part of a finished product (such as a game, app, video, or film)
+
+PROHIBITED USE
+You may NOT:
+• Resell, sublicense, or redistribute the audio files as standalone files
+• Include the audio in sound libraries, voice packs, or asset collections
+• Share the raw files publicly or privately
+• Claim authorship of the recordings
+
+AI / MACHINE LEARNING RESTRICTIONS
+You may NOT:
+• Use the audio files to train, fine-tune, or benchmark artificial intelligence, machine learning, voice synthesis, or speech generation systems
+• Use the recordings to create synthetic or cloned voices
+• Include the audio in datasets used for automated voice or speech systems
+• Use the audio as prompts or source material for generative audio models
+
+OWNERSHIP
+All recordings remain the intellectual property of GiddyGumdrop.
+This license grants usage rights only and does not transfer ownership.
+
+ATTRIBUTION
+Credit is appreciated but not required.
+If you choose to credit, please use:
+"Voice assets by GiddyGumdrop"
+
+LIABILITY
+This product is provided "as is" without warranty of any kind. GiddyGumdrop is not responsible for any damages arising from the use of these files.
+
+By using these files, you agree to the terms above.
+
+© GiddyGumdrop. All rights reserved.
