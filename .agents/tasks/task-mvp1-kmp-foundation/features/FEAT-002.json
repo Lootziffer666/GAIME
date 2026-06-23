@@ -2,7 +2,7 @@
   "id": "FEAT-002",
   "type": "feat",
   "description": "Canvas Engine with LetterSwarm and SpriteIdle Scenes (Phases 2+3). Implement the shared Scene/SceneEngine abstraction, the ParticleEngine with LetterSwarmScene (letters with Nervous/Curious/Sleepy personalities), the SpriteSheet animator with SpriteIdleScene (placeholder rectangles), GameCanvas composable, and scene switching in WaitroomScreen.",
-  "status": "pending",
+  "status": "completed",
   "steps": [
     "Create composeApp/src/commonMain/kotlin/engine/Scene.kt - interface Scene with update(deltaTime: Float), draw(drawScope: DrawScope), onPointerMove(x: Float, y: Float), onPointerExit(), name: String",
     "Create composeApp/src/commonMain/kotlin/engine/SceneEngine.kt - class managing current scene, scene switching, update loop",
@@ -32,5 +32,5 @@
     "Run: cd /projects/sandbox/GAIME && ./gradlew allTests"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "Initial spring strength (2.0) was too weak for efficient convergence in tests. Increased to 8.0 with 0.9 damping for responsive particle movement. The Compose text drawing in LetterSwarmScene uses TextMeasurer which must be passed from the composable level (rememberTextMeasurer). Lint metadata version warnings from AGP 8.2.2 are non-blocking (same as FEAT-001). All 12 tests pass across desktop and Android unit test targets."
 }
