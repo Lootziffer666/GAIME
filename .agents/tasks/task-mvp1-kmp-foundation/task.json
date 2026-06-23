@@ -1,7 +1,14 @@
 {
   "task_id": "task-mvp1-kmp-foundation",
   "task_description": "GAIME MVP 1: Create a Kotlin Multiplatform project with Compose Multiplatform targeting Android + Desktop. Implement core GameStateMachine, LetterSwarm particle scene, SpriteIdle placeholder scene, manual AI state buttons, Android Activity shell, and Desktop window shell. No WebView, no Overlay, no browser integration.",
-  "status": "in_progress",
+  "status": "completed",
   "feature_order": ["FEAT-001", "FEAT-002", "FEAT-003"],
-  "blocked_reason": null
+  "blocked_reason": null,
+  "verification": {
+    "build": "pass",
+    "tests": "pass",
+    "test_quality": "pass",
+    "docker_build": "skipped",
+    "summary": "All three features implemented. ./gradlew build succeeds (107 tasks), ./gradlew allTests passes (12 tests across desktop/android: 8 GameStateMachine + 4 ParticleEngine), ./gradlew :composeApp:desktopJar builds successfully. Tests cover state machine transitions and particle physics behaviors with meaningful assertions."
+  }
 }
