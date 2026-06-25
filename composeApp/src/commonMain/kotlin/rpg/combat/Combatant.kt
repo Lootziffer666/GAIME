@@ -19,7 +19,12 @@ class Combatant(
     /** How this combatant selects targets and paces attacks. */
     val attackStyle: AttackStyle = AttackStyle.MELEE
 ) {
-    /** Counts ticks since last attack for pacing (used by [AttackStyle.RANGED_SLOW]). */
+    /**
+     * Counts ticks since last attack for pacing (used by [AttackStyle.RANGED_SLOW]).
+     * Never reset: enemies are spawned fresh per encounter via [EnemyArchetype.spawn],
+     * so the counter always starts at zero. This spawn-per-encounter lifecycle is the
+     * expected contract; do not pool or reuse Combatant instances across fights.
+     */
     var ticksSinceLastAttack: Int = 0
     var hp: Int = maxHp
         private set

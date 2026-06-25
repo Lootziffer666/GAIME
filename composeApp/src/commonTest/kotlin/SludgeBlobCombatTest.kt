@@ -109,4 +109,40 @@ class SludgeBlobCombatTest {
     fun sludgeBlobHasRangedSlowAttackStyle() {
         assertEquals(AttackStyle.RANGED_SLOW, EnemyArchetype.SLUDGE_BLOB.attackStyle)
     }
+
+    @Test
+    fun strikeRandomPartyMemberDoesNotCrashWhenAllPartyMembersDead() {
+        // Create a party with 1 HP so the blob kills them, then verify no crash on next tick
+        val party = listOf(member("h1", 1, 1))
+        val blob = EnemyArchetype.SLUDGE_BLOB.spawn("blob")
+        val engine = CombatEngine(party, listOf(blob), random = Random(42))
+
+        // Tick 0 (even): blob attacks and kills h1 (blob has 5 attack, h1 has 1 HP)
+        val events0 = engine.tick(CombatAction.Wait)
+        assertTrue(events0.any { it is CombatEvent.Message && "falls" in it.text },
+            "Party should be defeated after tick 0")
+
+        // The party is now dead; combat is over with DEFEAT.
+        // Verify the engine didn't crash during strikeRandomPartyMember.
+        assertEquals(rpg.combat.CombatResult.DEFEAT, engine.result)
+    }
+
+    @Test
+    fun blobDoesNotCrashWhenPartyDiesMidCombat() {
+        // Multiple party members that all die - verifies no IllegalArgumentException
+        // from random.nextInt(0) when livingParty() becomes empty
+        val party = listOf(
+            member("h1", 1, 1),
+            member("h2", 1, 1)
+        )
+        // Spawn multiple blobs to ensure they all attack without crashing
+        val blob1 = EnemyArchetype.SLUDGE_BLOB.spawn("blob1")
+        val blob2 = EnemyArchetype.SLUDGE_BLOB.spawn("blob2")
+        val engine = CombatEngine(party, listOf(blob1, blob2), random = Random(123))
+
+        // Just tick; if it doesn't throw, the bug is fixed
+        val events = engine.tick(CombatAction.Wait)
+        // Should reach defeat without an exception
+        assertEquals(rpg.combat.CombatResult.DEFEAT, engine.result)
+    }
 }

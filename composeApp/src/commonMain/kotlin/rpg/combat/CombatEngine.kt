@@ -220,21 +220,11 @@ class CombatEngine(
             return
         }
         val living = livingParty()
-        val target = living.getOrNull(random.nextInt(living.size)) ?: return
+        if (living.isEmpty()) return
+        val target = living[random.nextInt(living.size)]
         val dealt = target.takeDamage(damage)
         events += CombatEvent.Message("${attacker.name} hits ${target.name} for $dealt.")
-
-        // Emit damage/death barks for party members
-        if (target.side == Side.PLAYER && dealt > 0) {
-            if (!target.isAlive) {
-                deathBarkFor(target.id)?.let { events += CombatEvent.BarkTriggered(it) }
-            } else if (random.nextFloat() < 0.4f) {
-                val bark = damageBarkFor(target.id, dealt, target)
-                if (bark != null) {
-                    events += CombatEvent.BarkTriggered(bark)
-                }
-            }
-        }
+        emitBarkIfApplicable(target, dealt, events)
     }
 
     private fun strikeParty(attacker: Combatant, damage: Int, dodging: Boolean, events: MutableList<CombatEvent>) {
@@ -245,19 +235,20 @@ class CombatEngine(
         val target = livingParty().firstOrNull() ?: return
         val dealt = target.takeDamage(damage)
         events += CombatEvent.Message("${attacker.name} hits ${target.name} for $dealt.")
+        emitBarkIfApplicable(target, dealt, events)
+    }
 
-        // Emit damage/death barks for party members
-        if (target.side == Side.PLAYER && dealt > 0) {
-            if (!target.isAlive) {
-                // Death bark (always fires on death)
-                deathBarkFor(target.id)?.let { events += CombatEvent.BarkTriggered(it) }
-            } else if (random.nextFloat() < 0.4f) {
-                // 40% chance to fire a damage reaction bark
-                val bark = damageBarkFor(target.id, dealt, target)
-                if (bark != null) {
-                    events += CombatEvent.BarkTriggered(bark)
-                }
-            }
+    /**
+     * Shared bark emission after a party member takes damage.
+     * On death the death bark always fires; otherwise there is a 40% chance
+     * of a damage-reaction bark.
+     */
+    private fun emitBarkIfApplicable(target: Combatant, dealt: Int, events: MutableList<CombatEvent>) {
+        if (target.side != Side.PLAYER || dealt <= 0) return
+        if (!target.isAlive) {
+            deathBarkFor(target.id)?.let { events += CombatEvent.BarkTriggered(it) }
+        } else if (random.nextFloat() < 0.4f) {
+            damageBarkFor(target.id, dealt, target)?.let { events += CombatEvent.BarkTriggered(it) }
         }
     }
 
