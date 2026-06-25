@@ -4,8 +4,14 @@ package rpg.i18n
  * Supported UI languages. Spoken voice barks and songs stay English regardless
  * of this setting (they are audio, not text) -- see docs/SONGBOOK.md and the
  * bark audio system.
+ *
+ * German is a *complete* translation. The other languages cover the
+ * high-visibility "structural" set ([Localizer.requiredKeys]: chapter/boss/
+ * enemy/page names, quest-pressure labels, and the headline Questbook lines);
+ * any untranslated long-tail line falls back to English. See
+ * .kiro/steering/localization.md.
  */
-enum class Locale { EN, DE }
+enum class Locale { EN, DE, ES, FR, IT, PT, RU, ZH, JA }
 
 /**
  * The currently selected UI language. The renderer (Compose today, KorGE next)
@@ -17,38 +23,108 @@ object GameLocale {
 }
 
 /**
- * Complete German localization of the game's user-facing text.
+ * Localization of the game's user-facing text.
  *
  * Design: the canonical English string (as produced by [rpg.questbook.QuestbookProcessor]
  * and the various `displayName`/`title` properties) is the lookup key. [localize]
- * returns the German rendering for [Locale.DE] and the original for [Locale.EN].
- * Unknown strings fall back to English, so a missing entry degrades gracefully
- * instead of crashing. The [LocalizationTest] enforces that every enum display
- * name and every known Questbook reaction has a German entry.
+ * returns the translation for the target [Locale], or the original English when
+ * a key is missing -- so a missing entry degrades gracefully instead of
+ * crashing. [LocalizationTest] enforces that every supported locale covers
+ * [requiredKeys] (the structural, high-visibility set) and that German covers
+ * everything.
  *
  * Voice/song audio is intentionally NOT localized.
  */
 object Localizer {
 
-    fun localize(text: String, locale: Locale = GameLocale.current): String = when (locale) {
-        Locale.EN -> text
-        Locale.DE -> de[text] ?: text
-    }
+    fun localize(text: String, locale: Locale = GameLocale.current): String =
+        catalogs[locale]?.get(text) ?: text
 
-    /** True if [text] has an explicit German translation. */
+    /** True if [text] has an explicit German translation (German is complete). */
     fun hasGerman(text: String): Boolean = de.containsKey(text)
+
+    /** True if [text] is translated in [locale]. */
+    fun hasTranslation(text: String, locale: Locale): Boolean =
+        locale == Locale.EN || catalogs[locale]?.containsKey(text) == true
 
     /** Localized LOW/MEDIUM/HIGH label for the quest-pressure meter. */
     fun pressureLabel(level: String, locale: Locale = GameLocale.current): String =
-        if (locale == Locale.DE) when (level.uppercase()) {
-            "LOW" -> "NIEDRIG"
-            "MEDIUM" -> "MITTEL"
-            "HIGH" -> "HOCH"
-            else -> level
-        } else level
+        pressure[locale]?.get(level.uppercase()) ?: level
 
     /** All English keys that have a German translation (for tests/tools). */
     val germanKeys: Set<String> get() = de.keys
+
+    /** Every non-English UI language the game ships. */
+    val translatedLocales: List<Locale> get() = Locale.entries.filter { it != Locale.EN }
+
+    /**
+     * The structural, high-visibility strings every supported locale must
+     * translate (chapter/boss/enemy/page names, generic headers, and the
+     * headline Questbook lines). The long tail of Questbook reactions is fully
+     * translated in German and falls back to English elsewhere.
+     */
+    val requiredKeys: Set<String> = setOf(
+        "QUEST PRESSURE", "QUEST ACCEPTED", "GAME OVER",
+        "The Four-Armed Bartender",
+        "The Sewers of Bad Decisions",
+        "The Market of Mandatory Commerce",
+        "The Woods That Had Opinions",
+        "The Ship That Was Technically Seaworthy",
+        "The Dragon That Was Accidentally Summoned",
+        "Done Enough",
+        "The Rat Accountant",
+        "The Guard Captain Who Cannot Legally Move",
+        "The Helpful Tree",
+        "Captain Formbeard",
+        "The Administragon",
+        "Sewer Rat",
+        "Sludge Blob",
+        "Forest Wolf",
+        "The Tax Collector Badger",
+        "Kobold Scout",
+        "Quest Wisp",
+        "Pirate Clerk",
+        "Barrel Mimic",
+        "The Page of Beginnings",
+        "The Page of Terms and Conditions",
+        "The Page of Directions",
+        "The Page of Claims and Rewards",
+        "URGENT QUEST ACCEPTED: DEFEAT THE DRAGON",
+        "QUEST ACCEPTED: IDENTIFY THE HORSE",
+        "QUEST ACCEPTED: APPRAISE THE GOLD",
+        "QUEST ACCEPTED: OPEN THE DOOR",
+        "Atmospheric observation noted",
+        "Official Quest Registered: Locate subterranean valuables (Priority: Mandatory)",
+        "Name Registration Complete: 'Everything Changes' -- Official Party Name Locked"
+    )
+
+    /** Per-locale catalogs. English has none (identity). Lazy so all maps
+     *  (incl. the large German map below and the per-language files) are
+     *  initialised before they are referenced. */
+    private val catalogs: Map<Locale, Map<String, String>> by lazy {
+        mapOf(
+            Locale.DE to de,
+            Locale.ES to es,
+            Locale.FR to fr,
+            Locale.IT to it,
+            Locale.PT to pt,
+            Locale.RU to ru,
+            Locale.ZH to zh,
+            Locale.JA to ja
+        )
+    }
+
+    /** Per-locale quest-pressure labels. */
+    private val pressure: Map<Locale, Map<String, String>> = mapOf(
+        Locale.DE to mapOf("LOW" to "NIEDRIG", "MEDIUM" to "MITTEL", "HIGH" to "HOCH"),
+        Locale.ES to mapOf("LOW" to "BAJO", "MEDIUM" to "MEDIO", "HIGH" to "ALTO"),
+        Locale.FR to mapOf("LOW" to "FAIBLE", "MEDIUM" to "MOYEN", "HIGH" to "ÉLEVÉ"),
+        Locale.IT to mapOf("LOW" to "BASSO", "MEDIUM" to "MEDIO", "HIGH" to "ALTO"),
+        Locale.PT to mapOf("LOW" to "BAIXO", "MEDIUM" to "MÉDIO", "HIGH" to "ALTO"),
+        Locale.RU to mapOf("LOW" to "НИЗКИЙ", "MEDIUM" to "СРЕДНИЙ", "HIGH" to "ВЫСОКИЙ"),
+        Locale.ZH to mapOf("LOW" to "低", "MEDIUM" to "中", "HIGH" to "高"),
+        Locale.JA to mapOf("LOW" to "低", "MEDIUM" to "中", "HIGH" to "高")
+    )
 
     private val de: Map<String, String> = mapOf(
         // ─── Quest pressure / generic UI ─────────────────────────────────
