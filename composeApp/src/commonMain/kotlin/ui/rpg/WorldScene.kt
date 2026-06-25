@@ -7,6 +7,8 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import engine.Scene
 import rpg.world.Camera
+import rpg.world.GridEntity
+import rpg.world.GridEntityType
 import rpg.world.GridWorld
 
 /**
@@ -26,6 +28,8 @@ class WorldScene(
     override val name: String = "World"
 
     var onTrigger: ((String) -> Unit)? = null
+    var onEntityInteraction: ((GridEntity) -> Unit)? = null
+    var spriteMap: Map<String, ImageBitmap> = emptyMap()
 
     private val camera = Camera()
     private val columns = (tileset.width / srcTile).coerceAtLeast(1)
@@ -36,6 +40,11 @@ class WorldScene(
         if (triggered.isNotEmpty()) {
             val cb = onTrigger
             if (cb != null) triggered.forEach(cb)
+        }
+        val interactions = world.consumeEntityInteractions()
+        if (interactions.isNotEmpty()) {
+            val cb = onEntityInteraction
+            if (cb != null) interactions.forEach(cb)
         }
     }
 
@@ -61,6 +70,14 @@ class WorldScene(
             for (tx in x0..x1) {
                 blit(drawScope, map.tileAt(tx, ty), tx * tilePx - camX, ty * tilePx - camY)
             }
+        }
+
+        // Entities (NPCs, enemies).
+        for (entity in world.entities) {
+            val sprite = spriteMap[entity.sprite] ?: continue
+            val ex = entity.tileX * tilePx - camX
+            val ey = entity.tileY * tilePx - camY
+            drawSprite(drawScope, sprite, ex, ey)
         }
 
         // Player (with a small bob while sliding between tiles).

@@ -18,7 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import ui.WaitroomScreen
 import ui.rpg.RpgDemoScreen
-import ui.rpg.RpgWorldScreen
+import ui.rpg.SliceScreen
 
 private enum class Mode { EXPLORE, RPG, WAITROOM }
 
@@ -39,7 +39,7 @@ fun App(
                 ModeButton("Waitroom", mode == Mode.WAITROOM) { mode = Mode.WAITROOM }
             }
             when (mode) {
-                Mode.EXPLORE -> RpgWorldScreen()
+                Mode.EXPLORE -> SliceScreen()
                 Mode.RPG -> RpgDemoScreen()
                 Mode.WAITROOM -> WaitroomScreen(lifecycleActive = lifecycleActive)
             }
