@@ -338,13 +338,6 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
                     bossWorld.removeEntity("rat_accountant")
                     director.clearCombat()
                     fireAndFlash(BarkEvent.VELLUM_THIS_CHANGES_EVERYTHING)
-                    // Fire a treasure bark after boss victory
-                    val treasureBarks = listOf(
-                        BarkEvent.NIB_THIS_LOOKS_LIKE_TREASURE,
-                        BarkEvent.BRUGG_THIS_LOOKS_LIKE_TREASURE,
-                        BarkEvent.VELLUM_THIS_LOOKS_LIKE_TREASURE
-                    )
-                    fireAndFlash(treasureBarks[Random.nextInt(treasureBarks.size)])
                     dialogueLines = POST_BOSS_LINES
                     dialogueIndex = 0
                     phase = SlicePhase.POST_BOSS

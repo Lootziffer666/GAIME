@@ -156,7 +156,7 @@ class CombatEngine(
         return if (taunts.isNotEmpty()) taunts[random.nextInt(taunts.size)] else null
     }
 
-    fun tauntsFor(characterId: String): List<BarkEvent> = when (characterId) {
+    internal fun tauntsFor(characterId: String): List<BarkEvent> = when (characterId) {
         "nib" -> listOf(
             BarkEvent.NIB_FROM_THE_SHADOWS,
             BarkEvent.NIB_IS_THAT_ALL_YOUVE_GOT,
@@ -201,7 +201,7 @@ class CombatEngine(
         return if (victories.isNotEmpty()) victories[random.nextInt(victories.size)] else null
     }
 
-    fun victoriesFor(characterId: String): List<BarkEvent> = when (characterId) {
+    internal fun victoriesFor(characterId: String): List<BarkEvent> = when (characterId) {
         "nib" -> listOf(
             BarkEvent.NIB_IS_THAT_ALL_YOUVE_GOT,
             BarkEvent.NIB_YOULL_NOT_BE_GETTING_UP,
