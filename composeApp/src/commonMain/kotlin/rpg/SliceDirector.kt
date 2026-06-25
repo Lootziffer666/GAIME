@@ -119,6 +119,10 @@ class SliceDirector(
         currentCombat = engine
     }
 
+    fun clearCombat() {
+        currentCombat = null
+    }
+
     /** Advances combat one tick and feeds combat-origin events back through the pipeline. */
     fun combatAction(action: CombatAction): CombatTurn {
         val engine = currentCombat ?: return CombatTurn(emptyList(), CombatResult.ONGOING)
