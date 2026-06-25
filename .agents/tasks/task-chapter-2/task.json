@@ -1,7 +1,14 @@
 {
   "task_id": "task-chapter-2",
   "task_description": "Implement Chapter 2: 'The Market of Mandatory Commerce'. Full play sequence from Stokeport Market through Forest Trail, Shrine puzzle, Tax Collector Badger boss fight, and Questbook Page 2 return. Includes new maps, enemies, BarkEvents, Questbook reactions, and UI state machine wiring.",
-  "status": "in_progress",
+  "status": "completed",
   "feature_order": ["FEAT-001", "FEAT-002", "FEAT-003"],
-  "blocked_reason": null
+  "blocked_reason": null,
+  "verification": {
+    "build": "pass",
+    "tests": "pass",
+    "test_quality": "pass",
+    "docker_build": "skipped",
+    "summary": "145 tests pass (0 failures) across 19 test suites. New Chapter 2 tests: 32 tests covering TaxCollectorController (7), QuestbookReactions (13), Combat (6), Pipeline (6). Build compiles successfully. Post-review fix: added missing director.enterRoom() calls for shrine and boss room contexts in SliceScreen.kt."
+  }
 }
