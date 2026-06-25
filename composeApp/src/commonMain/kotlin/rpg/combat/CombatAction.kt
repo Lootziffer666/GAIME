@@ -15,4 +15,7 @@ sealed class CombatAction {
 
     /** Do nothing this tick. */
     data object Wait : CombatAction()
+
+    /** Heal the lowest-HP living party member. */
+    data object Heal : CombatAction()
 }

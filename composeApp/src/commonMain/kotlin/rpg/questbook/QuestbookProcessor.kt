@@ -212,6 +212,48 @@ class QuestbookProcessor {
             BarkEvent.VELLUM_READ_THE_FINE_PRINT ->
                 if (ctx.hasInteractableTarget) react("Disclosure Request Granted: Fine Print Revealed", RevealHidden)
                 else react("No fine print located (font size: adequate)", FlavorText)
+
+            // --- Combat, Exploration, and Ambient barks: flavor only ---
+            BarkEvent.NIB_IS_THAT_ALL_YOUVE_GOT,
+            BarkEvent.NIB_YOUR_DEFENSES_ARE_WEAK,
+            BarkEvent.NIB_FROM_THE_SHADOWS,
+            BarkEvent.BRUGG_HAVE_AT_THEE,
+            BarkEvent.BRUGG_SURRENDER_OR_DIE,
+            BarkEvent.BRUGG_SHOW_YOURSELVES,
+            BarkEvent.VELLUM_LETS_SEE_IF_YOU_CAN_DODGE,
+            BarkEvent.VELLUM_YOUR_DEFENSES_ARE_FUTILE,
+            BarkEvent.VELLUM_I_SMITE_YOU,
+            BarkEvent.NIB_THAT_STINGS,
+            BarkEvent.NIB_LUCKY_HIT,
+            BarkEvent.NIB_AVENGE_ME,
+            BarkEvent.BRUGG_THATS_GOING_TO_LEAVE_A_MARK,
+            BarkEvent.BRUGG_I_DONT_HAVE_MUCH_LEFT,
+            BarkEvent.BRUGG_THAT_DREW_BLOOD,
+            BarkEvent.VELLUM_IM_GOING_TO_FEEL_THAT,
+            BarkEvent.VELLUM_I_NEED_A_HEALER,
+            BarkEvent.VELLUM_I_DIDNT_THINK_IT_WOULD_END,
+            BarkEvent.NIB_GOOD_AS_NEW,
+            BarkEvent.BRUGG_I_FEEL_BETTER_THAN_EVER,
+            BarkEvent.VELLUM_IM_BACK_ON_MY_FEET,
+            BarkEvent.NIB_ITS_A_TRAP,
+            BarkEvent.NIB_THEYRE_ONTO_US,
+            BarkEvent.NIB_WHAT_DO_WE_HAVE_HERE,
+            BarkEvent.BRUGG_THE_DEEPER_WE_GO,
+            BarkEvent.BRUGG_THIS_LOOKS_LIKE_TROUBLE,
+            BarkEvent.BRUGG_SURPRISE_SURPRISE,
+            BarkEvent.VELLUM_TREES_HAVE_EYES,
+            BarkEvent.VELLUM_HMM_WONDER_WHAT_THIS_IS,
+            BarkEvent.VELLUM_THIS_LOOKS_LIKE_A_GLYPH,
+            BarkEvent.NIB_I_LOVE_GOLD,
+            BarkEvent.NIB_THERES_A_HOLE_IN_MY_BOOT,
+            BarkEvent.NIB_STEW_AGAIN,
+            BarkEvent.BRUGG_BARKEEP_A_FLAGON,
+            BarkEvent.BRUGG_GRAB_YOUR_TORCH,
+            BarkEvent.BRUGG_WHERE_DID_I_PUT_THAT_MAP,
+            BarkEvent.VELLUM_NOW_WHAT_WAS_THAT_INCANTATION,
+            BarkEvent.VELLUM_OF_ALL_THE_ARCANE_LORE,
+            BarkEvent.VELLUM_TIME_WAITS_FOR_NO_MAN ->
+                react("Atmospheric observation noted", FlavorText)
         }
     }
 }

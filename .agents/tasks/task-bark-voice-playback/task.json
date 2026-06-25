@@ -1,0 +1,14 @@
+{
+  "task_id": "task-bark-voice-playback",
+  "task_description": "Wire bark voice-line audio playback into the running game: instantiate BarkAudioPlayer in SliceScreen, fire combat barks (taunts, damage reactions, death, healing, victory), fire exploration barks on room/enemy encounters, and fire ambient idle barks after 30s of inactivity.",
+  "status": "completed",
+  "feature_order": ["FEAT-001"],
+  "blocked_reason": null,
+  "verification": {
+    "build": "pass",
+    "tests": "pass",
+    "test_quality": "pass",
+    "docker_build": "skipped",
+    "summary": "All 88 tests pass (74 pre-existing + 14 new CombatBarkIntegrationTest). Tests cover combat taunts, damage reactions, death barks, victory barks, heal action (HP restoration and bark trigger), and Combatant.heal() edge cases. Tests use seeded Random for deterministic verification."
+  }
+}

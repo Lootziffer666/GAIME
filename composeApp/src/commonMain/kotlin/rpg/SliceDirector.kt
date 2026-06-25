@@ -3,6 +3,7 @@ package rpg
 import rpg.bark.BarkEvent
 import rpg.bark.BarkEventBus
 import rpg.bark.BarkFireResult
+import rpg.bark.audio.BarkAudioPlayer
 import rpg.combat.CombatAction
 import rpg.combat.CombatEngine
 import rpg.combat.CombatEvent
@@ -41,6 +42,9 @@ data class CombatTurn(
 class SliceDirector(
     clockMillis: () -> Long
 ) {
+    /** Optional audio player for bark voice lines. Set after construction. */
+    var barkAudioPlayer: BarkAudioPlayer? = null
+
     val bus = BarkEventBus(clockMillis)
     val questbook = QuestbookProcessor()
 
@@ -90,6 +94,7 @@ class SliceDirector(
             is BarkFireResult.Emitted -> {
                 val reaction = questbook.process(bark, context)
                 applyEffect(reaction.effect)
+                barkAudioPlayer?.playBark(bark)
                 BarkOutcome.Fired(reaction)
             }
         }

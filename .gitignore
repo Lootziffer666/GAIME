@@ -39,3 +39,6 @@ Thumbs.db
 *.part2
 *.part3
 *.7z
+
+# Extracted audio archives (temporary)
+.extracted/

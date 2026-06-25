@@ -36,6 +36,20 @@ class BarkRegistryTest {
     }
 
     @Test
+    fun totalBarkEventCountIsCorrect() {
+        // 20 original + 39 new (combat taunts, combat reactions, exploration, ambient)
+        assertEquals(59, BarkEvent.entries.size)
+        assertEquals(59, BarkRegistry.all().size)
+    }
+
+    @Test
+    fun newBarksAreNotMarkedAsSliceBarks() {
+        // Only the original 7 should be usedInSlice
+        val sliceCount = BarkRegistry.all().count { it.usedInSlice }
+        assertEquals(7, sliceCount)
+    }
+
+    @Test
     fun spotCheckTableMetadataMatchesDocs() {
         BarkRegistry[BarkEvent.NIB_SMELL_TREASURE].let {
             assertEquals(PartyCharacter.NIB, it.character)
