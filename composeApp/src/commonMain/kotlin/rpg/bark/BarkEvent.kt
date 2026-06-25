@@ -80,5 +80,10 @@ enum class BarkEvent {
     BRUGG_WHERE_DID_I_PUT_THAT_MAP,
     VELLUM_NOW_WHAT_WAS_THAT_INCANTATION,
     VELLUM_OF_ALL_THE_ARCANE_LORE,
-    VELLUM_TIME_WAITS_FOR_NO_MAN
+    VELLUM_TIME_WAITS_FOR_NO_MAN,
+
+    // ═══ NPC Dialogue ════════════════════════════════════════════════════
+    BARKEEP_SPEND_SOME_COIN,
+    BARKEEP_BEEN_PLAYING_IN_SEWERS,
+    PATRON_HE_SURE_IS_SLOW
 }

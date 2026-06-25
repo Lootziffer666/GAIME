@@ -90,7 +90,12 @@ object BarkAudioRegistry {
         BarkEvent.BRUGG_WHERE_DID_I_PUT_THAT_MAP to "where_did_i_put_that_map.wav",
         BarkEvent.VELLUM_NOW_WHAT_WAS_THAT_INCANTATION to "now_what_was_that_incantation.wav",
         BarkEvent.VELLUM_OF_ALL_THE_ARCANE_LORE to "of_all_the_arcane_lore.wav",
-        BarkEvent.VELLUM_TIME_WAITS_FOR_NO_MAN to "time_waits_for_no_man.wav"
+        BarkEvent.VELLUM_TIME_WAITS_FOR_NO_MAN to "time_waits_for_no_man.wav",
+
+        // ═══ NPC Dialogue ════════════════════════════════════════════════
+        BarkEvent.BARKEEP_SPEND_SOME_COIN to "spend_some_coin_or_get_out.wav",
+        BarkEvent.BARKEEP_BEEN_PLAYING_IN_SEWERS to "been_playing_in_the_sewers_have_we.wav",
+        BarkEvent.PATRON_HE_SURE_IS_SLOW to "he_sure_is_slow_for_a_four_armed_bartender.wav"
     )
 
     init {

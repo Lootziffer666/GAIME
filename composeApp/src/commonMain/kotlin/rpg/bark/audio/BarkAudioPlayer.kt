@@ -42,6 +42,19 @@ class BarkAudioPlayer(
         currentBark = null
     }
 
+    /**
+     * Play an arbitrary WAV file by path (for NPC dialogue lines that are
+     * not driven by a [BarkEvent]). Stops any currently playing audio first.
+     *
+     * @param path resource path relative to the Compose Resources `files/` root,
+     *   e.g. `"bark/brugg/spend_some_coin_or_get_out.wav"`.
+     */
+    fun playRawPath(path: String) {
+        audioPlayer.stop()
+        currentBark = null
+        audioPlayer.play(path)
+    }
+
     /** Whether a bark is currently playing. */
     fun isPlaying(): Boolean = audioPlayer.isPlaying()
 

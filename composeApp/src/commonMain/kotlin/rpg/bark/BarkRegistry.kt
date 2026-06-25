@@ -91,7 +91,12 @@ object BarkRegistry {
         def(BarkEvent.BRUGG_WHERE_DID_I_PUT_THAT_MAP, BRUGG, "Where did I put that map?", SAFE_BARK, CURRENT_ROOM, 20, false),
         def(BarkEvent.VELLUM_NOW_WHAT_WAS_THAT_INCANTATION, VELLUM, "Now what was that incantation?", SAFE_BARK, CURRENT_ROOM, 20, false),
         def(BarkEvent.VELLUM_OF_ALL_THE_ARCANE_LORE, VELLUM, "Of all the arcane lore...", SAFE_BARK, CURRENT_ROOM, 25, false),
-        def(BarkEvent.VELLUM_TIME_WAITS_FOR_NO_MAN, VELLUM, "Time waits for no man.", SAFE_BARK, CURRENT_ROOM, 30, false)
+        def(BarkEvent.VELLUM_TIME_WAITS_FOR_NO_MAN, VELLUM, "Time waits for no man.", SAFE_BARK, CURRENT_ROOM, 30, false),
+
+        // ═══ NPC Dialogue ════════════════════════════════════════════════
+        def(BarkEvent.BARKEEP_SPEND_SOME_COIN, BRUGG, "Spend some coin or get out.", SAFE_BARK, CURRENT_ROOM, 0, true),
+        def(BarkEvent.BARKEEP_BEEN_PLAYING_IN_SEWERS, BRUGG, "Been playing in the sewers, have we?", SAFE_BARK, CURRENT_ROOM, 0, true),
+        def(BarkEvent.PATRON_HE_SURE_IS_SLOW, VELLUM, "He sure is slow for a four-armed bartender.", SAFE_BARK, CURRENT_ROOM, 0, true)
     ).associateBy { it.key }
 
     init {

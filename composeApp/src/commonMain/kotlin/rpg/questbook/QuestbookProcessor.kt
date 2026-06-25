@@ -252,7 +252,10 @@ class QuestbookProcessor {
             BarkEvent.BRUGG_WHERE_DID_I_PUT_THAT_MAP,
             BarkEvent.VELLUM_NOW_WHAT_WAS_THAT_INCANTATION,
             BarkEvent.VELLUM_OF_ALL_THE_ARCANE_LORE,
-            BarkEvent.VELLUM_TIME_WAITS_FOR_NO_MAN ->
+            BarkEvent.VELLUM_TIME_WAITS_FOR_NO_MAN,
+            BarkEvent.BARKEEP_SPEND_SOME_COIN,
+            BarkEvent.BARKEEP_BEEN_PLAYING_IN_SEWERS,
+            BarkEvent.PATRON_HE_SURE_IS_SLOW ->
                 react("Atmospheric observation noted", FlavorText)
         }
     }
