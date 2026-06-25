@@ -165,7 +165,20 @@ renderer must supply.
 
 ---
 
+## End credits (absurdly long, two people)
 
+A deliberately enormous credits roll for a ~15-minute game (`:core`
+`rpg.credits`). The joke: every grandiose role is filled by exactly two
+entities — **Lootziffer** (human) and **Opus 4.8** (model) — wearing every hat,
+making Monkey Island 2's credits look like a receipt. ~90 ridiculous roles
+(Senior Barrel Inspector, Head of Deflating the Head of Pathos, Irony Gap
+Quantity Surveyor, Self-Driving Horse Liability Adjuster, Arabic RTL Deferral
+Committee (One Member)...), grouped into bureaucratic sections, plus a
+self-aware post-credits crawl ("Total development team: 2."). KorGE scrolls it.
+
+---
+
+## Tone summary
 
 Platt, böse, klug, dumm, systemisch — in that mix. Stamp the holy thing, file
 it, sewer it, and let Nib ask if it drops loot.
