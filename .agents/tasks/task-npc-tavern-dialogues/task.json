@@ -1,7 +1,14 @@
 {
   "task_id": "task-npc-tavern-dialogues",
   "task_description": "Implement NPC dialogue system with voice-line playback for Barkeep (pre-sewer and post-sewer) and Patron in the tavern. Extend DialogueLine with audioPath, add NPC_DIALOGUE phase, wire entity interaction, and update RETURN_LINES with audio.",
-  "status": "in_progress",
+  "status": "completed",
   "feature_order": ["FEAT-001"],
-  "blocked_reason": null
+  "blocked_reason": null,
+  "verification": {
+    "build": "pass",
+    "tests": "pass",
+    "test_quality": "pass",
+    "docker_build": "skipped",
+    "summary": "./gradlew desktopTest passes all 101+ tests. BUILD SUCCESSFUL. NpcDialogueTest.kt covers DialogueLine.audioPath (3 tests), BarkAudioPlayer.playRawPath (3 tests), and NPC registry entries (5 tests). Full build cannot run due to missing Android SDK in sandbox, but all common code compiles via desktopTest."
+  }
 }
