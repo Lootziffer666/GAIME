@@ -2,7 +2,7 @@
   "id": "FEAT-002",
   "type": "feat",
   "description": "Sludge Blob improved combat behavior: ranged spit attack targeting random party member (not always the first), slow attack pattern (skip every other tick), and verify higher HP than rats",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "In composeApp/src/commonMain/kotlin/rpg/combat/EnemyArchetype.kt, add an `attackStyle` property to the enum. SEWER_RAT gets MELEE (targets first living party member, attacks every tick), SLUDGE_BLOB gets RANGED_SLOW (targets random party member, attacks every 2nd tick), RAT_ACCOUNTANT keeps current behavior (handled by BossController). Add an enum AttackStyle { MELEE, RANGED_SLOW } in the same file or a new file.",
     "In composeApp/src/commonMain/kotlin/rpg/combat/Combatant.kt, add a `ticksSinceLastAttack: Int` mutable counter (starts at 0) and an `attackStyle: AttackStyle` property (default MELEE). Update EnemyArchetype.spawn() to pass the appropriate attackStyle.",
@@ -24,5 +24,5 @@
     "Run ./gradlew build to ensure compilation succeeds"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "Full build fails due to missing ANDROID_HOME (no Android SDK in sandbox), but desktop compilation (compileKotlinDesktop) and all tests (desktopTest) pass. The RANGED_SLOW attack style uses ticksSinceLastAttack counter starting at 0, so the blob attacks on its first tick (even=0), prepares on tick 1, attacks on tick 2, etc. All 6 new tests pass alongside existing CombatEngineTest."
 }
