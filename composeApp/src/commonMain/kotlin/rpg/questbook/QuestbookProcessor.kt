@@ -264,7 +264,6 @@ class QuestbookProcessor {
             BarkEvent.BRUGG_DARKNESS_TAKE_YOU,
             BarkEvent.VELLUM_DARKNESS_TAKE_YOU,
             BarkEvent.NIB_DROP_YOUR_WEAPONS,
-            BarkEvent.BRUGG_DROP_YOUR_WEAPONS,
             BarkEvent.VELLUM_DROP_YOUR_WEAPONS,
             BarkEvent.NIB_YOU_FIGHT_LIKE_A_NEWBORN,
             BarkEvent.BRUGG_YOU_FIGHT_LIKE_A_NEWBORN,
@@ -364,6 +363,59 @@ class QuestbookProcessor {
             BarkEvent.NIB_WHERES_THE_PRIVVY,
             BarkEvent.BRUGG_WHERES_THE_PRIVVY,
             BarkEvent.VELLUM_WHERES_THE_NEAREST_INN ->
+                react("Atmospheric observation noted", FlavorText)
+
+            // ═══ Chapter 2: Context-aware reactions ═════════════════════
+            BarkEvent.BRUGG_DROP_YOUR_WEAPONS ->
+                if (ctx.roomId == RoomContext.ROOM_FOREST_BOSS) {
+                    react("Surrender Filing: Rejected (Reason: Insufficient Paperwork)", FlavorText)
+                } else {
+                    react("Atmospheric observation noted", FlavorText)
+                }
+
+            BarkEvent.NIB_SMELL_GOLD ->
+                if (ctx.roomId == RoomContext.ROOM_MARKET) {
+                    react(
+                        "Commercial Survey Initiated: Catalogue all vendor-adjacent valuables (Mandatory)",
+                        SpawnQuestMarker("market valuables")
+                    )
+                } else {
+                    react("Gold detected: Source unverified", FlavorText)
+                }
+
+            BarkEvent.BRUGG_WHO_RUNS_THIS_CITY ->
+                react("Municipal Inquiry Filed: Authority Structure Report (Budget: 0 Gold)", FlavorText)
+
+            BarkEvent.VELLUM_CREATURES_IN_WOODS ->
+                react(
+                    "Wildlife Census Ordered: Document all woodland fauna (Deadline: Immediate)",
+                    SpawnQuestMarker("woodland fauna")
+                )
+
+            BarkEvent.VELLUM_ELEMENTS_MINE_TO_COMMAND ->
+                react("Elemental Claim Registered: Command over elements noted (Scope: Undefined)", FlavorText)
+
+            BarkEvent.VELLUM_CALLS_FOR_LIGHTNING ->
+                if (ctx.roomId == RoomContext.ROOM_FOREST_SHRINE) {
+                    react("Electrical Works Permit: Granted (Safety Notice: None)", RevealHidden)
+                } else {
+                    react("Lightning request: No valid conductor", FlavorText)
+                }
+
+            BarkEvent.VELLUM_BALANCE_LIFE_DEATH ->
+                react("Existential Risk Assessment: Filed (Priority: Philosophical)", FlavorText)
+
+            // Chapter 2: flavor-only reactions
+            BarkEvent.NIB_HOW_MUCH,
+            BarkEvent.NIB_SECRET_ENTRANCE,
+            BarkEvent.BRUGG_SPEAK_TO_GUARD,
+            BarkEvent.BRUGG_KEEP_TO_TRAIL,
+            BarkEvent.BRUGG_EXPERIENCE_IS_HOW_WE_GROW,
+            BarkEvent.VELLUM_SO_THATS_HOW_IT_IS,
+            BarkEvent.MERCHANT_SEE_IF_THIS_STRIKES_FANCY,
+            BarkEvent.MERCHANT_MAKE_ME_AN_OFFER,
+            BarkEvent.MERCHANT_NAME_YOUR_PRICE,
+            BarkEvent.GUARD_BACK_ALREADY ->
                 react("Atmospheric observation noted", FlavorText)
         }
     }

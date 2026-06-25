@@ -9,7 +9,11 @@ enum class EnemyArchetype(
 ) {
     SEWER_RAT("Sewer Rat", maxHp = 12, attackPower = 3, attackStyle = AttackStyle.MELEE),
     SLUDGE_BLOB("Sludge Blob", maxHp = 20, attackPower = 4, attackStyle = AttackStyle.RANGED_SLOW),
-    RAT_ACCOUNTANT("The Rat Accountant", maxHp = 60, attackPower = 6);
+    RAT_ACCOUNTANT("The Rat Accountant", maxHp = 60, attackPower = 6),
+
+    // ═══ Chapter 2 ═══════════════════════════════════════════════════════
+    FOREST_WOLF("Forest Wolf", maxHp = 18, attackPower = 5, attackStyle = AttackStyle.MELEE),
+    TAX_COLLECTOR_BADGER("The Tax Collector Badger", maxHp = 80, attackPower = 7);
 
     /** Builds a fresh [Combatant] from this template. */
     fun spawn(id: String, isPaperAdd: Boolean = false): Combatant =
