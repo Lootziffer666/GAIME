@@ -103,4 +103,48 @@ class LocalizationTest {
             assertNotEquals(p.name, Localizer.pressureLabel(p.name, Locale.DE))
         }
     }
+
+    @Test
+    fun everySupportedLocaleCoversTheStructuralKeys() {
+        for (locale in Localizer.translatedLocales) {
+            for (key in Localizer.requiredKeys) {
+                assertTrue(
+                    Localizer.hasTranslation(key, locale),
+                    "Locale $locale is missing required key: '$key'"
+                )
+                assertNotEquals(
+                    key, Localizer.localize(key, locale),
+                    "Locale $locale left '$key' untranslated"
+                )
+            }
+        }
+    }
+
+    @Test
+    fun everySupportedLocaleLocalizesPressureLabels() {
+        for (locale in Localizer.translatedLocales) {
+            for (level in listOf("LOW", "MEDIUM", "HIGH")) {
+                val label = Localizer.pressureLabel(level, locale)
+                assertTrue(label.isNotBlank())
+                assertNotEquals(level, label, "Locale $locale did not localize pressure '$level'")
+            }
+        }
+    }
+
+    @Test
+    fun shipsTheExpectedNumberOfLanguages() {
+        // EN + DE + ES + FR + IT + PT + RU + ZH + JA
+        assertEquals(9, Locale.entries.size)
+        assertEquals(8, Localizer.translatedLocales.size)
+    }
+
+    @Test
+    fun structuralKeysCoverEveryEnumDisplayName() {
+        // The required-key set must include every name a locale could show, so
+        // adding a chapter/boss/enemy/page forces a translation review.
+        for (c in Chapter.entries) assertTrue(c.title in Localizer.requiredKeys, "chapter ${c.title}")
+        for (b in CampaignBoss.entries) assertTrue(b.displayName in Localizer.requiredKeys, "boss ${b.displayName}")
+        for (e in EnemyArchetype.entries) assertTrue(e.displayName in Localizer.requiredKeys, "enemy ${e.displayName}")
+        for (p in QuestbookPage.entries) assertTrue(p.displayTitle in Localizer.requiredKeys, "page ${p.displayTitle}")
+    }
 }
