@@ -1,5 +1,10 @@
 # HD-2D Upgrade — Three Variants for GAIME
 
+> **DECIDED:** The project uses **Variant B — KorGE 2.5D**. See
+> `.kiro/steering/rendering-engine.md` for the locked decision, the agreed
+> `:core` / `:game` / `:composeApp` module architecture, and the migration plan.
+> This document is kept for historical comparison only.
+
 The GAIME design (`docs/GAME_CONCEPT_LOCK.md`) calls for an "8/16-bit top-down
 pixel RPG". This folder contains **three working demonstrations** of how to push
 that look toward a premium **HD-2D** feel (think *Octopath Traveler*: pixel art +
