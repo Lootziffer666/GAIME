@@ -17,8 +17,12 @@ interface AudioPlayer {
      * e.g. `"bark/nib/i_smell_treasure.wav"`.
      *
      * If audio is already playing, it is stopped first (interruption).
+     *
+     * @param onComplete optional callback invoked when playback finishes naturally
+     *   (not on interruption via [stop]). Implementations should invoke this on
+     *   natural completion only. The callback may be called from a background thread.
      */
-    fun play(resourcePath: String)
+    fun play(resourcePath: String, onComplete: (() -> Unit)? = null)
 
     /** Stop any currently playing audio. */
     fun stop()
@@ -32,7 +36,7 @@ interface AudioPlayer {
 
 /** A no-op [AudioPlayer] for testing or headless operation. */
 object NoOpAudioPlayer : AudioPlayer {
-    override fun play(resourcePath: String) {}
+    override fun play(resourcePath: String, onComplete: (() -> Unit)?) {}
     override fun stop() {}
     override fun isPlaying(): Boolean = false
     override fun release() {}

@@ -12,12 +12,18 @@ import javax.sound.sampled.LineEvent
  * `composeResources/files/` content on the classpath at runtime).
  * A single [Clip] is reused for sequential playback; starting a new clip
  * closes the previous one.
+ *
+ * Thread safety: [currentClip] access is guarded by [lock] to prevent
+ * a race between the LineListener callback (audio thread) and [stop]
+ * (calling thread).
  */
 class DesktopAudioPlayer : AudioPlayer {
 
+    private val lock = Any()
     private var currentClip: Clip? = null
+    private var onCompleteCallback: (() -> Unit)? = null
 
-    override fun play(resourcePath: String) {
+    override fun play(resourcePath: String, onComplete: (() -> Unit)?) {
         stop()
 
         try {
@@ -32,10 +38,22 @@ class DesktopAudioPlayer : AudioPlayer {
             clip.open(audioStream)
             clip.addLineListener { event ->
                 if (event.type == LineEvent.Type.STOP) {
-                    clip.close()
+                    synchronized(lock) {
+                        // Only close if this clip is still the active one and is open.
+                        // Prevents double-close when stop() races with natural completion.
+                        if (currentClip === clip && clip.isOpen) {
+                            clip.close()
+                            currentClip = null
+                            onCompleteCallback?.invoke()
+                            onCompleteCallback = null
+                        }
+                    }
                 }
             }
-            currentClip = clip
+            synchronized(lock) {
+                currentClip = clip
+                onCompleteCallback = onComplete
+            }
             clip.start()
         } catch (_: Exception) {
             // Audio playback is best-effort; never crash the game loop
@@ -43,16 +61,24 @@ class DesktopAudioPlayer : AudioPlayer {
     }
 
     override fun stop() {
-        currentClip?.let { clip ->
-            if (clip.isRunning) {
-                clip.stop()
+        synchronized(lock) {
+            currentClip?.let { clip ->
+                // Discard the completion callback on explicit stop (interruption)
+                onCompleteCallback = null
+                if (clip.isRunning) {
+                    clip.stop()
+                }
+                if (clip.isOpen) {
+                    clip.close()
+                }
             }
-            clip.close()
+            currentClip = null
         }
-        currentClip = null
     }
 
-    override fun isPlaying(): Boolean = currentClip?.isRunning == true
+    override fun isPlaying(): Boolean = synchronized(lock) {
+        currentClip?.isRunning == true
+    }
 
     override fun release() {
         stop()

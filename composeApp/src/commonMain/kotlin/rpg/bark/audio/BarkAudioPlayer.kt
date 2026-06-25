@@ -23,13 +23,17 @@ class BarkAudioPlayer(
      * Play the voice line for [event].
      *
      * Resolves the WAV path via [BarkAudioRegistry] and starts playback.
-     * Any currently playing bark is interrupted.
+     * Any currently playing bark is interrupted. When playback finishes
+     * naturally (without interruption), [currentBark] is cleared automatically.
      */
     fun playBark(event: BarkEvent) {
         val path = BarkAudioRegistry.pathFor(event)
         audioPlayer.stop()
         currentBark = event
-        audioPlayer.play(path)
+        audioPlayer.play(path) {
+            // Clear currentBark on natural playback completion
+            currentBark = null
+        }
     }
 
     /** Stop the currently playing bark, if any. */
