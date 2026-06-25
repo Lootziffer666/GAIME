@@ -2,7 +2,7 @@
   "id": "FEAT-001",
   "type": "feat",
   "description": "Add NPC dialogue system with voice lines for Barkeep and Patron in the tavern. This includes: extending DialogueLine with optional audioPath, adding NPC_DIALOGUE SlicePhase, implementing NPC interaction in tavernScene, adding NPC-specific BarkEvents for the Barkeep (pre-sewer and post-sewer) and Patron, and updating RETURN_LINES with Barkeep post-sewer audio.",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "1. Extend DialogueLine data class in composeApp/src/commonMain/kotlin/ui/rpg/DialogueLine.kt: add `val audioPath: String? = null` as a third field. This keeps backward compat since existing DialogueLine() calls without audioPath still work.",
     "2. Update DialogueOverlay composable in the same file to accept a `barkAudioPlayer: BarkAudioPlayer?` parameter (defaulting to null). When a dialogue line displays and has a non-null audioPath, call the audio player's underlying AudioPlayer.play(audioPath). Import BarkAudioPlayer and use its internal audioPlayer via a new `playRawPath(path: String)` method to be added to BarkAudioPlayer.",
@@ -34,5 +34,5 @@
     "Verify new NpcDialogueTest.kt tests cover DialogueLine.audioPath, BarkAudioPlayer.playRawPath, and NPC bark registry entries"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "Added 3 new BarkEvent entries which required updating: (1) QuestbookProcessor exhaustive when-expression (added to flavor-only group), (2) BarkRegistryTest count assertions (59->62, 7->10 slice barks), (3) BarkAudioRegistryTest count assertion (59->62). The full ./gradlew build fails due to missing Android SDK (ANDROID_HOME) in the sandbox environment, but ./gradlew desktopTest compiles all common code and passes all 101+ tests successfully."
 }
