@@ -1,0 +1,29 @@
+{
+  "project_type": "Kotlin Multiplatform (Compose) targeting Android + Desktop (JVM)",
+  "language": "Kotlin",
+  "build_system": "Gradle 8.14+ with Kotlin 2.1.21, Compose 1.7.3. Root build.gradle.kts applies plugins. Single :composeApp module.",
+  "test_framework": "kotlin.test in commonTest source set. Tests are plain @Test annotated classes.",
+  "build_command": "./gradlew build",
+  "test_command": "./gradlew allTests",
+  "verification_instructions": "Run ./gradlew allTests to verify all tests pass. Run ./gradlew build to verify full compilation.",
+  "snapshot_or_generated_files": "Compose Resources generates gaime.resources.Res class with typed accessors for files in composeResources/drawable/ and composeResources/files/. These are auto-generated during build and not checked in.",
+  "setup_instructions": "JDK 17+ must be available. Gradle wrapper downloads Gradle 8.14.5 automatically.",
+  "environment_constraints": "OPEN_INTERNET - full network access. WAV files total ~212MB across all 3 voices. The .gitignore excludes common media formats (mp3, ogg, png, jpg) but NOT .wav. The extracted WAVs are currently in .extracted/ which should be added to .gitignore.",
+  "contribution_requirements": "No CONTRIBUTING.md found. Game concept is locked in docs/GAME_CONCEPT_LOCK.md. BarkEvent enum must stay in sync with BARK_TRIGGER_TABLE.md. Every BarkEvent must have a BarkRegistry entry (enforced by init check).",
+  "key_patterns": "BarkEvent enum -> BarkRegistry metadata -> BarkEventBus (cooldowns) -> SliceDirector (pipeline). ComposeResources: drawable/ for images accessed via Res.drawable.xxx. For raw files, composeResources/files/ directory generates Res.files accessors. Platform code: androidMain has MainActivity, desktopMain has main.kt. Audio playback requires platform-specific implementations (expect/actual pattern).",
+  "relevant_files": [
+    "composeApp/src/commonMain/kotlin/rpg/bark/BarkEvent.kt",
+    "composeApp/src/commonMain/kotlin/rpg/bark/BarkRegistry.kt",
+    "composeApp/src/commonMain/kotlin/rpg/bark/BarkDefinition.kt",
+    "composeApp/src/commonMain/kotlin/rpg/bark/BarkEventBus.kt",
+    "composeApp/src/commonMain/kotlin/rpg/bark/PartyCharacter.kt",
+    "composeApp/src/commonMain/kotlin/rpg/SliceDirector.kt",
+    "composeApp/src/commonMain/kotlin/ui/rpg/SliceScreen.kt",
+    "composeApp/build.gradle.kts",
+    "composeApp/src/commonMain/composeResources/drawable/",
+    "composeApp/src/desktopMain/kotlin/main.kt",
+    "composeApp/src/androidMain/kotlin/com/aiundb/gaime/MainActivity.kt",
+    ".extracted/ (temporary extraction of WAVs from 7z archives)"
+  ],
+  "directory_structure": "Root: GAIME/ with single module composeApp/. Source sets: commonMain (shared logic), androidMain (Android Activity), desktopMain (JVM window). Resources: composeApp/src/commonMain/composeResources/drawable/ for images. Tests: composeApp/src/commonTest/kotlin/. Archives: *.7z.part* files in root contain voice WAVs. Extracted to .extracted/{gruff,raspy,whiny}/{gruff,raspy,whiny}/*.wav."
+}

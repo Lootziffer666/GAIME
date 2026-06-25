@@ -1,0 +1,14 @@
+{
+  "task_id": "task-bark-audio-system",
+  "task_description": "Extract voice line WAVs from 7z archives into composeResources, build complete BarkEvent-to-WAV mapping with extended bark events for combat/exploration/ambient, and implement cross-platform audio playback system for KMP (Desktop+Android).",
+  "status": "completed",
+  "feature_order": ["FEAT-001", "FEAT-002", "FEAT-003"],
+  "blocked_reason": null,
+  "verification": {
+    "build": "pass",
+    "tests": "pass",
+    "test_quality": "pass",
+    "docker_build": "skipped",
+    "summary": "All desktop tests pass (BUILD SUCCESSFUL). BarkEvent expanded from 20 to 59 values. BarkAudioRegistry maps all events to WAV paths. Audio playback uses streaming/on-demand loading (only one WAV in memory at a time). Review issues (state drift, race condition, temp-file docs) all addressed in fix commit."
+  }
+}
