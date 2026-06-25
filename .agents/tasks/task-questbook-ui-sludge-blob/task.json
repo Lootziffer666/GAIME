@@ -3,5 +3,12 @@
   "task_description": "Two features: (1) Questbook UI polish with animated flash overlay, animated pressure chip color, and glitchy false quest markers. (2) Sludge Blob improved combat with ranged spit attack targeting random party members and slow (every-other-tick) attack pattern.",
   "status": "in_progress",
   "feature_order": ["FEAT-001", "FEAT-002"],
-  "blocked_reason": null
+  "blocked_reason": null,
+  "verification": {
+    "build": "pass",
+    "tests": "pass",
+    "test_quality": "pass",
+    "docker_build": "skipped",
+    "summary": "107 tests pass across 15 suites (0 failures). Desktop compilation successful. New SludgeBlobCombatTest has 6 meaningful tests covering skip pattern, random targeting, HP comparison, and regression for existing enemy behavior."
+  }
 }

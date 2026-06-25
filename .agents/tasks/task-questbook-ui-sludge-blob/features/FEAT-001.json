@@ -2,7 +2,7 @@
   "id": "FEAT-001",
   "type": "feat",
   "description": "Questbook UI polish: animated flash overlay (slide-in/out from top), animated pressure chip color transitions, and glitchy false quest markers",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "In composeApp/src/commonMain/kotlin/ui/rpg/SliceScreen.kt, rewrite SliceQuestbookFlash to use AnimatedVisibility with slideInVertically (from top) + fadeIn for enter, slideOutVertically (to top) + fadeOut for exit. The composable currently just appears/disappears. Wrap it in AnimatedVisibility keyed on the flashText state being non-null.",
     "In the same file, rewrite SlicePressureChip to use animateColorAsState for the background color so that when pressure changes from LOW->MEDIUM->HIGH, the color smoothly transitions (green -> amber -> red) with a visible animation (use tween or spring spec).",
@@ -22,5 +22,5 @@
     "Run ./gradlew build to ensure compilation succeeds"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "All animation APIs (AnimatedVisibility, animateColorAsState, rememberInfiniteTransition, graphicsLayer) are available from compose.foundation without additional dependencies. Build and all tests pass successfully. The unused import for alpha modifier was avoided by using graphicsLayer for the alpha effect in SliceFalseMarkerChip."
 }
