@@ -2,7 +2,7 @@
   "id": "FEAT-003",
   "type": "feat",
   "description": "Chapter 2 tests: Add unit tests for the TaxCollectorController, the new QuestbookProcessor reactions, the forest combat scenarios, and an integration test for the Chapter 2 pipeline flow.",
-  "status": "pending",
+  "status": "in_progress",
   "steps": [
     "1. Create composeApp/src/commonTest/kotlin/TaxCollectorControllerTest.kt modeled on CombatEngineTest.kt. Test: (a) onCombatStart summons 2 FOREST_WOLF adds, (b) phase transitions at correct HP thresholds (50% -> PHASE_2, 25% -> PHASE_3), (c) PHASE_3 damage is attackPower*3, (d) BossPhaseChanged events are emitted on transition, (e) PHASE_2 transition emits pressure escalation event.",
     "2. Create composeApp/src/commonTest/kotlin/Chapter2QuestbookTest.kt. Test each new Chapter 2 bark reaction: (a) NIB_SMELL_GOLD in market context produces 'Commercial Survey Initiated' text with SpawnQuestMarker effect, (b) BRUGG_WHO_RUNS_THIS_CITY produces 'Municipal Inquiry Filed' with FlavorText, (c) VELLUM_CREATURES_IN_WOODS produces 'Wildlife Census Ordered' with SpawnQuestMarker, (d) VELLUM_CALLS_FOR_LIGHTNING in shrine context produces 'Electrical Works Permit: Granted' with RevealHidden, (e) VELLUM_BALANCE_LIFE_DEATH produces 'Existential Risk Assessment' with FlavorText, (f) VELLUM_ELEMENTS_MINE_TO_COMMAND produces 'Elemental Claim Registered' with FlavorText.",
