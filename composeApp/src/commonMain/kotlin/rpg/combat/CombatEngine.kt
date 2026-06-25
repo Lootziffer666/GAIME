@@ -77,7 +77,11 @@ class CombatEngine(
                 if (target != null) {
                     val dealt = target.takeDamage(playerAttackPower())
                     events += CombatEvent.Message("Party hits ${target.name} for $dealt.")
-                    if (!target.isAlive) events += CombatEvent.Message("${target.name} is defeated.")
+                    if (!target.isAlive) {
+                        events += CombatEvent.Message("${target.name} is defeated.")
+                    } else if (target.hpFraction < 0.25f && random.nextFloat() < 0.3f) {
+                        pickEnemyNearlyDeadBark()?.let { events += CombatEvent.BarkTriggered(it) }
+                    }
                 } else {
                     events += CombatEvent.Message("No such target.")
                 }
@@ -152,21 +156,39 @@ class CombatEngine(
         return if (taunts.isNotEmpty()) taunts[random.nextInt(taunts.size)] else null
     }
 
-    private fun tauntsFor(characterId: String): List<BarkEvent> = when (characterId) {
+    fun tauntsFor(characterId: String): List<BarkEvent> = when (characterId) {
         "nib" -> listOf(
             BarkEvent.NIB_FROM_THE_SHADOWS,
             BarkEvent.NIB_IS_THAT_ALL_YOUVE_GOT,
-            BarkEvent.NIB_YOUR_DEFENSES_ARE_WEAK
+            BarkEvent.NIB_YOUR_DEFENSES_ARE_WEAK,
+            BarkEvent.NIB_BACK_FOUL_CREATURE,
+            BarkEvent.NIB_DARKNESS_TAKE_YOU,
+            BarkEvent.NIB_DROP_YOUR_WEAPONS,
+            BarkEvent.NIB_IVE_FOUGHT_KOBOLDS_TOUGHER,
+            BarkEvent.NIB_IVE_FOUGHT_PUPPIES_TOUGHER,
+            BarkEvent.NIB_IVE_FOUGHT_ARTICHOKES_TOUGHER
         )
         "brugg" -> listOf(
             BarkEvent.BRUGG_HAVE_AT_THEE,
             BarkEvent.BRUGG_SURRENDER_OR_DIE,
-            BarkEvent.BRUGG_SHOW_YOURSELVES
+            BarkEvent.BRUGG_SHOW_YOURSELVES,
+            BarkEvent.BRUGG_BACK_FOUL_CREATURE,
+            BarkEvent.BRUGG_DARKNESS_TAKE_YOU,
+            BarkEvent.BRUGG_DROP_YOUR_WEAPONS,
+            BarkEvent.BRUGG_IVE_FOUGHT_KOBOLDS_TOUGHER,
+            BarkEvent.BRUGG_IVE_FOUGHT_PUPPIES_TOUGHER,
+            BarkEvent.BRUGG_IVE_FOUGHT_ARTICHOKES_TOUGHER
         )
         "vellum" -> listOf(
             BarkEvent.VELLUM_LETS_SEE_IF_YOU_CAN_DODGE,
             BarkEvent.VELLUM_YOUR_DEFENSES_ARE_FUTILE,
-            BarkEvent.VELLUM_I_SMITE_YOU
+            BarkEvent.VELLUM_I_SMITE_YOU,
+            BarkEvent.VELLUM_BACK_FOUL_CREATURE,
+            BarkEvent.VELLUM_DARKNESS_TAKE_YOU,
+            BarkEvent.VELLUM_DROP_YOUR_WEAPONS,
+            BarkEvent.VELLUM_IVE_FOUGHT_KOBOLDS_TOUGHER,
+            BarkEvent.VELLUM_IVE_FOUGHT_PUPPIES_TOUGHER,
+            BarkEvent.VELLUM_IVE_FOUGHT_ARTICHOKES_TOUGHER
         )
         else -> emptyList()
     }
@@ -179,11 +201,35 @@ class CombatEngine(
         return if (victories.isNotEmpty()) victories[random.nextInt(victories.size)] else null
     }
 
-    private fun victoriesFor(characterId: String): List<BarkEvent> = when (characterId) {
-        "nib" -> listOf(BarkEvent.NIB_IS_THAT_ALL_YOUVE_GOT)
-        "brugg" -> listOf(BarkEvent.BRUGG_SURRENDER_OR_DIE)
-        "vellum" -> listOf(BarkEvent.VELLUM_YOUR_DEFENSES_ARE_FUTILE)
+    fun victoriesFor(characterId: String): List<BarkEvent> = when (characterId) {
+        "nib" -> listOf(
+            BarkEvent.NIB_IS_THAT_ALL_YOUVE_GOT,
+            BarkEvent.NIB_YOULL_NOT_BE_GETTING_UP,
+            BarkEvent.NIB_NEXT_TIME_WONT_BE_SO_LUCKY
+        )
+        "brugg" -> listOf(
+            BarkEvent.BRUGG_SURRENDER_OR_DIE,
+            BarkEvent.BRUGG_YOULL_NOT_BE_GETTING_UP,
+            BarkEvent.BRUGG_NEXT_TIME_WONT_BE_SO_LUCKY
+        )
+        "vellum" -> listOf(
+            BarkEvent.VELLUM_YOUR_DEFENSES_ARE_FUTILE,
+            BarkEvent.VELLUM_YOULL_NOT_BE_GETTING_UP,
+            BarkEvent.VELLUM_NEXT_TIME_WONT_BE_SO_LUCKY
+        )
         else -> emptyList()
+    }
+
+    private fun pickEnemyNearlyDeadBark(): BarkEvent? {
+        val living = livingParty()
+        if (living.isEmpty()) return null
+        val speaker = living[random.nextInt(living.size)]
+        return when (speaker.id) {
+            "nib" -> BarkEvent.NIB_MY_NEXT_STRIKE_WILL_FELL_YOU
+            "brugg" -> BarkEvent.BRUGG_MY_NEXT_STRIKE_WILL_FELL_YOU
+            "vellum" -> BarkEvent.VELLUM_MY_NEXT_STRIKE_WILL_FELL_YOU
+            else -> null
+        }
     }
 
     private fun enemyTurn(dodging: Boolean, events: MutableList<CombatEvent>) {
@@ -241,15 +287,40 @@ class CombatEngine(
     /**
      * Shared bark emission after a party member takes damage.
      * On death the death bark always fires; otherwise there is a 40% chance
-     * of a damage-reaction bark.
+     * of a damage-reaction bark. If the enemy dealt very low damage (<=2)
+     * and the target is alive, there is a 25% chance of a mockery bark instead.
      */
     private fun emitBarkIfApplicable(target: Combatant, dealt: Int, events: MutableList<CombatEvent>) {
         if (target.side != Side.PLAYER || dealt <= 0) return
         if (!target.isAlive) {
             deathBarkFor(target.id)?.let { events += CombatEvent.BarkTriggered(it) }
+        } else if (dealt <= 2 && random.nextFloat() < 0.25f) {
+            pickWeakAttackMockery(target.id)?.let { events += CombatEvent.BarkTriggered(it) }
         } else if (random.nextFloat() < 0.4f) {
             damageBarkFor(target.id, dealt, target)?.let { events += CombatEvent.BarkTriggered(it) }
         }
+    }
+
+    private fun pickWeakAttackMockery(characterId: String): BarkEvent? {
+        val variants = when (characterId) {
+            "nib" -> listOf(
+                BarkEvent.NIB_YOU_FIGHT_LIKE_A_NEWBORN,
+                BarkEvent.NIB_YOU_FIGHT_LIKE_AN_INFANT,
+                BarkEvent.NIB_YOU_FIGHT_LIKE_YOUR_MOTHER
+            )
+            "brugg" -> listOf(
+                BarkEvent.BRUGG_YOU_FIGHT_LIKE_A_NEWBORN,
+                BarkEvent.BRUGG_YOU_FIGHT_LIKE_AN_INFANT,
+                BarkEvent.BRUGG_YOU_FIGHT_LIKE_YOUR_MOTHER
+            )
+            "vellum" -> listOf(
+                BarkEvent.VELLUM_YOU_FIGHT_LIKE_A_NEWBORN,
+                BarkEvent.VELLUM_YOU_FIGHT_LIKE_AN_INFANT,
+                BarkEvent.VELLUM_YOU_FIGHT_LIKE_YOUR_MOTHER
+            )
+            else -> return null
+        }
+        return variants[random.nextInt(variants.size)]
     }
 
     private fun deathBarkFor(characterId: String): BarkEvent? = when (characterId) {
@@ -269,8 +340,17 @@ class CombatEngine(
                 else -> null
             }
         }
-        // Medium damage (>30% of maxHp): painful bark
+        // Medium damage (>30% of maxHp): painful bark or HOW_HUMILIATING (50/50)
         if (dealt > target.maxHp * 0.3f) {
+            val useHumiliating = random.nextFloat() < 0.5f
+            if (useHumiliating) {
+                return when (characterId) {
+                    "nib" -> BarkEvent.NIB_HOW_HUMILIATING
+                    "brugg" -> BarkEvent.BRUGG_HOW_HUMILIATING
+                    "vellum" -> BarkEvent.VELLUM_HOW_HUMILIATING
+                    else -> null
+                }
+            }
             return when (characterId) {
                 "nib" -> BarkEvent.NIB_THAT_STINGS
                 "brugg" -> BarkEvent.BRUGG_THATS_GOING_TO_LEAVE_A_MARK
