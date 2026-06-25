@@ -36,7 +36,7 @@ class ChapterStructureTest {
         assertEquals(
             listOf(
                 CampaignBoss.RAT_ACCOUNTANT,
-                CampaignBoss.TAX_COLLECTOR_BADGER,
+                CampaignBoss.GUARD_CAPTAIN_CANNOT_MOVE,
                 CampaignBoss.HELPFUL_TREE,
                 CampaignBoss.CAPTAIN_FORMBEARD,
                 CampaignBoss.ADMINISTRAGON

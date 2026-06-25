@@ -120,7 +120,7 @@ Questbook misreads bureaucratically. Each chapter ends with one recovered
 |---|---|---|---|---|
 | 0 | Prologue: The Four-Armed Bartender | Tavern *The Limping Cockatrice* | — | — |
 | 1 | The Sewers of Bad Decisions | Sewers under Stokeport | The Rat Accountant | The Page of Beginnings |
-| 2 | The Market of Mandatory Commerce | Stokeport market + forest trail | The Tax Collector Badger | The Page of Terms and Conditions |
+| 2 | The Market of Mandatory Commerce | Stokeport market + forest trail | The Guard Captain Who Cannot Legally Move | The Page of Terms and Conditions |
 | 3 | The Woods That Had Opinions | Woods outside Stokeport | The Helpful Tree | The Page of Directions |
 | 4 | The Ship That Was Technically Seaworthy | Harbour, warehouse, ship, fog sea | Captain Formbeard | The Page of Claims and Rewards |
 | 5 | The Dragon That Was Accidentally Summoned | Island cave, gold chamber | The Administragon | (final) |
@@ -175,27 +175,38 @@ for knowing that?"
 
 ## Chapter 2 — The Market of Mandatory Commerce
 
-*(Shipped: PR #12. Buildable and playable on top of Chapter 1.)*
-
 Cliche: town market, merchants, a quest board, and guards with unclear orders.
 The party follows the Questbook's demands out of the tavern into Stokeport's
 market square and the forest beyond.
 
-Play beats (~10 min):
-1. **Stokeport Market** — merchant and city-guard NPCs. Nib's "I smell gold!"
-   opens a *Commercial Survey* quest; merchants reinterpret every bark as a
-   price-relevant declaration.
-2. **Forest Trail** — three wolf encounters, rising quest pressure.
-3. **Shrine of the Fine Print** — a Vellum puzzle solved with the
-   `VELLUM_CALLS_FOR_LIGHTNING` utility bark (like flame clears rubble in Ch1).
-4. **Boss: The Tax Collector Badger** — three phases: wolf adds, then "OVERDUE"
-   stamps, then a single heavy stamp. He audits the party's outstanding balance.
-5. **The Page of Terms and Conditions** — "Outstanding Quest Balance: 47.
-   Payment: Additional heroism."
-6. **Return to Market** — chapter complete.
+**Canonical boss: The Guard Captain Who Cannot Legally Move** (theme: Song #3
+"The Warden's Mandate", docs/SONGBOOK.md). Chapter 2 is centrally about the town
+guard that arrested *itself* through contradictory orders. The boss embodies the
+authority loop:
 
-Running gag: the guard and the board take every line literally, and merchants
-price "quest-relevant" junk accordingly. The heroic move is to stop answering.
+```
+"What are your orders?"  ->  the order generates a new arrest reason
+                         ->  the guard may not move
+                         ->  the Captain is simultaneously in charge,
+                             suspicious, on duty, and under arrest.
+```
+
+You "win" not by damage but by removing the contradictory orders so the loop can
+terminate — the heroic move is, again, to stop answering / stop issuing orders.
+
+Play beats (~10 min): Stokeport market (merchant + city-guard NPCs, Nib's "I
+smell gold!" opens a Commercial Survey quest), a forest trail with rising
+pressure, a Vellum lightning shrine puzzle, the Guard Captain authority-loop
+encounter, then **The Page of Terms and Conditions** and return to the market.
+
+> **Implementation drift (to reconcile):** the shipped Ch2 (PR #12) delivers a
+> **Tax Collector Badger** boss (`TaxCollectorController`,
+> `EnemyArchetype.TAX_COLLECTOR_BADGER`) instead of the Guard Captain. The Badger
+> is **non-canon** — too close to Ch1's Rat Accountant and it shifts the focus
+> away from guard logic / orders / self-arrest / mandate / authority loop. The
+> canon model (`CampaignBoss.GUARD_CAPTAIN_CANNOT_MOVE`) and docs are correct;
+> the combat implementation should be reworked to the Guard Captain in a future
+> PR. The shipped Badger code is left in place until then.
 
 ---
 

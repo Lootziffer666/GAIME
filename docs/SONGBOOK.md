@@ -5,10 +5,11 @@ boss theme per chapter. The code mapping lives in `:core`
 (`rpg.music.MusicTrack`); playback is wired by the renderer (KorGE `:game`,
 see `.kiro/steering/rendering-engine.md`).
 
-> **Open design question:** Song 3 is *"The Guard Captain Who Cannot Legally
-> Move"*, but the shipped Chapter 2 boss (PR #12) is **The Tax Collector
-> Badger**. The track is mapped to Chapter 2 regardless. Confirm which boss is
-> canonical for Ch2 so the theme and the encounter agree.
+> **Ch2 boss canon (resolved):** the canonical Chapter 2 boss is **The Guard
+> Captain Who Cannot Legally Move** (this song, "The Warden's Mandate") — it
+> embodies the self-arresting authority loop. The shipped **Tax Collector
+> Badger** (PR #12) is **non-canon / implementation drift** and is to be
+> reconciled in a future PR.
 
 **Audio files:** drop the rendered tracks into `assets/audio/music/` using the
 base names in the table below (`.ogg` preferred). NB: `.gitignore` currently
@@ -19,7 +20,7 @@ ignore rule relaxed for `assets/audio/music/`.
 |---|---|---|---|---|---|
 | 1 | Quest Accepted: Unfortunately! | — (title/menu) | — | Comedy Chiptune / 16-Bit March | `title_quest_accepted` |
 | 2 | The Rat Accountant (Form 8-B Denied) | Ch1 Sewers | The Rat Accountant | 16-Bit Bureaucracy Chiptune | `boss_rat_accountant` |
-| 3 | The Warden's Mandate | Ch2 Market | Guard Captain / (Tax Collector Badger?) | 16-Bit Symphonic Chiptune / Paradox Loop | `boss_wardens_mandate` |
+| 3 | The Warden's Mandate | Ch2 Market | The Guard Captain Who Cannot Legally Move (canon) | 16-Bit Symphonic Chiptune / Paradox Loop | `boss_wardens_mandate` |
 | 4 | Fanfare For The Seeker | Ch3 Woods | The Helpful Tree | 16-Bit JRPG Chiptune / Baroque Pop | `boss_helpful_tree` |
 | 5 | Plunder Permit | Ch4 Ship | Captain Formbeard | Chiptune Sea Shanty | `boss_formbeard` |
 | 6 | The Administragon | Ch5 Dragon | The Administragon | 16-Bit Final Boss Symphonic Chiptune | `boss_administragon` |
