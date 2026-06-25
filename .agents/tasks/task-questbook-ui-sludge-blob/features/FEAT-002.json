@@ -2,7 +2,7 @@
   "id": "FEAT-002",
   "type": "feat",
   "description": "Sludge Blob improved combat behavior: ranged spit attack targeting random party member (not always the first), slow attack pattern (skip every other tick), and verify higher HP than rats",
-  "status": "pending",
+  "status": "in_progress",
   "steps": [
     "In composeApp/src/commonMain/kotlin/rpg/combat/EnemyArchetype.kt, add an `attackStyle` property to the enum. SEWER_RAT gets MELEE (targets first living party member, attacks every tick), SLUDGE_BLOB gets RANGED_SLOW (targets random party member, attacks every 2nd tick), RAT_ACCOUNTANT keeps current behavior (handled by BossController). Add an enum AttackStyle { MELEE, RANGED_SLOW } in the same file or a new file.",
     "In composeApp/src/commonMain/kotlin/rpg/combat/Combatant.kt, add a `ticksSinceLastAttack: Int` mutable counter (starts at 0) and an `attackStyle: AttackStyle` property (default MELEE). Update EnemyArchetype.spawn() to pass the appropriate attackStyle.",
