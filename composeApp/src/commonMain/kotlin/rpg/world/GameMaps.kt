@@ -125,8 +125,6 @@ object GameMaps {
     const val TRIGGER_MARKET_EXIT     = "market_exit"
     const val TRIGGER_FOREST_SHRINE   = "forest_shrine"
     const val TRIGGER_FOREST_BOSS     = "forest_boss"
-    const val TRIGGER_CHAPTER2_PAGE   = "chapter2_page"
-    const val TRIGGER_CHAPTER2_EXIT   = "chapter2_exit"
 
     private val marketLegend = mapOf(
         '#' to TileSpec(atlasIndex = 14, blocked = true),
@@ -171,8 +169,7 @@ object GameMaps {
         '.' to TileSpec(atlasIndex = 48),
         '@' to TileSpec(atlasIndex = 48, spawn = true),
         'H' to TileSpec(atlasIndex = 48, trigger = TRIGGER_FOREST_SHRINE),
-        'B' to TileSpec(atlasIndex = 48, trigger = TRIGGER_FOREST_BOSS),
-        'P' to TileSpec(atlasIndex = 48, trigger = TRIGGER_CHAPTER2_PAGE)
+        'B' to TileSpec(atlasIndex = 48, trigger = TRIGGER_FOREST_BOSS)
     )
 
     // 30 wide x 20 tall. Spawn at (1,10). Main path goes east. Branch north to shrine.
@@ -194,7 +191,7 @@ object GameMaps {
         "#........#...#...............#",
         "#........#...#...............#",
         "#........#...########........#",
-        "#........#..........#..P.....#",
+        "#........#..........#........#",
         "#........#..........#........#",
         "#........#..........#...B....#",
         "##############################"

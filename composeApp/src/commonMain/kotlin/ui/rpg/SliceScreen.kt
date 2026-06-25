@@ -877,6 +877,7 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
                         if (bark == BarkEvent.VELLUM_CALLS_FOR_LIGHTNING && !shrineActivated) {
                             shrineActivated = true
                             fireAndFlash(bark)
+                            director.enterRoom(FOREST_CTX)
                             phase = SlicePhase.CHAPTER2_FOREST
                         } else {
                             fireAndFlash(bark)

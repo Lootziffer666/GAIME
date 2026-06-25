@@ -2,7 +2,7 @@
   "id": "FEAT-001",
   "type": "feat",
   "description": "Chapter 2 data layer: new BarkEvents, SlicePhases, EnemyArchetypes, Maps, and TaxCollectorController. Extends all registries and the QuestbookProcessor with Chapter 2 reactions.",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "1. Add new BarkEvent enum values to composeApp/src/commonMain/kotlin/rpg/bark/BarkEvent.kt. Add a '// Chapter 2' section at the end with these values: NIB_SMELL_GOLD, NIB_HOW_MUCH, NIB_SECRET_ENTRANCE, BRUGG_WHO_RUNS_THIS_CITY, BRUGG_SPEAK_TO_GUARD, BRUGG_KEEP_TO_TRAIL, BRUGG_EXPERIENCE_IS_HOW_WE_GROW, VELLUM_CREATURES_IN_WOODS, VELLUM_ELEMENTS_MINE_TO_COMMAND, VELLUM_CALLS_FOR_LIGHTNING (UTILITY_BARK - activates shrine), VELLUM_SO_THATS_HOW_IT_IS, VELLUM_BALANCE_LIFE_DEATH, MERCHANT_SEE_IF_THIS_STRIKES_FANCY, MERCHANT_MAKE_ME_AN_OFFER, MERCHANT_NAME_YOUR_PRICE, GUARD_BACK_ALREADY (for the return dialogue). Note: BRUGG_DROP_YOUR_WEAPONS already exists and is the UTILITY_BARK in the boss fight.",
     "2. Add BarkRegistry definitions for each new BarkEvent in composeApp/src/commonMain/kotlin/rpg/bark/BarkRegistry.kt. Follow the existing pattern: def(event, character, audioText, type, scope, cooldown, usedInSlice=true). The merchant and guard NPCs use BRUGG character (gruff voice). VELLUM_CALLS_FOR_LIGHTNING should be UTILITY_BARK type. NIB_SMELL_GOLD should be TRIGGER_BARK. BRUGG_WHO_RUNS_THIS_CITY and BRUGG_SPEAK_TO_GUARD should be TRIGGER_BARK. VELLUM_CREATURES_IN_WOODS is SAFE_BARK. VELLUM_ELEMENTS_MINE_TO_COMMAND is TRIGGER_BARK. VELLUM_BALANCE_LIFE_DEATH is SAFE_BARK. BRUGG_EXPERIENCE_IS_HOW_WE_GROW is SAFE_BARK.",
@@ -31,5 +31,5 @@
     "Run ./gradlew build and confirm compilation succeeds"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "All 16 new BarkEvents added and wired into registries, processor, and tests. SliceScreen had an exhaustive when() on SlicePhase that required stub branches for the new phases. Test counts updated from 164 to 180. The build command fails due to missing ANDROID_HOME (no Android SDK), but desktopTest target compiles and passes all 113 tests successfully. BRUGG_DROP_YOUR_WEAPONS was already in the flavor-text list - moved it out and gave it context-aware handling for the forest boss room."
 }
