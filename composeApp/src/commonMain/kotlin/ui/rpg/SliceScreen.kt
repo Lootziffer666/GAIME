@@ -606,10 +606,12 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
             lastActivityTime = clock()
             when (id) {
                 GameMaps.TRIGGER_FOREST_SHRINE -> {
+                    director.enterRoom(RoomContext("forest_trail", RoomContext.ROOM_FOREST_SHRINE, hasPuzzleElement = true))
                     fireAndFlash(BarkEvent.VELLUM_ELEMENTS_MINE_TO_COMMAND)
                     phase = SlicePhase.CHAPTER2_SHRINE
                 }
                 GameMaps.TRIGGER_FOREST_BOSS -> {
+                    director.enterRoom(RoomContext("forest_trail", RoomContext.ROOM_FOREST_BOSS))
                     fireAndFlash(BarkEvent.BRUGG_DROP_YOUR_WEAPONS)
                     dialogueLines = listOf(
                         DialogueLine("", "A massive badger in a waistcoat blocks the path."),
@@ -642,6 +644,7 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
                     phase = SlicePhase.CHAPTER2_FOREST_COMBAT
                 }
                 entity.id == "tax_badger" -> {
+                    director.enterRoom(RoomContext("forest_trail", RoomContext.ROOM_FOREST_BOSS))
                     fireAndFlash(BarkEvent.BRUGG_DROP_YOUR_WEAPONS)
                     dialogueLines = listOf(
                         DialogueLine("", "A massive badger in a waistcoat blocks the path."),
