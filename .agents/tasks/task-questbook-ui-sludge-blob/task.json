@@ -1,7 +1,7 @@
 {
   "task_id": "task-questbook-ui-sludge-blob",
   "task_description": "Two features: (1) Questbook UI polish with animated flash overlay, animated pressure chip color, and glitchy false quest markers. (2) Sludge Blob improved combat with ranged spit attack targeting random party members and slow (every-other-tick) attack pattern.",
-  "status": "in_progress",
+  "status": "completed",
   "feature_order": ["FEAT-001", "FEAT-002"],
   "blocked_reason": null,
   "verification": {
