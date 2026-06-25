@@ -572,7 +572,8 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
                             val lootBarks = listOf(
                                 BarkEvent.NIB_OOO_ANOTHER_BARREL,
                                 BarkEvent.BRUGG_OOO_ANOTHER_BARREL,
-                                BarkEvent.NIB_I_WONDER_WHATS_IN_THIS_ONE
+                                BarkEvent.NIB_I_WONDER_WHATS_IN_THIS_ONE,
+                                BarkEvent.VELLUM_I_WONDER_WHATS_IN_THIS_ONE
                             )
                             fireAndFlash(lootBarks[Random.nextInt(lootBarks.size)])
                             when (val out = director.fireBark(bark)) {

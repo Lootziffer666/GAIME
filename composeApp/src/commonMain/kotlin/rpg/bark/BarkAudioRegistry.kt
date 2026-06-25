@@ -146,7 +146,7 @@ object BarkAudioRegistry {
         BarkEvent.NIB_OOO_ANOTHER_BARREL to "ooo_another_barrel.wav",
         BarkEvent.BRUGG_OOO_ANOTHER_BARREL to "ooo_another_barrel.wav",
         BarkEvent.NIB_YESSS_ANOTHER_CRATE to "yesss_another_crate.wav",
-        BarkEvent.BRUGG_YESSS_ANOTHER_CRATE to "yess_another_crate.wav",
+        BarkEvent.BRUGG_YESSS_ANOTHER_CRATE to "yesss_another_crate.wav",
         BarkEvent.NIB_I_WONDER_WHATS_IN_THIS_ONE to "i_wonder_whats_in_this_one.wav",
         BarkEvent.BRUGG_I_WONDER_WHATS_IN_THIS_ONE to "i_wonder_whats_in_this_one.wav",
         BarkEvent.VELLUM_I_WONDER_WHATS_IN_THIS_ONE to "i_wonder_whats_in_this_one.wav",
