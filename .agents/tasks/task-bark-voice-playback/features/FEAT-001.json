@@ -2,7 +2,7 @@
   "id": "FEAT-001",
   "type": "feat",
   "description": "Wire BarkAudioPlayer into SliceScreen, add combat bark triggers (taunts, damage, death, healing, victory), add exploration barks on room transitions and enemy encounters, and add idle bark timer. This is the complete voice-line playback integration.",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "Step 1: Create expect/actual AudioPlayer factory. Create composeApp/src/commonMain/kotlin/rpg/bark/audio/PlatformAudioPlayer.kt with `expect fun createPlatformAudioPlayer(): AudioPlayer`. Create composeApp/src/desktopMain/kotlin/rpg/bark/audio/PlatformAudioPlayer.kt with `actual fun createPlatformAudioPlayer(): AudioPlayer = DesktopAudioPlayer()`. Create composeApp/src/androidMain/kotlin/rpg/bark/audio/PlatformAudioPlayer.kt with `actual fun createPlatformAudioPlayer(): AudioPlayer = AndroidAudioPlayer()`.",
     "Step 2: In SliceScreen.kt, within SliceContent composable, instantiate BarkAudioPlayer using `remember { BarkAudioPlayer(createPlatformAudioPlayer()) }` and assign it to `director.barkAudioPlayer`. Add a DisposableEffect to call release() on cleanup.",
@@ -31,5 +31,5 @@
     "Run ./gradlew desktopTest and confirm all tests pass including new CombatBarkIntegrationTest"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "All 88 tests pass including 14 new CombatBarkIntegrationTest cases. The expect/actual pattern works correctly for KMP. mutableLongStateOf is not available in Compose Multiplatform 1.7.3 so mutableStateOf<Long> was used instead. The heal test needed adjustment because enemy still attacks after the heal in the same tick."
 }
