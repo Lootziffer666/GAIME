@@ -1,0 +1,14 @@
+{
+  "task_id": "task-expanded-voice-lines",
+  "task_description": "Add ~90 new voice line bark events across combat taunts, victory, loot/container, exploration, and tavern idle categories. Wire them into gameplay trigger points in CombatEngine, SliceScreen, and idle bark pools. Focus on lines that can actually trigger in the current slice gameplay.",
+  "status": "completed",
+  "verification": {
+    "build": "pass",
+    "tests": "pass",
+    "test_quality": "pass",
+    "docker_build": "skipped",
+    "summary": "All tests pass including 4 new CombatEngineTest tests verifying expanded taunt/victory pools, enemy-nearly-dead bark, and weak-attack mockery. 759 lines added across 10 files. Post-review fixes applied: removed treasure bark overwrite in boss victory handler (SliceScreen), narrowed tauntsFor/victoriesFor from public to internal (CombatEngine)."
+  },
+  "feature_order": ["FEAT-001", "FEAT-002"],
+  "blocked_reason": null
+}

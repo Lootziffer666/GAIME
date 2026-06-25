@@ -213,124 +213,6 @@ class QuestbookProcessor {
                 if (ctx.hasInteractableTarget) react("Disclosure Request Granted: Fine Print Revealed", RevealHidden)
                 else react("No fine print located (font size: adequate)", FlavorText)
 
-            // ─── Chapter 2: The Town Guard That Arrested Itself ──────────
-            BarkEvent.BRUGG_SPEAK_TO_TOWN_GUARD ->
-                react("Audience Request Logged: Guard Will Self-Report", SpawnQuestMarker("guardhouse"))
-
-            BarkEvent.BRUGG_WHO_GOES_THERE ->
-                react("Identity Challenge Filed (Respondent: Self)", FlavorText)
-
-            BarkEvent.BRUGG_YOUR_ORDERS_SIR ->
-                react("Standing Order Reaffirmed (Authority: Unclear)", FlavorText, before.raised())
-
-            BarkEvent.BRUGG_DROP_WEAPONS ->
-                if (ctx.hasEnemies) react("Disarmament Notice Served (Compliance: Optional)", FlavorText)
-                else react("No armed parties present to disarm", FlavorText)
-
-            BarkEvent.BRUGG_CONSTRUCTION_COMPLETE ->
-                react("Completion Certificate Issued (Project: Unspecified)", FlavorText)
-
-            BarkEvent.NIB_IF_IT_GLOWS ->
-                if (ctx.hasContainer || ctx.hasInteractableTarget)
-                    react("Valuation Request Approved: Item Marked Important", SpawnQuestMarker("glowing item"))
-                else react("Luminosity assessment: inconclusive", FlavorText)
-
-            // ─── Chapter 3: The Woods That Had Opinions ──────────────────
-            BarkEvent.NIB_SECRET_ENTRANCE ->
-                if (ctx.hasPuzzleElement || ctx.hasInteractableTarget)
-                    react("Concealed Access Reclassified as Public Right of Way", RevealHidden)
-                else react("No concealed access on file", FlavorText)
-
-            BarkEvent.BRUGG_JUST_KEEP_TO_THE_TRAIL ->
-                react("Route Adherence Acknowledged", FlavorText)
-
-            BarkEvent.VELLUM_WHICH_DIRECTION ->
-                if (before != QuestPressure.LOW)
-                    react("Navigation Quest Reissued: Destination Recalculated", SpawnFalseMarker("Recalculated Route"))
-                else react("Direction noted. Map unchanged (for now)", FlavorText, before.raised())
-
-            BarkEvent.VELLUM_THIS_LOOKS_LIKE_A_MAP ->
-                if (ctx.hasInteractableTarget) react("Cartographic Asset Catalogued", RevealHidden)
-                else react("No cartographic asset detected", FlavorText)
-
-            BarkEvent.VELLUM_CALLS_FOR_LIGHTNING ->
-                if (ctx.hasPuzzleElement) react("Electrical Works Permit: Glyphs Energised", RevealHidden)
-                else react("Discharge logged: no valid conduit", FlavorText)
-
-            // ─── Chapter 4: The Ship That Was Technically Seaworthy ──────
-            BarkEvent.NIB_ANOTHER_BARREL ->
-                if (ctx.hasContainer)
-                    react("Optional Quest Accepted: Inspect Every Barrel", SpawnQuestMarker("every barrel"), before.raised())
-                else react("No further barrels on manifest", FlavorText)
-
-            BarkEvent.BRUGG_IS_SHE_SEAWORTHY ->
-                react("Seaworthiness Assessment: Technically", FlavorText)
-
-            BarkEvent.BRUGG_HOIST_ANCHOR ->
-                if (ctx.hasInteractableTarget) react("Anchorage Released (Direction: Approximate)", RevealHidden)
-                else react("Anchor status: ambiguous", FlavorText)
-
-            BarkEvent.BRUGG_DROP_ANCHOR ->
-                react("Mooring Logged (Permanence: Doubtful)", FlavorText)
-
-            BarkEvent.BRUGG_RAISE_THE_SAIL ->
-                react("Canvas Deployment Filed", FlavorText)
-
-            BarkEvent.BRUGG_LETS_BE_UNDERWAY ->
-                react("Departure Authorised (Heading: Reverse)", FlavorText)
-
-            BarkEvent.BRUGG_OUT_MANEUVERED ->
-                react("Tactical Disadvantage Filed (Blame: Pending)", FlavorText, before.raised())
-
-            BarkEvent.BRUGG_RETREAT ->
-                if (ctx.roomId == RoomContext.ROOM_BOSS) react("Retreat denied by paperwork.", FlavorText)
-                else react("Tactical Withdrawal Logged (Direction: Away)", FlavorText)
-
-            // ─── Chapter 5: The Dragon That Was Accidentally Summoned ────
-            BarkEvent.NIB_SMELL_DRAGON ->
-                // Signature reaction: the book treats a smell as a defect report.
-                react(
-                    "URGENT QUEST ACCEPTED: DEFEAT THE DRAGON",
-                    SpawnQuestMarker("dragon (to be generated)"),
-                    QuestPressure.HIGH
-                )
-
-            BarkEvent.NIB_SMELL_GOLD ->
-                if (ctx.hasContainer || ctx.hasInteractableTarget)
-                    react("Mineral Survey Commissioned: Nearest Gold", SpawnQuestMarker("nearest gold"))
-                else react("Olfactory gold claim unsubstantiated", SpawnQuestMarker("Nib"))
-
-            BarkEvent.NIB_SMELL_MONSTERS ->
-                if (ctx.hasEnemies)
-                    react("Threat Acknowledgement Filed: Monsters Marked", SpawnQuestMarker("nearest monster"), before.raised())
-                else react("No monsters in vicinity (regrettably)", FlavorText)
-
-            BarkEvent.BRUGG_HOLD_THE_LINE ->
-                react("Defensive Posture Mandated (Line: Imaginary)", FlavorText, before.raised())
-
-            BarkEvent.BRUGG_PROTECT_THE_ASSET ->
-                react("Asset Protection Order Filed (Asset: Undefined)", FlavorText, before.raised())
-
-            // ─── Finale: System Overload (each banal bark accepts a quest) ─
-            BarkEvent.NIB_WHERES_THE_PRIVVY ->
-                react("QUEST ACCEPTED: FIND THE PRIVVY", SpawnQuestMarker("privvy"))
-            BarkEvent.NIB_IS_THAT_ROAST ->
-                react("QUEST ACCEPTED: ROAST CONFIRMATION", SpawnQuestMarker("roast"))
-            BarkEvent.NIB_NOT_A_HORSE ->
-                react("QUEST ACCEPTED: IDENTIFY THE HORSE", SpawnQuestMarker("horse"))
-            BarkEvent.NIB_WHO_RUNS_THIS_CITY ->
-                react("QUEST ACCEPTED: MUNICIPAL AUTHORITY REVIEW", SpawnQuestMarker("authority"))
-            BarkEvent.NIB_THIS_LOOKS_LIKE_GOLD ->
-                react("QUEST ACCEPTED: APPRAISE THE GOLD", SpawnQuestMarker("gold"))
-            BarkEvent.NIB_THIS_LOOKS_LIKE_TREASURE ->
-                react("QUEST ACCEPTED: LOCATE THE TREASURE", SpawnQuestMarker("treasure"))
-            BarkEvent.NIB_CHEST_ALMOST_UNLOCKED ->
-                if (ctx.hasContainer) react("Lockpicking Reclassified as Routine Maintenance", RevealHidden)
-                else react("QUEST ACCEPTED: OPEN THE CHEST", SpawnQuestMarker("chest"))
-            BarkEvent.NIB_DOOR_ALMOST_UNLOCKED ->
-                if (ctx.hasInteractableTarget) react("Entry Reclassified as Pre-Authorised", RevealHidden)
-                else react("QUEST ACCEPTED: OPEN THE DOOR", SpawnQuestMarker("door"))
-
             // --- Combat, Exploration, and Ambient barks: flavor only ---
             BarkEvent.NIB_IS_THAT_ALL_YOUVE_GOT,
             BarkEvent.NIB_YOUR_DEFENSES_ARE_WEAK,
@@ -370,17 +252,238 @@ class QuestbookProcessor {
             BarkEvent.BRUGG_WHERE_DID_I_PUT_THAT_MAP,
             BarkEvent.VELLUM_NOW_WHAT_WAS_THAT_INCANTATION,
             BarkEvent.VELLUM_OF_ALL_THE_ARCANE_LORE,
-            BarkEvent.BRUGG_OBJECTIVE_COMPLETE,
-            BarkEvent.VELLUM_HARD_WON_KNOWLEDGE,
+            BarkEvent.VELLUM_TIME_WAITS_FOR_NO_MAN,
+            BarkEvent.BARKEEP_SPEND_SOME_COIN,
+            BarkEvent.BARKEEP_BEEN_PLAYING_IN_SEWERS,
+            BarkEvent.PATRON_HE_SURE_IS_SLOW,
+            // Extended Combat Taunts
+            BarkEvent.NIB_BACK_FOUL_CREATURE,
+            BarkEvent.BRUGG_BACK_FOUL_CREATURE,
+            BarkEvent.VELLUM_BACK_FOUL_CREATURE,
+            BarkEvent.NIB_DARKNESS_TAKE_YOU,
+            BarkEvent.BRUGG_DARKNESS_TAKE_YOU,
+            BarkEvent.VELLUM_DARKNESS_TAKE_YOU,
+            BarkEvent.NIB_DROP_YOUR_WEAPONS,
+            BarkEvent.VELLUM_DROP_YOUR_WEAPONS,
+            BarkEvent.NIB_YOU_FIGHT_LIKE_A_NEWBORN,
+            BarkEvent.BRUGG_YOU_FIGHT_LIKE_A_NEWBORN,
+            BarkEvent.VELLUM_YOU_FIGHT_LIKE_A_NEWBORN,
+            BarkEvent.NIB_YOU_FIGHT_LIKE_AN_INFANT,
+            BarkEvent.BRUGG_YOU_FIGHT_LIKE_AN_INFANT,
+            BarkEvent.VELLUM_YOU_FIGHT_LIKE_AN_INFANT,
+            BarkEvent.NIB_YOU_FIGHT_LIKE_YOUR_MOTHER,
+            BarkEvent.BRUGG_YOU_FIGHT_LIKE_YOUR_MOTHER,
+            BarkEvent.VELLUM_YOU_FIGHT_LIKE_YOUR_MOTHER,
+            BarkEvent.NIB_MY_NEXT_STRIKE_WILL_FELL_YOU,
+            BarkEvent.BRUGG_MY_NEXT_STRIKE_WILL_FELL_YOU,
+            BarkEvent.VELLUM_MY_NEXT_STRIKE_WILL_FELL_YOU,
+            BarkEvent.NIB_IVE_FOUGHT_KOBOLDS_TOUGHER,
+            BarkEvent.BRUGG_IVE_FOUGHT_KOBOLDS_TOUGHER,
+            BarkEvent.VELLUM_IVE_FOUGHT_KOBOLDS_TOUGHER,
+            BarkEvent.NIB_IVE_FOUGHT_PUPPIES_TOUGHER,
+            BarkEvent.BRUGG_IVE_FOUGHT_PUPPIES_TOUGHER,
+            BarkEvent.VELLUM_IVE_FOUGHT_PUPPIES_TOUGHER,
+            BarkEvent.NIB_IVE_FOUGHT_ARTICHOKES_TOUGHER,
+            BarkEvent.BRUGG_IVE_FOUGHT_ARTICHOKES_TOUGHER,
+            BarkEvent.VELLUM_IVE_FOUGHT_ARTICHOKES_TOUGHER,
+            // Victory Barks
+            BarkEvent.NIB_YOULL_NOT_BE_GETTING_UP,
+            BarkEvent.BRUGG_YOULL_NOT_BE_GETTING_UP,
+            BarkEvent.VELLUM_YOULL_NOT_BE_GETTING_UP,
+            BarkEvent.NIB_NEXT_TIME_WONT_BE_SO_LUCKY,
+            BarkEvent.BRUGG_NEXT_TIME_WONT_BE_SO_LUCKY,
+            BarkEvent.VELLUM_NEXT_TIME_WONT_BE_SO_LUCKY,
+            // Damage Reaction
+            BarkEvent.NIB_HOW_HUMILIATING,
+            BarkEvent.BRUGG_HOW_HUMILIATING,
+            BarkEvent.VELLUM_HOW_HUMILIATING,
+            // Loot / Container
+            BarkEvent.NIB_OOO_ANOTHER_BARREL,
+            BarkEvent.BRUGG_OOO_ANOTHER_BARREL,
+            BarkEvent.NIB_YESSS_ANOTHER_CRATE,
+            BarkEvent.BRUGG_YESSS_ANOTHER_CRATE,
+            BarkEvent.NIB_I_WONDER_WHATS_IN_THIS_ONE,
+            BarkEvent.BRUGG_I_WONDER_WHATS_IN_THIS_ONE,
+            BarkEvent.VELLUM_I_WONDER_WHATS_IN_THIS_ONE,
+            BarkEvent.NIB_THIS_CHEST_UNLOCKED,
+            BarkEvent.VELLUM_THIS_CHEST_UNLOCKED,
+            BarkEvent.NIB_THIS_LOOKS_LIKE_TREASURE,
+            BarkEvent.BRUGG_THIS_LOOKS_LIKE_TREASURE,
+            BarkEvent.VELLUM_THIS_LOOKS_LIKE_TREASURE,
+            BarkEvent.NIB_NOTHING_HERE,
+            BarkEvent.BRUGG_NOTHING_HERE,
+            BarkEvent.VELLUM_NOTHING_HERE,
+            BarkEvent.NIB_IF_IT_GLOWS_MORE_EXPENSIVE,
+            BarkEvent.BRUGG_IF_IT_GLOWS_MORE_EXPENSIVE,
+            BarkEvent.VELLUM_IF_IT_GLOWS_MORE_EXPENSIVE,
+            BarkEvent.NIB_WHY_DO_THEY_LEAVE_LOOT,
+            BarkEvent.BRUGG_WHY_DO_THEY_LEAVE_LOOT,
+            BarkEvent.VELLUM_WHY_DO_THEY_LEAVE_LOOT,
+            // Exploration / Navigation
+            BarkEvent.NIB_LETS_GET_OUT_OF_HERE,
+            BarkEvent.BRUGG_LETS_GET_OUT_OF_HERE,
+            BarkEvent.VELLUM_LETS_GET_OUT_OF_HERE,
+            BarkEvent.NIB_LETS_HIT_THE_TRAIL,
+            BarkEvent.BRUGG_LETS_HIT_THE_TRAIL,
+            BarkEvent.NIB_LETS_BE_UNDERWAY,
+            BarkEvent.BRUGG_LETS_BE_UNDERWAY,
+            BarkEvent.VELLUM_LETS_BE_UNDERWAY,
+            BarkEvent.NIB_THIS_PLACE_REEKS_OF_DEATH,
+            BarkEvent.BRUGG_THIS_PLACE_REEKS_OF_DEATH,
+            BarkEvent.VELLUM_THIS_PLACE_REEKS_OF_DEATH,
+            BarkEvent.NIB_WHAT_DARK_DEALINGS,
+            BarkEvent.BRUGG_WHAT_DARK_DEALINGS,
+            BarkEvent.VELLUM_WHAT_DARK_DEALINGS,
+            BarkEvent.NIB_LOOK_OUT,
+            BarkEvent.BRUGG_LOOK_OUT,
+            BarkEvent.VELLUM_LOOK_OUT,
+            BarkEvent.VELLUM_LIGHT_WILL_SCOUR,
+            BarkEvent.NIB_THIS_THING_LOOKS_INTERESTING,
+            BarkEvent.BRUGG_THIS_THING_LOOKS_INTERESTING,
+            BarkEvent.VELLUM_THIS_THING_LOOKS_INTERESTING,
+            // Tavern / Idle Expansion
+            BarkEvent.NIB_IS_THAT_ROAST,
+            BarkEvent.BRUGG_IS_THAT_ROAST,
+            BarkEvent.VELLUM_IS_THAT_ROAST,
+            BarkEvent.NIB_YOUVE_GOT_TO_TRY_ROAST,
+            BarkEvent.BRUGG_YOUVE_GOT_TO_TRY_ROAST,
+            BarkEvent.VELLUM_YOUVE_GOT_TO_TRY_ROAST,
+            BarkEvent.NIB_I_NEEDED_THAT,
+            BarkEvent.BRUGG_I_NEEDED_THAT,
+            BarkEvent.VELLUM_I_NEEDED_THAT,
+            BarkEvent.NIB_THATS_NOTHING_ALE_WONT_FIX,
+            BarkEvent.BRUGG_THATS_NOTHING_ALE_WONT_FIX,
+            BarkEvent.VELLUM_THATS_NOTHING_ALE_WONT_FIX,
+            BarkEvent.NIB_GREETINGS_FRIEND,
+            BarkEvent.BRUGG_GREETINGS_FRIEND,
+            BarkEvent.VELLUM_GREETINGS_STRANGER,
+            BarkEvent.NIB_WHAT_NEWS,
+            BarkEvent.BRUGG_WHAT_NEWS,
+            BarkEvent.VELLUM_WHAT_NEWS,
+            BarkEvent.NIB_WHERES_THE_PRIVVY,
+            BarkEvent.BRUGG_WHERES_THE_PRIVVY,
+            BarkEvent.VELLUM_WHERES_THE_NEAREST_INN ->
+                react("Atmospheric observation noted", FlavorText)
+
+            // ═══ Chapter 2: Context-aware reactions ═════════════════════
+            BarkEvent.BRUGG_DROP_YOUR_WEAPONS ->
+                if (ctx.roomId == RoomContext.ROOM_FOREST_BOSS) {
+                    react("Surrender Filing: Rejected (Reason: Insufficient Paperwork)", FlavorText)
+                } else {
+                    react("Atmospheric observation noted", FlavorText)
+                }
+
+            BarkEvent.NIB_SMELL_GOLD ->
+                if (ctx.roomId == RoomContext.ROOM_MARKET) {
+                    react(
+                        "Commercial Survey Initiated: Catalogue all vendor-adjacent valuables (Mandatory)",
+                        SpawnQuestMarker("market valuables")
+                    )
+                } else {
+                    react("Gold detected: Source unverified", FlavorText)
+                }
+
+            BarkEvent.BRUGG_WHO_RUNS_THIS_CITY ->
+                react("Municipal Inquiry Filed: Authority Structure Report (Budget: 0 Gold)", FlavorText)
+
+            BarkEvent.VELLUM_CREATURES_IN_WOODS ->
+                react(
+                    "Wildlife Census Ordered: Document all woodland fauna (Deadline: Immediate)",
+                    SpawnQuestMarker("woodland fauna")
+                )
+
+            BarkEvent.VELLUM_ELEMENTS_MINE_TO_COMMAND ->
+                react("Elemental Claim Registered: Command over elements noted (Scope: Undefined)", FlavorText)
+
+            BarkEvent.VELLUM_CALLS_FOR_LIGHTNING ->
+                if (ctx.roomId == RoomContext.ROOM_FOREST_SHRINE) {
+                    react("Electrical Works Permit: Granted (Safety Notice: None)", RevealHidden)
+                } else {
+                    react("Lightning request: No valid conductor", FlavorText)
+                }
+
+            BarkEvent.VELLUM_BALANCE_LIFE_DEATH ->
+                react("Existential Risk Assessment: Filed (Priority: Philosophical)", FlavorText)
+
+            // Chapter 2: flavor-only reactions
+            BarkEvent.NIB_HOW_MUCH,
+            BarkEvent.NIB_SECRET_ENTRANCE,
+            BarkEvent.BRUGG_SPEAK_TO_GUARD,
+            BarkEvent.BRUGG_KEEP_TO_TRAIL,
+            BarkEvent.BRUGG_EXPERIENCE_IS_HOW_WE_GROW,
+            BarkEvent.VELLUM_SO_THATS_HOW_IT_IS,
+            BarkEvent.MERCHANT_SEE_IF_THIS_STRIKES_FANCY,
+            BarkEvent.MERCHANT_MAKE_ME_AN_OFFER,
+            BarkEvent.MERCHANT_NAME_YOUR_PRICE,
+            BarkEvent.GUARD_BACK_ALREADY ->
+                react("Atmospheric observation noted", FlavorText)
+
+            // ═══ Chapters 3-5 + Finale (docs/CAMPAIGN.md) ═══════════════
+            // --- Completion flavor ---
+            BarkEvent.BRUGG_OBJECTIVE_COMPLETE ->
+                react("Objective Logged: Closed (Satisfaction: Assumed)", FlavorText)
+            BarkEvent.VELLUM_HARD_WON_KNOWLEDGE ->
+                react("Knowledge Filed (Effort: Noted, Reward: Pending)", FlavorText)
+
+            // --- Chapter 3: The Woods That Had Opinions ---
+            BarkEvent.VELLUM_WHICH_DIRECTION ->
+                if (before != QuestPressure.LOW)
+                    react("Navigation Quest Reissued: Destination Recalculated", SpawnFalseMarker("Recalculated Route"))
+                else react("Direction noted. Map unchanged (for now)", FlavorText, before.raised())
+            BarkEvent.VELLUM_THIS_LOOKS_LIKE_A_MAP ->
+                if (ctx.hasInteractableTarget) react("Cartographic Asset Catalogued", RevealHidden)
+                else react("No cartographic asset detected", FlavorText)
+
+            // --- Chapter 4: The Ship That Was Technically Seaworthy ---
+            BarkEvent.BRUGG_IS_SHE_SEAWORTHY ->
+                react("Seaworthiness Assessment: Technically", FlavorText)
+            BarkEvent.BRUGG_HOIST_ANCHOR ->
+                if (ctx.hasInteractableTarget) react("Anchorage Released (Direction: Approximate)", RevealHidden)
+                else react("Anchor status: ambiguous", FlavorText)
+            BarkEvent.BRUGG_DROP_ANCHOR ->
+                react("Mooring Logged (Permanence: Doubtful)", FlavorText)
+            BarkEvent.BRUGG_RAISE_THE_SAIL ->
+                react("Canvas Deployment Filed", FlavorText)
+            BarkEvent.BRUGG_OUT_MANEUVERED ->
+                react("Tactical Disadvantage Filed (Blame: Pending)", FlavorText, before.raised())
+            BarkEvent.BRUGG_RETREAT ->
+                if (ctx.roomId == RoomContext.ROOM_BOSS || ctx.roomId == RoomContext.ROOM_FOREST_BOSS)
+                    react("Retreat denied by paperwork.", FlavorText)
+                else react("Tactical Withdrawal Logged (Direction: Away)", FlavorText)
+
+            // --- Chapter 5: The Dragon That Was Accidentally Summoned ---
+            BarkEvent.NIB_SMELL_DRAGON ->
+                // Signature reaction: the book reads a smell as a defect report.
+                react(
+                    "URGENT QUEST ACCEPTED: DEFEAT THE DRAGON",
+                    SpawnQuestMarker("dragon (to be generated)"),
+                    QuestPressure.HIGH
+                )
+            BarkEvent.NIB_SMELL_MONSTERS ->
+                if (ctx.hasEnemies)
+                    react("Threat Acknowledgement Filed: Monsters Marked", SpawnQuestMarker("nearest monster"), before.raised())
+                else react("No monsters in vicinity (regrettably)", FlavorText)
+            BarkEvent.BRUGG_HOLD_THE_LINE ->
+                react("Defensive Posture Mandated (Line: Imaginary)", FlavorText, before.raised())
+            BarkEvent.BRUGG_PROTECT_THE_ASSET ->
+                react("Asset Protection Order Filed (Asset: Undefined)", FlavorText, before.raised())
+
+            // --- Chapter 5 / Finale flavor ---
             BarkEvent.NIB_FRESH_SEA_AIR,
             BarkEvent.NIB_NOT_FOND_OF_DEEP_WATER,
             BarkEvent.VELLUM_SEA_IS_ANGRY_MISTRESS,
-            BarkEvent.VELLUM_REEKS_OF_DEATH,
-            BarkEvent.VELLUM_DARKNESS_TAKE_YOU,
-            BarkEvent.VELLUM_SUMMON_YOUR_STRENGTH,
             BarkEvent.BRUGG_LOW_ON_HEALTH,
-            BarkEvent.VELLUM_TIME_WAITS_FOR_NO_MAN ->
+            BarkEvent.VELLUM_SUMMON_YOUR_STRENGTH ->
                 react("Atmospheric observation noted", FlavorText)
+
+            // --- Finale: System Overload (banal, contradictory quest-accepts) ---
+            BarkEvent.NIB_NOT_A_HORSE ->
+                react("QUEST ACCEPTED: IDENTIFY THE HORSE", SpawnQuestMarker("horse"))
+            BarkEvent.NIB_THIS_LOOKS_LIKE_GOLD ->
+                react("QUEST ACCEPTED: APPRAISE THE GOLD", SpawnQuestMarker("gold"))
+            BarkEvent.NIB_DOOR_ALMOST_UNLOCKED ->
+                if (ctx.hasInteractableTarget) react("Entry Reclassified as Pre-Authorised", RevealHidden)
+                else react("QUEST ACCEPTED: OPEN THE DOOR", SpawnQuestMarker("door"))
         }
     }
 }

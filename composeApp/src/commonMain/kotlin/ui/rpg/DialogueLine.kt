@@ -7,19 +7,34 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import rpg.bark.audio.BarkAudioPlayer
 
-data class DialogueLine(val speaker: String, val text: String)
+data class DialogueLine(val speaker: String, val text: String, val audioPath: String? = null)
 
 @Composable
-fun DialogueOverlay(lines: List<DialogueLine>, currentIndex: Int, onAdvance: () -> Unit) {
+fun DialogueOverlay(
+    lines: List<DialogueLine>,
+    currentIndex: Int,
+    onAdvance: () -> Unit,
+    barkAudioPlayer: BarkAudioPlayer? = null
+) {
     if (lines.isEmpty()) return
     val line = lines.getOrNull(currentIndex) ?: return
+
+    // Play audio when the current line changes and has an audioPath
+    LaunchedEffect(currentIndex) {
+        line.audioPath?.let { path ->
+            barkAudioPlayer?.playRawPath(path)
+        }
+    }
+
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
         Surface(
             shape = RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp),

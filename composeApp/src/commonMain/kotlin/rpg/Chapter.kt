@@ -37,11 +37,11 @@ enum class Chapter(
         boss = CampaignBoss.RAT_ACCOUNTANT,
         pageReward = QuestbookPage.PAGE_OF_BEGINNINGS
     ),
-    CH2_TOWN_GUARD(
+    CH2_MARKET(
         order = 2,
-        title = "The Town Guard That Arrested Itself",
-        mapId = "town_centre",
-        boss = null,
+        title = "The Market of Mandatory Commerce",
+        mapId = "stokeport_market",
+        boss = CampaignBoss.TAX_COLLECTOR_BADGER,
         pageReward = QuestbookPage.PAGE_OF_TERMS_AND_CONDITIONS
     ),
     CH3_WOODS(
@@ -88,6 +88,7 @@ enum class Chapter(
 /** The campaign bosses (docs/CAMPAIGN.md). */
 enum class CampaignBoss(val displayName: String, val chapter: Int) {
     RAT_ACCOUNTANT("The Rat Accountant", chapter = 1),
+    TAX_COLLECTOR_BADGER("The Tax Collector Badger", chapter = 2),
     HELPFUL_TREE("The Helpful Tree", chapter = 3),
     CAPTAIN_FORMBEARD("Captain Formbeard", chapter = 4),
     ADMINISTRAGON("The Administragon", chapter = 5)

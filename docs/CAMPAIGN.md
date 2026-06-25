@@ -120,7 +120,7 @@ Questbook misreads bureaucratically. Each chapter ends with one recovered
 |---|---|---|---|---|
 | 0 | Prologue: The Four-Armed Bartender | Tavern *The Limping Cockatrice* | — | — |
 | 1 | The Sewers of Bad Decisions | Sewers under Stokeport | The Rat Accountant | The Page of Beginnings |
-| 2 | The Town Guard That Arrested Itself | Stokeport town centre | (no combat boss) | The Page of Terms and Conditions |
+| 2 | The Market of Mandatory Commerce | Stokeport market + forest trail | The Tax Collector Badger | The Page of Terms and Conditions |
 | 3 | The Woods That Had Opinions | Woods outside Stokeport | The Helpful Tree | The Page of Directions |
 | 4 | The Ship That Was Technically Seaworthy | Harbour, warehouse, ship, fog sea | Captain Formbeard | The Page of Claims and Rewards |
 | 5 | The Dragon That Was Accidentally Summoned | Island cave, gold chamber | The Administragon | (final) |
@@ -173,38 +173,29 @@ for knowing that?"
 
 ---
 
-## Chapter 2 — The Town Guard That Arrested Itself
+## Chapter 2 — The Market of Mandatory Commerce
 
-Cliche: town guards with unclear orders, market, merchants, quest board.
+*(Shipped: PR #12. Buildable and playable on top of Chapter 1.)*
 
-Problem: the public quest board issued so many contradictory orders that the
-guard arrested itself to pre-empt the question of jurisdiction.
+Cliche: town market, merchants, a quest board, and guards with unclear orders.
+The party follows the Questbook's demands out of the tavern into Stokeport's
+market square and the forest beyond.
 
-Map: market square, guardhouse, merchant lane, quest board, cell block, an
-official queuing for his own permit.
+Play beats (~10 min):
+1. **Stokeport Market** — merchant and city-guard NPCs. Nib's "I smell gold!"
+   opens a *Commercial Survey* quest; merchants reinterpret every bark as a
+   price-relevant declaration.
+2. **Forest Trail** — three wolf encounters, rising quest pressure.
+3. **Shrine of the Fine Print** — a Vellum puzzle solved with the
+   `VELLUM_CALLS_FOR_LIGHTNING` utility bark (like flame clears rubble in Ch1).
+4. **Boss: The Tax Collector Badger** — three phases: wolf adds, then "OVERDUE"
+   stamps, then a single heavy stamp. He audits the party's outstanding balance.
+5. **The Page of Terms and Conditions** — "Outstanding Quest Balance: 47.
+   Payment: Additional heroism."
+6. **Return to Market** — chapter complete.
 
-Barks: Brugg ("I need to speak to the town guard.", "Who goes there?", "Drop
-your weapons and surrender.", "What are your orders?", "Your orders, sir."),
-merchants ("Make me an offer.", "Name your price.", "Spend some coin or get
-out.", "Might I interest you in this bauble?", "How much do you want for this?",
-"Do you have anything in a plus two?").
-
-Gameplay: work out which NPCs hold real information and which only imitate quest
-language to inflate prices. Merchants sell useless amulets, suspiciously glowing
-junk, a "premium barrel", and an old paper that allegedly glows magically. Nib:
-"If it glows, does that make it more expensive?" The Questbook marks the item as
-important. It is important — it is **The Page of Terms and Conditions**.
-
-Mini-twist: the guard was not manipulated. It simply obeyed every line on the
-board ("Protect the citizens.", "Arrest suspicious persons.", "Question all
-armed individuals.", "Remain at your post.", "Report immediately.", "Do not
-leave suspects unattended."). Since all guards are armed, suspicious, on duty and
-at their post, self-arrest was the cleanest logical solution. Brugg finds this
-reasonable. That is alarming.
-
-Resolution: remove three contradictory orders from the board so the guards can
-stand without logging each other. Barks: "Construction complete.", "All done.",
-"Ready."
+Running gag: the guard and the board take every line literally, and merchants
+price "quest-relevant" junk accordingly. The heroic move is to stop answering.
 
 ---
 

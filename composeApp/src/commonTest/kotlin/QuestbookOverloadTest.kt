@@ -58,7 +58,7 @@ class QuestbookOverloadTest {
     fun flavorReactionsNeverContributeToOverload() {
         val overload = QuestbookOverload()
         val flavor = QuestbookReaction(
-            bark = BarkEvent.VELLUM_REEKS_OF_DEATH,
+            bark = BarkEvent.VELLUM_THIS_PLACE_REEKS_OF_DEATH,
             questbookText = "Atmospheric observation noted",
             effect = QuestbookEffect.FlavorText,
             pressureBefore = QuestPressure.HIGH,
@@ -81,23 +81,22 @@ class QuestbookOverloadTest {
     @Test
     fun realFinaleBarksDriveTheOverloadThroughThePipeline() {
         // Wire the real Questbook to the overload, as a finale director would.
+        // NIB_SMELL_DRAGON forces HIGH pressure; subsequent banal barks each
+        // file a distinct contradictory quest while pressure stays maxed.
         val qb = QuestbookProcessor()
-        qb.escalateTo(QuestPressure.HIGH)
-        val overload = QuestbookOverload()
-        val ctx = RoomContext(mapId = "island_cave", roomId = "cave")
+        val overload = QuestbookOverload(threshold = 5)
+        val ctx = RoomContext(mapId = "island_cave", roomId = "cave", hasEnemies = true)
 
         val finaleBarks = listOf(
-            BarkEvent.NIB_WHERES_THE_PRIVVY,
-            BarkEvent.NIB_IS_THAT_ROAST,
-            BarkEvent.NIB_NOT_A_HORSE,
-            BarkEvent.NIB_WHO_RUNS_THIS_CITY,
-            BarkEvent.NIB_THIS_LOOKS_LIKE_GOLD,
-            BarkEvent.NIB_THIS_LOOKS_LIKE_TREASURE,
-            BarkEvent.NIB_CHEST_ALMOST_UNLOCKED // no container -> QUEST ACCEPTED: OPEN THE CHEST
+            BarkEvent.NIB_SMELL_DRAGON,        // -> "dragon", forces HIGH
+            BarkEvent.NIB_NOT_A_HORSE,         // -> "horse"
+            BarkEvent.NIB_THIS_LOOKS_LIKE_GOLD,// -> "gold"
+            BarkEvent.NIB_SMELL_MONSTERS,      // -> "nearest monster"
+            BarkEvent.NIB_DOOR_ALMOST_UNLOCKED // -> "door" (no interactable target)
         )
         finaleBarks.forEach { overload.offer(qb.process(it, ctx)) }
 
         assertTrue(overload.isCollapsed, "the book should crash under contradiction")
-        assertEquals(QuestbookOverload.COLLAPSE_VERDICT, "GAME OVER")
+        assertEquals("GAME OVER", QuestbookOverload.COLLAPSE_VERDICT)
     }
 }

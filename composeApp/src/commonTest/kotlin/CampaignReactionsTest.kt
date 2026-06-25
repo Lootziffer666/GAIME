@@ -7,7 +7,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-/** Reactions added for Chapters 2-5 + Finale (docs/CAMPAIGN.md). */
+/** Reactions added for Chapters 3-5 + Finale (docs/CAMPAIGN.md). */
 class CampaignReactionsTest {
 
     private fun room(
@@ -27,18 +27,6 @@ class CampaignReactionsTest {
     }
 
     @Test
-    fun anotherBarrelOpensAnOptionalInspectEveryBarrelQuest() {
-        val qb = QuestbookProcessor()
-        val r = qb.process(
-            BarkEvent.NIB_ANOTHER_BARREL,
-            room("harbour", "ship") { copy(hasContainer = true) }
-        )
-        assertTrue(r.questbookText.contains("Inspect Every Barrel"))
-        assertTrue(r.effect is QuestbookEffect.SpawnQuestMarker)
-        assertEquals(QuestPressure.MEDIUM, r.pressureAfter)
-    }
-
-    @Test
     fun retreatIsDeniedByPaperworkInsideABossRoom() {
         val qb = QuestbookProcessor()
         val r = qb.process(BarkEvent.BRUGG_RETREAT, room("harbour", RoomContext.ROOM_BOSS))
@@ -47,14 +35,11 @@ class CampaignReactionsTest {
     }
 
     @Test
-    fun secretEntranceIsReclassifiedAsAPublicRightOfWay() {
+    fun retreatOutsideABossRoomIsJustLogged() {
         val qb = QuestbookProcessor()
-        val r = qb.process(
-            BarkEvent.NIB_SECRET_ENTRANCE,
-            room("woods", "trail") { copy(hasPuzzleElement = true) }
-        )
-        assertTrue(r.questbookText.contains("Public Right of Way"))
-        assertEquals(QuestbookEffect.RevealHidden, r.effect)
+        val r = qb.process(BarkEvent.BRUGG_RETREAT, room("harbour", "deck"))
+        assertTrue(r.questbookText.contains("Tactical Withdrawal"))
+        assertEquals(QuestbookEffect.FlavorText, r.effect)
     }
 
     @Test
@@ -63,9 +48,17 @@ class CampaignReactionsTest {
         val anchor = qb.process(BarkEvent.BRUGG_DROP_ANCHOR, room("harbour", "deck"))
         assertTrue(anchor.questbookText.contains("Mooring Logged"))
         assertEquals(QuestbookEffect.FlavorText, anchor.effect)
+    }
 
-        val underway = qb.process(BarkEvent.BRUGG_LETS_BE_UNDERWAY, room("harbour", "deck"))
-        assertTrue(underway.questbookText.contains("Heading: Reverse"))
+    @Test
+    fun mapBarkRevealsCartographicAssetWhenTargetPresent() {
+        val qb = QuestbookProcessor()
+        val r = qb.process(
+            BarkEvent.VELLUM_THIS_LOOKS_LIKE_A_MAP,
+            room("woods", "trail") { copy(hasInteractableTarget = true) }
+        )
+        assertTrue(r.questbookText.contains("Cartographic Asset"))
+        assertEquals(QuestbookEffect.RevealHidden, r.effect)
     }
 
     @Test
@@ -74,6 +67,14 @@ class CampaignReactionsTest {
         val r = qb.process(BarkEvent.BRUGG_HOLD_THE_LINE, room("island_cave", "cave"))
         assertEquals(QuestPressure.MEDIUM, r.pressureAfter)
         assertEquals(QuestbookEffect.FlavorText, r.effect)
+    }
+
+    @Test
+    fun finaleBanalBarkAcceptsAContradictoryQuest() {
+        val qb = QuestbookProcessor()
+        val r = qb.process(BarkEvent.NIB_NOT_A_HORSE, room("questbook", "finale"))
+        assertTrue(r.questbookText.contains("IDENTIFY THE HORSE"))
+        assertTrue(r.effect is QuestbookEffect.SpawnQuestMarker)
     }
 
     @Test

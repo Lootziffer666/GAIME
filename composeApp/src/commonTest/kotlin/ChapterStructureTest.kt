@@ -36,15 +36,16 @@ class ChapterStructureTest {
         assertEquals(
             listOf(
                 CampaignBoss.RAT_ACCOUNTANT,
+                CampaignBoss.TAX_COLLECTOR_BADGER,
                 CampaignBoss.HELPFUL_TREE,
                 CampaignBoss.CAPTAIN_FORMBEARD,
                 CampaignBoss.ADMINISTRAGON
             ),
             bossChapters.map { it.boss }
         )
-        // Prologue and the town-guard chapter have no combat boss.
+        // Prologue and the finale have no combat boss.
         assertNull(Chapter.PROLOGUE.boss)
-        assertNull(Chapter.CH2_TOWN_GUARD.boss)
+        assertNull(Chapter.FINALE.boss)
     }
 
     @Test
