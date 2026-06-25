@@ -1,5 +1,16 @@
 package ui.rpg
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
@@ -14,9 +25,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.key.*
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
@@ -472,6 +485,7 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
                     title    = "The Limping Cockatrice",
                     scene    = tavernScene,
                     pressure = director.pressure,
+                    falseMarkers = director.falseMarkers,
                     onStep   = tavernWorld::requestStep,
                     barkButtons = listOf(BarkEvent.NIB_SMELL_TREASURE to "Nib: Smell Treasure"),
                     onBark   = ::fireAndFlash
@@ -482,6 +496,7 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
                     title    = "The Limping Cockatrice",
                     scene    = tavernScene,
                     pressure = director.pressure,
+                    falseMarkers = director.falseMarkers,
                     onStep   = tavernWorld::requestStep,
                     barkButtons = emptyList(),
                     onBark   = ::fireAndFlash
@@ -499,6 +514,7 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
                     title    = "Sewers of Bad Decisions",
                     scene    = sewerScene,
                     pressure = director.pressure,
+                    falseMarkers = director.falseMarkers,
                     onStep   = sewerWorld::requestStep,
                     barkButtons = listOf(
                         BarkEvent.BRUGG_ATTACK        to "Brugg: Attack!",
@@ -528,6 +544,7 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
                     title    = "The Rat Accountant's Office",
                     scene    = bossScene,
                     pressure = director.pressure,
+                    falseMarkers = director.falseMarkers,
                     onStep   = bossWorld::requestStep,
                     barkButtons = listOf(BarkEvent.VELLUM_CALLS_FOR_FLAME to "Vellum: Flame"),
                     onBark   = ::fireAndFlash
@@ -565,8 +582,8 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
                 )
         }
 
-        // Questbook flash (always on top)
-        flashText?.let { SliceQuestbookFlash(it) }
+        // Questbook flash (always on top) with animated slide-in/out
+        SliceQuestbookFlash(visible = flashText != null, text = flashText ?: "")
     }
 }
 
@@ -579,6 +596,7 @@ private fun ExploreView(
     title: String,
     scene: WorldScene,
     pressure: QuestPressure,
+    falseMarkers: List<String> = emptyList(),
     onStep: (Direction) -> Unit,
     barkButtons: List<Pair<BarkEvent, String>>,
     onBark: (BarkEvent) -> Unit
@@ -590,6 +608,14 @@ private fun ExploreView(
         Text(title, color = Color(0xFFE8C170), fontWeight = FontWeight.Bold, fontSize = 16.sp)
         Spacer(Modifier.height(4.dp))
         SlicePressureChip(pressure)
+        if (falseMarkers.isNotEmpty()) {
+            Spacer(Modifier.height(4.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                falseMarkers.forEach { marker ->
+                    SliceFalseMarkerChip(marker)
+                }
+            }
+        }
         Spacer(Modifier.height(8.dp))
         Box(Modifier.fillMaxWidth().weight(1f)) {
             GameCanvas(scene = scene, isActive = true, modifier = Modifier.fillMaxSize())
@@ -721,13 +747,19 @@ private fun EndView(title: String, subtitle: String, color: Color, onRestart: ()
 }
 
 @Composable
-private fun SliceQuestbookFlash(text: String) {
+private fun SliceQuestbookFlash(visible: Boolean, text: String) {
     Box(modifier = Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.TopCenter) {
-        Surface(shape = RoundedCornerShape(10.dp), color = Color(0xF2241E12), modifier = Modifier.fillMaxWidth()) {
-            Column(Modifier.padding(16.dp)) {
-                Text("QUESTBOOK", color = Color(0xFFE8C170), fontWeight = FontWeight.Bold, fontSize = 12.sp)
-                Spacer(Modifier.height(4.dp))
-                Text(text, color = Color(0xFFF5E9C8), fontSize = 15.sp)
+        AnimatedVisibility(
+            visible = visible,
+            enter = slideInVertically(animationSpec = tween(300)) { -it } + fadeIn(animationSpec = tween(300)),
+            exit = slideOutVertically(animationSpec = tween(300)) { -it } + fadeOut(animationSpec = tween(300))
+        ) {
+            Surface(shape = RoundedCornerShape(10.dp), color = Color(0xF2241E12), modifier = Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(16.dp)) {
+                    Text("QUESTBOOK", color = Color(0xFFE8C170), fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                    Spacer(Modifier.height(4.dp))
+                    Text(text, color = Color(0xFFF5E9C8), fontSize = 15.sp)
+                }
             }
         }
     }
@@ -735,18 +767,57 @@ private fun SliceQuestbookFlash(text: String) {
 
 @Composable
 private fun SlicePressureChip(pressure: QuestPressure) {
-    val color = when (pressure) {
+    val targetColor = when (pressure) {
         QuestPressure.LOW    -> Color(0xFF4CAF50)
         QuestPressure.MEDIUM -> Color(0xFFFFB300)
         QuestPressure.HIGH   -> Color(0xFFE53935)
     }
-    Surface(shape = RoundedCornerShape(8.dp), color = color) {
+    val animatedColor by animateColorAsState(
+        targetValue = targetColor,
+        animationSpec = tween(durationMillis = 600)
+    )
+    Surface(shape = RoundedCornerShape(8.dp), color = animatedColor) {
         Text(
             "QUEST PRESSURE: $pressure",
             color = Color.White,
             fontWeight = FontWeight.Bold,
             fontSize = 12.sp,
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp)
+        )
+    }
+}
+
+@Composable
+private fun SliceFalseMarkerChip(label: String) {
+    val infiniteTransition = rememberInfiniteTransition()
+    val alpha by infiniteTransition.animateFloat(
+        initialValue = 0.5f,
+        targetValue = 1.0f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 150),
+            repeatMode = RepeatMode.Reverse
+        )
+    )
+    val offsetX by infiniteTransition.animateFloat(
+        initialValue = -2f,
+        targetValue = 2f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 80),
+            repeatMode = RepeatMode.Reverse
+        )
+    )
+    Surface(
+        shape = RoundedCornerShape(6.dp),
+        color = Color(0xFF6B2D5B),
+        modifier = Modifier
+            .graphicsLayer(translationX = offsetX, alpha = alpha)
+    ) {
+        Text(
+            label,
+            color = Color(0xFFFF80AB),
+            fontWeight = FontWeight.Bold,
+            fontSize = 11.sp,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
         )
     }
 }

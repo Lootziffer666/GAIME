@@ -1,0 +1,26 @@
+{
+  "id": "FEAT-001",
+  "type": "feat",
+  "description": "Questbook UI polish: animated flash overlay (slide-in/out from top), animated pressure chip color transitions, and glitchy false quest markers",
+  "status": "in_progress",
+  "steps": [
+    "In composeApp/src/commonMain/kotlin/ui/rpg/SliceScreen.kt, rewrite SliceQuestbookFlash to use AnimatedVisibility with slideInVertically (from top) + fadeIn for enter, slideOutVertically (to top) + fadeOut for exit. The composable currently just appears/disappears. Wrap it in AnimatedVisibility keyed on the flashText state being non-null.",
+    "In the same file, rewrite SlicePressureChip to use animateColorAsState for the background color so that when pressure changes from LOW->MEDIUM->HIGH, the color smoothly transitions (green -> amber -> red) with a visible animation (use tween or spring spec).",
+    "Add a new composable SliceFalseMarkerChip (or similar) that renders false quest markers with a glitchy visual effect: slight random offset (translationX jittering via infinite animation), and a flicker effect (alpha oscillating between 0.5 and 1.0 on a fast cycle). Use rememberInfiniteTransition for the flicker/jitter.",
+    "Integrate SliceFalseMarkerChip into the ExploreView by displaying director.falseMarkers when they exist, positioned distinctly from real quest markers. Show them as small chips with the glitchy animation below the pressure chip.",
+    "Add compose.animation import to the build.gradle.kts commonMain dependencies if needed (it may already be included via compose.foundation)."
+  ],
+  "acceptance_criteria": [
+    "SliceQuestbookFlash uses AnimatedVisibility with slide-in from top and slide-out to top",
+    "SlicePressureChip color animates smoothly on pressure changes using animateColorAsState",
+    "False quest markers display with visible glitch effect (jitter + flicker animation)",
+    "Existing tests still pass (./gradlew desktopTest)",
+    "No LLM/AI calls - everything is deterministic Compose animation"
+  ],
+  "verification": [
+    "Run ./gradlew desktopTest and confirm all existing tests pass",
+    "Run ./gradlew build to ensure compilation succeeds"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

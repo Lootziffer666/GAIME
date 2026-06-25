@@ -1,0 +1,28 @@
+{
+  "id": "FEAT-002",
+  "type": "feat",
+  "description": "Sludge Blob improved combat behavior: ranged spit attack targeting random party member (not always the first), slow attack pattern (skip every other tick), and verify higher HP than rats",
+  "status": "pending",
+  "steps": [
+    "In composeApp/src/commonMain/kotlin/rpg/combat/EnemyArchetype.kt, add an `attackStyle` property to the enum. SEWER_RAT gets MELEE (targets first living party member, attacks every tick), SLUDGE_BLOB gets RANGED_SLOW (targets random party member, attacks every 2nd tick), RAT_ACCOUNTANT keeps current behavior (handled by BossController). Add an enum AttackStyle { MELEE, RANGED_SLOW } in the same file or a new file.",
+    "In composeApp/src/commonMain/kotlin/rpg/combat/Combatant.kt, add a `ticksSinceLastAttack: Int` mutable counter (starts at 0) and an `attackStyle: AttackStyle` property (default MELEE). Update EnemyArchetype.spawn() to pass the appropriate attackStyle.",
+    "In composeApp/src/commonMain/kotlin/rpg/combat/CombatEngine.kt, modify the enemyTurn() method: for non-boss enemies, check their attackStyle. For MELEE: use existing behavior (strikeParty targeting first living). For RANGED_SLOW: increment ticksSinceLastAttack; if it's an even tick (0, 2, 4...) the blob attacks a random living party member, if odd tick it skips ('Sludge Blob is preparing to spit...'). Extract a new method strikeRandomPartyMember() that picks a random target from livingParty() using the engine's random instance.",
+    "Verify EnemyArchetype.SLUDGE_BLOB already has maxHp=20 (vs SEWER_RAT's 12) - it does, so no change needed.",
+    "Add new tests in composeApp/src/commonTest/kotlin/SludgeBlobCombatTest.kt: (1) Test that blob skips attack on odd ticks and attacks on even ticks. (2) Test that blob targets random party member (not always the first) - use seeded Random. (3) Test that blob has higher HP than rat (20 vs 12). (4) Test that SEWER_RAT still targets first living party member (regression)."
+  ],
+  "acceptance_criteria": [
+    "Sludge Blob attacks every 2nd tick (skip pattern) with a 'preparing' message on skip ticks",
+    "Sludge Blob targets a random living party member (not always the first)",
+    "Sludge Blob has 20 HP (higher than Sewer Rat's 12)",
+    "Sewer Rat behavior is unchanged (melee, targets first, attacks every tick)",
+    "Boss behavior is unchanged (handled by BossController, not affected by AttackStyle)",
+    "All existing tests pass plus new SludgeBlobCombatTest",
+    "No LLM/AI calls - combat remains fully deterministic with seeded Random"
+  ],
+  "verification": [
+    "Run ./gradlew desktopTest and confirm all tests pass including new SludgeBlobCombatTest",
+    "Run ./gradlew build to ensure compilation succeeds"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}
