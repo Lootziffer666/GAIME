@@ -228,7 +228,35 @@ object BarkRegistry {
         def(BarkEvent.MERCHANT_SEE_IF_THIS_STRIKES_FANCY, BRUGG, "See if any of this strikes your fancy.", SAFE_BARK, CURRENT_ROOM, 0, true),
         def(BarkEvent.MERCHANT_MAKE_ME_AN_OFFER, BRUGG, "Make me an offer.", SAFE_BARK, CURRENT_ROOM, 0, true),
         def(BarkEvent.MERCHANT_NAME_YOUR_PRICE, BRUGG, "Name your price.", SAFE_BARK, CURRENT_ROOM, 0, true),
-        def(BarkEvent.GUARD_BACK_ALREADY, BRUGG, "Been playing in the sewers, have we?", SAFE_BARK, CURRENT_ROOM, 0, true)
+        def(BarkEvent.GUARD_BACK_ALREADY, BRUGG, "Been playing in the sewers, have we?", SAFE_BARK, CURRENT_ROOM, 0, true),
+
+        // ═══ Campaign: Chapters 3-5 + Finale (docs/CAMPAIGN.md) ══════════
+        def(BarkEvent.BRUGG_OBJECTIVE_COMPLETE, BRUGG, "Objective complete.", SAFE_BARK, CURRENT_ROOM, 30, false),
+        def(BarkEvent.VELLUM_HARD_WON_KNOWLEDGE, VELLUM, "Hard-won knowledge.", SAFE_BARK, CURRENT_ROOM, 30, false),
+        // ─── Chapter 3 ───────────────────────────────────────────────────
+        def(BarkEvent.VELLUM_WHICH_DIRECTION, VELLUM, "Which direction?", TRIGGER_BARK, CURRENT_ROOM, 15, false),
+        def(BarkEvent.VELLUM_THIS_LOOKS_LIKE_A_MAP, VELLUM, "This looks like a map.", TRIGGER_BARK, CURRENT_ROOM, 25, false),
+        // ─── Chapter 4 ───────────────────────────────────────────────────
+        def(BarkEvent.NIB_FRESH_SEA_AIR, NIB, "I love the fresh sea air.", SAFE_BARK, CURRENT_ROOM, 30, false),
+        def(BarkEvent.NIB_NOT_FOND_OF_DEEP_WATER, NIB, "I've never been fond of deep water.", SAFE_BARK, CURRENT_ROOM, 25, false),
+        def(BarkEvent.BRUGG_IS_SHE_SEAWORTHY, BRUGG, "Is she seaworthy?", SAFE_BARK, CURRENT_ROOM, 25, false),
+        def(BarkEvent.BRUGG_DROP_ANCHOR, BRUGG, "Drop anchor.", UTILITY_BARK, CURRENT_ROOM, 20, false),
+        def(BarkEvent.BRUGG_HOIST_ANCHOR, BRUGG, "Hoist anchor.", UTILITY_BARK, CURRENT_ROOM, 20, false),
+        def(BarkEvent.BRUGG_RAISE_THE_SAIL, BRUGG, "Raise the sail.", UTILITY_BARK, CURRENT_ROOM, 20, false),
+        def(BarkEvent.BRUGG_OUT_MANEUVERED, BRUGG, "We're out maneuvered.", DANGER_BARK, CURRENT_ROOM, 30, false),
+        def(BarkEvent.BRUGG_RETREAT, BRUGG, "Retreat.", DANGER_BARK, CURRENT_ROOM, 15, false),
+        def(BarkEvent.VELLUM_SEA_IS_ANGRY_MISTRESS, VELLUM, "The sea is an angry mistress.", SAFE_BARK, CURRENT_ROOM, 30, false),
+        // ─── Chapter 5 ───────────────────────────────────────────────────
+        def(BarkEvent.NIB_SMELL_DRAGON, NIB, "I smell dragon.", TRIGGER_BARK, CURRENT_MAP, 45, false),
+        def(BarkEvent.NIB_SMELL_MONSTERS, NIB, "I smell monsters.", DANGER_BARK, CURRENT_ROOM, 30, false),
+        def(BarkEvent.BRUGG_HOLD_THE_LINE, BRUGG, "Hold the line.", PRESSURE_BARK, CURRENT_MAP, 30, false),
+        def(BarkEvent.BRUGG_PROTECT_THE_ASSET, BRUGG, "Protect the asset.", PRESSURE_BARK, CURRENT_MAP, 30, false),
+        def(BarkEvent.BRUGG_LOW_ON_HEALTH, BRUGG, "Low on health.", SAFE_BARK, CURRENT_ROOM, 20, false),
+        def(BarkEvent.VELLUM_SUMMON_YOUR_STRENGTH, VELLUM, "Summon your strength.", SAFE_BARK, CURRENT_ROOM, 25, false),
+        // ─── Finale: System Overload ─────────────────────────────────────
+        def(BarkEvent.NIB_NOT_A_HORSE, NIB, "Hey, that's not a horse.", TRIGGER_BARK, CURRENT_ROOM, 5, false),
+        def(BarkEvent.NIB_THIS_LOOKS_LIKE_GOLD, NIB, "This looks like gold.", TRIGGER_BARK, CURRENT_ROOM, 5, false),
+        def(BarkEvent.NIB_DOOR_ALMOST_UNLOCKED, NIB, "This door is almost certainly unlocked.", UTILITY_BARK, CURRENT_ROOM, 5, false)
     ).associateBy { it.key }
 
     init {

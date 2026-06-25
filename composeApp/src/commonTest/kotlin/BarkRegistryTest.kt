@@ -57,9 +57,9 @@ class BarkRegistryTest {
 
     @Test
     fun totalBarkEventCountIsCorrect() {
-        // 20 original + 39 new (combat taunts, combat reactions, exploration, ambient) + 3 NPC dialogue + 102 expanded voice lines + 16 Chapter 2
-        assertEquals(180, BarkEvent.entries.size)
-        assertEquals(180, BarkRegistry.all().size)
+        // 20 original + 39 + 3 NPC + 102 voice lines + 16 Chapter 2 + 22 campaign (Ch3-5 + finale)
+        assertEquals(202, BarkEvent.entries.size)
+        assertEquals(202, BarkRegistry.all().size)
     }
 
     @Test

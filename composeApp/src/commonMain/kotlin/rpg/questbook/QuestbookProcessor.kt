@@ -417,6 +417,73 @@ class QuestbookProcessor {
             BarkEvent.MERCHANT_NAME_YOUR_PRICE,
             BarkEvent.GUARD_BACK_ALREADY ->
                 react("Atmospheric observation noted", FlavorText)
+
+            // ═══ Chapters 3-5 + Finale (docs/CAMPAIGN.md) ═══════════════
+            // --- Completion flavor ---
+            BarkEvent.BRUGG_OBJECTIVE_COMPLETE ->
+                react("Objective Logged: Closed (Satisfaction: Assumed)", FlavorText)
+            BarkEvent.VELLUM_HARD_WON_KNOWLEDGE ->
+                react("Knowledge Filed (Effort: Noted, Reward: Pending)", FlavorText)
+
+            // --- Chapter 3: The Woods That Had Opinions ---
+            BarkEvent.VELLUM_WHICH_DIRECTION ->
+                if (before != QuestPressure.LOW)
+                    react("Navigation Quest Reissued: Destination Recalculated", SpawnFalseMarker("Recalculated Route"))
+                else react("Direction noted. Map unchanged (for now)", FlavorText, before.raised())
+            BarkEvent.VELLUM_THIS_LOOKS_LIKE_A_MAP ->
+                if (ctx.hasInteractableTarget) react("Cartographic Asset Catalogued", RevealHidden)
+                else react("No cartographic asset detected", FlavorText)
+
+            // --- Chapter 4: The Ship That Was Technically Seaworthy ---
+            BarkEvent.BRUGG_IS_SHE_SEAWORTHY ->
+                react("Seaworthiness Assessment: Technically", FlavorText)
+            BarkEvent.BRUGG_HOIST_ANCHOR ->
+                if (ctx.hasInteractableTarget) react("Anchorage Released (Direction: Approximate)", RevealHidden)
+                else react("Anchor status: ambiguous", FlavorText)
+            BarkEvent.BRUGG_DROP_ANCHOR ->
+                react("Mooring Logged (Permanence: Doubtful)", FlavorText)
+            BarkEvent.BRUGG_RAISE_THE_SAIL ->
+                react("Canvas Deployment Filed", FlavorText)
+            BarkEvent.BRUGG_OUT_MANEUVERED ->
+                react("Tactical Disadvantage Filed (Blame: Pending)", FlavorText, before.raised())
+            BarkEvent.BRUGG_RETREAT ->
+                if (ctx.roomId == RoomContext.ROOM_BOSS || ctx.roomId == RoomContext.ROOM_FOREST_BOSS)
+                    react("Retreat denied by paperwork.", FlavorText)
+                else react("Tactical Withdrawal Logged (Direction: Away)", FlavorText)
+
+            // --- Chapter 5: The Dragon That Was Accidentally Summoned ---
+            BarkEvent.NIB_SMELL_DRAGON ->
+                // Signature reaction: the book reads a smell as a defect report.
+                react(
+                    "URGENT QUEST ACCEPTED: DEFEAT THE DRAGON",
+                    SpawnQuestMarker("dragon (to be generated)"),
+                    QuestPressure.HIGH
+                )
+            BarkEvent.NIB_SMELL_MONSTERS ->
+                if (ctx.hasEnemies)
+                    react("Threat Acknowledgement Filed: Monsters Marked", SpawnQuestMarker("nearest monster"), before.raised())
+                else react("No monsters in vicinity (regrettably)", FlavorText)
+            BarkEvent.BRUGG_HOLD_THE_LINE ->
+                react("Defensive Posture Mandated (Line: Imaginary)", FlavorText, before.raised())
+            BarkEvent.BRUGG_PROTECT_THE_ASSET ->
+                react("Asset Protection Order Filed (Asset: Undefined)", FlavorText, before.raised())
+
+            // --- Chapter 5 / Finale flavor ---
+            BarkEvent.NIB_FRESH_SEA_AIR,
+            BarkEvent.NIB_NOT_FOND_OF_DEEP_WATER,
+            BarkEvent.VELLUM_SEA_IS_ANGRY_MISTRESS,
+            BarkEvent.BRUGG_LOW_ON_HEALTH,
+            BarkEvent.VELLUM_SUMMON_YOUR_STRENGTH ->
+                react("Atmospheric observation noted", FlavorText)
+
+            // --- Finale: System Overload (banal, contradictory quest-accepts) ---
+            BarkEvent.NIB_NOT_A_HORSE ->
+                react("QUEST ACCEPTED: IDENTIFY THE HORSE", SpawnQuestMarker("horse"))
+            BarkEvent.NIB_THIS_LOOKS_LIKE_GOLD ->
+                react("QUEST ACCEPTED: APPRAISE THE GOLD", SpawnQuestMarker("gold"))
+            BarkEvent.NIB_DOOR_ALMOST_UNLOCKED ->
+                if (ctx.hasInteractableTarget) react("Entry Reclassified as Pre-Authorised", RevealHidden)
+                else react("QUEST ACCEPTED: OPEN THE DOOR", SpawnQuestMarker("door"))
         }
     }
 }

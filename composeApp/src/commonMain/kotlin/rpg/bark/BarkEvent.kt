@@ -217,5 +217,38 @@ enum class BarkEvent {
     MERCHANT_SEE_IF_THIS_STRIKES_FANCY,
     MERCHANT_MAKE_ME_AN_OFFER,
     MERCHANT_NAME_YOUR_PRICE,
-    GUARD_BACK_ALREADY
+    GUARD_BACK_ALREADY,
+
+    // ═══ Campaign: Chapters 3-5 + Finale (docs/CAMPAIGN.md) ══════════════
+    // Only barks main does not already provide; existing keys are reused.
+    BRUGG_OBJECTIVE_COMPLETE,
+    VELLUM_HARD_WON_KNOWLEDGE,
+
+    // ─── Chapter 3: The Woods That Had Opinions ──────────────────────────
+    VELLUM_WHICH_DIRECTION,
+    VELLUM_THIS_LOOKS_LIKE_A_MAP,
+
+    // ─── Chapter 4: The Ship That Was Technically Seaworthy ──────────────
+    NIB_FRESH_SEA_AIR,
+    NIB_NOT_FOND_OF_DEEP_WATER,
+    BRUGG_IS_SHE_SEAWORTHY,
+    BRUGG_DROP_ANCHOR,
+    BRUGG_HOIST_ANCHOR,
+    BRUGG_RAISE_THE_SAIL,
+    BRUGG_OUT_MANEUVERED,
+    BRUGG_RETREAT,
+    VELLUM_SEA_IS_ANGRY_MISTRESS,
+
+    // ─── Chapter 5: The Dragon That Was Accidentally Summoned ────────────
+    NIB_SMELL_DRAGON,
+    NIB_SMELL_MONSTERS,
+    BRUGG_HOLD_THE_LINE,
+    BRUGG_PROTECT_THE_ASSET,
+    BRUGG_LOW_ON_HEALTH,
+    VELLUM_SUMMON_YOUR_STRENGTH,
+
+    // ─── Finale: System Overload (banal, contradictory quest-accepts) ────
+    NIB_NOT_A_HORSE,
+    NIB_THIS_LOOKS_LIKE_GOLD,
+    NIB_DOOR_ALMOST_UNLOCKED
 }

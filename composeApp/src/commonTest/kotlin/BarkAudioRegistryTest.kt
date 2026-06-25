@@ -81,7 +81,7 @@ class BarkAudioRegistryTest {
 
     @Test
     fun totalBarkEventCountMatchesExpected() {
-        // 20 original + 39 new + 3 NPC dialogue + 102 expanded voice lines + 16 Chapter 2 = 180 total
-        assertEquals(180, BarkEvent.entries.size)
+        // 20 original + 39 + 3 NPC + 102 voice lines + 16 Chapter 2 + 22 campaign = 202 total
+        assertEquals(202, BarkEvent.entries.size)
     }
 }

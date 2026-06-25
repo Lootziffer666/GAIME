@@ -227,7 +227,31 @@ object BarkAudioRegistry {
         BarkEvent.MERCHANT_SEE_IF_THIS_STRIKES_FANCY to "see_if_any_of_this_strikes_your_fancy.wav",
         BarkEvent.MERCHANT_MAKE_ME_AN_OFFER to "make_me_an_offer.wav",
         BarkEvent.MERCHANT_NAME_YOUR_PRICE to "name_your_price.wav",
-        BarkEvent.GUARD_BACK_ALREADY to "been_playing_in_the_sewers_have_we.wav"
+        BarkEvent.GUARD_BACK_ALREADY to "been_playing_in_the_sewers_have_we.wav",
+
+        // ═══ Campaign: Chapters 3-5 + Finale (placeholders reuse real WAVs) ══
+        BarkEvent.BRUGG_OBJECTIVE_COMPLETE to "stay_down.wav",
+        BarkEvent.VELLUM_HARD_WON_KNOWLEDGE to "hard-won_knowledge.wav",
+        BarkEvent.VELLUM_WHICH_DIRECTION to "now_what_was_that_incantation.wav",
+        BarkEvent.VELLUM_THIS_LOOKS_LIKE_A_MAP to "this_looks_like_a_glyph.wav",
+        BarkEvent.NIB_FRESH_SEA_AIR to "i_love_gold.wav",
+        BarkEvent.NIB_NOT_FOND_OF_DEEP_WATER to "its_a_trap.wav",
+        BarkEvent.BRUGG_IS_SHE_SEAWORTHY to "this_looks_like_trouble.wav",
+        BarkEvent.BRUGG_DROP_ANCHOR to "attack.wav",
+        BarkEvent.BRUGG_HOIST_ANCHOR to "attack.wav",
+        BarkEvent.BRUGG_RAISE_THE_SAIL to "attack.wav",
+        BarkEvent.BRUGG_OUT_MANEUVERED to "fall_back.wav",
+        BarkEvent.BRUGG_RETREAT to "fall_back.wav",
+        BarkEvent.VELLUM_SEA_IS_ANGRY_MISTRESS to "of_all_the_arcane_lore.wav",
+        BarkEvent.NIB_SMELL_DRAGON to "i_smell_treasure.wav",
+        BarkEvent.NIB_SMELL_MONSTERS to "theyre_onto_us.wav",
+        BarkEvent.BRUGG_HOLD_THE_LINE to "stay_down.wav",
+        BarkEvent.BRUGG_PROTECT_THE_ASSET to "stay_down.wav",
+        BarkEvent.BRUGG_LOW_ON_HEALTH to "i_dont_have_much_left_in_me.wav",
+        BarkEvent.VELLUM_SUMMON_YOUR_STRENGTH to "i_smite_you.wav",
+        BarkEvent.NIB_NOT_A_HORSE to "what_do_we_have_here.wav",
+        BarkEvent.NIB_THIS_LOOKS_LIKE_GOLD to "i_love_gold.wav",
+        BarkEvent.NIB_DOOR_ALMOST_UNLOCKED to "this_way.wav"
     )
 
     init {
