@@ -32,11 +32,17 @@ class CombatBarkIntegrationTest {
 
         val barks = events.filterIsInstance<CombatEvent.BarkTriggered>().map { it.bark }
         assertTrue(barks.isNotEmpty(), "First tick should fire a taunt bark")
-        // The taunt should be from one of Nib's taunts
+        // The taunt should be from one of Nib's taunts (original + expanded)
         val nibTaunts = listOf(
             BarkEvent.NIB_FROM_THE_SHADOWS,
             BarkEvent.NIB_IS_THAT_ALL_YOUVE_GOT,
-            BarkEvent.NIB_YOUR_DEFENSES_ARE_WEAK
+            BarkEvent.NIB_YOUR_DEFENSES_ARE_WEAK,
+            BarkEvent.NIB_BACK_FOUL_CREATURE,
+            BarkEvent.NIB_DARKNESS_TAKE_YOU,
+            BarkEvent.NIB_DROP_YOUR_WEAPONS,
+            BarkEvent.NIB_IVE_FOUGHT_KOBOLDS_TOUGHER,
+            BarkEvent.NIB_IVE_FOUGHT_PUPPIES_TOUGHER,
+            BarkEvent.NIB_IVE_FOUGHT_ARTICHOKES_TOUGHER
         )
         assertTrue(barks.any { it in nibTaunts }, "Taunt should be from nib's taunt set: got $barks")
     }
@@ -54,10 +60,22 @@ class CombatBarkIntegrationTest {
         val allTaunts = listOf(
             BarkEvent.NIB_FROM_THE_SHADOWS, BarkEvent.NIB_IS_THAT_ALL_YOUVE_GOT,
             BarkEvent.NIB_YOUR_DEFENSES_ARE_WEAK,
+            BarkEvent.NIB_BACK_FOUL_CREATURE, BarkEvent.NIB_DARKNESS_TAKE_YOU,
+            BarkEvent.NIB_DROP_YOUR_WEAPONS,
+            BarkEvent.NIB_IVE_FOUGHT_KOBOLDS_TOUGHER, BarkEvent.NIB_IVE_FOUGHT_PUPPIES_TOUGHER,
+            BarkEvent.NIB_IVE_FOUGHT_ARTICHOKES_TOUGHER,
             BarkEvent.BRUGG_HAVE_AT_THEE, BarkEvent.BRUGG_SURRENDER_OR_DIE,
             BarkEvent.BRUGG_SHOW_YOURSELVES,
+            BarkEvent.BRUGG_BACK_FOUL_CREATURE, BarkEvent.BRUGG_DARKNESS_TAKE_YOU,
+            BarkEvent.BRUGG_DROP_YOUR_WEAPONS,
+            BarkEvent.BRUGG_IVE_FOUGHT_KOBOLDS_TOUGHER, BarkEvent.BRUGG_IVE_FOUGHT_PUPPIES_TOUGHER,
+            BarkEvent.BRUGG_IVE_FOUGHT_ARTICHOKES_TOUGHER,
             BarkEvent.VELLUM_LETS_SEE_IF_YOU_CAN_DODGE, BarkEvent.VELLUM_YOUR_DEFENSES_ARE_FUTILE,
-            BarkEvent.VELLUM_I_SMITE_YOU
+            BarkEvent.VELLUM_I_SMITE_YOU,
+            BarkEvent.VELLUM_BACK_FOUL_CREATURE, BarkEvent.VELLUM_DARKNESS_TAKE_YOU,
+            BarkEvent.VELLUM_DROP_YOUR_WEAPONS,
+            BarkEvent.VELLUM_IVE_FOUGHT_KOBOLDS_TOUGHER, BarkEvent.VELLUM_IVE_FOUGHT_PUPPIES_TOUGHER,
+            BarkEvent.VELLUM_IVE_FOUGHT_ARTICHOKES_TOUGHER
         )
         assertTrue(barks.none { it in allTaunts }, "Second tick should not fire another taunt")
     }
@@ -88,9 +106,12 @@ class CombatBarkIntegrationTest {
 
             val damageBarks = listOf(
                 BarkEvent.NIB_THAT_STINGS, BarkEvent.NIB_LUCKY_HIT,
+                BarkEvent.NIB_HOW_HUMILIATING,
                 BarkEvent.BRUGG_THATS_GOING_TO_LEAVE_A_MARK,
+                BarkEvent.BRUGG_HOW_HUMILIATING,
                 BarkEvent.BRUGG_I_DONT_HAVE_MUCH_LEFT, BarkEvent.BRUGG_THAT_DREW_BLOOD,
-                BarkEvent.VELLUM_IM_GOING_TO_FEEL_THAT, BarkEvent.VELLUM_I_NEED_A_HEALER
+                BarkEvent.VELLUM_IM_GOING_TO_FEEL_THAT, BarkEvent.VELLUM_I_NEED_A_HEALER,
+                BarkEvent.VELLUM_HOW_HUMILIATING
             )
             val triggered = allEvents.filterIsInstance<CombatEvent.BarkTriggered>().map { it.bark }
             if (triggered.any { it in damageBarks }) {
@@ -150,7 +171,13 @@ class CombatBarkIntegrationTest {
         val victoryBarks = listOf(
             BarkEvent.NIB_IS_THAT_ALL_YOUVE_GOT,
             BarkEvent.BRUGG_SURRENDER_OR_DIE,
-            BarkEvent.VELLUM_YOUR_DEFENSES_ARE_FUTILE
+            BarkEvent.VELLUM_YOUR_DEFENSES_ARE_FUTILE,
+            BarkEvent.NIB_YOULL_NOT_BE_GETTING_UP,
+            BarkEvent.NIB_NEXT_TIME_WONT_BE_SO_LUCKY,
+            BarkEvent.BRUGG_YOULL_NOT_BE_GETTING_UP,
+            BarkEvent.BRUGG_NEXT_TIME_WONT_BE_SO_LUCKY,
+            BarkEvent.VELLUM_YOULL_NOT_BE_GETTING_UP,
+            BarkEvent.VELLUM_NEXT_TIME_WONT_BE_SO_LUCKY
         )
         assertTrue(
             barks.any { it in victoryBarks },
