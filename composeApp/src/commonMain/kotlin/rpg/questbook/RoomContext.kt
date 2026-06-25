@@ -23,5 +23,11 @@ data class RoomContext(
         const val ROOM_SEWER_CORRIDOR = "sewer_corridor"
         const val ROOM_MINI_DUNGEON = "mini_dungeon"
         const val ROOM_BOSS = "boss_room"
+
+        // ═══ Chapter 2 ══════════════════════════════════════════════════
+        const val ROOM_MARKET = "market"
+        const val ROOM_FOREST = "forest"
+        const val ROOM_FOREST_SHRINE = "forest_shrine"
+        const val ROOM_FOREST_BOSS = "forest_boss"
     }
 }

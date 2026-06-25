@@ -210,7 +210,25 @@ object BarkRegistry {
         def(BarkEvent.VELLUM_WHAT_NEWS, VELLUM, "What news?", SAFE_BARK, CURRENT_ROOM, 30, false),
         def(BarkEvent.NIB_WHERES_THE_PRIVVY, NIB, "Where's the privvy?", SAFE_BARK, CURRENT_ROOM, 30, false),
         def(BarkEvent.BRUGG_WHERES_THE_PRIVVY, BRUGG, "Where's the privvy?", SAFE_BARK, CURRENT_ROOM, 30, false),
-        def(BarkEvent.VELLUM_WHERES_THE_NEAREST_INN, VELLUM, "Where's the nearest inn?", SAFE_BARK, CURRENT_ROOM, 30, false)
+        def(BarkEvent.VELLUM_WHERES_THE_NEAREST_INN, VELLUM, "Where's the nearest inn?", SAFE_BARK, CURRENT_ROOM, 30, false),
+
+        // ═══ Chapter 2 ══════════════════════════════════════════════════
+        def(BarkEvent.NIB_SMELL_GOLD, NIB, "I smell gold!", TRIGGER_BARK, CURRENT_ROOM, 30, true),
+        def(BarkEvent.NIB_HOW_MUCH, NIB, "How much do you want for this?", SAFE_BARK, CURRENT_ROOM, 30, true),
+        def(BarkEvent.NIB_SECRET_ENTRANCE, NIB, "This looks like a secret entrance.", TRIGGER_BARK, CURRENT_ROOM, 30, true),
+        def(BarkEvent.BRUGG_WHO_RUNS_THIS_CITY, BRUGG, "Who runs this city?", TRIGGER_BARK, CURRENT_ROOM, 30, true),
+        def(BarkEvent.BRUGG_SPEAK_TO_GUARD, BRUGG, "I need to speak to the town guard.", TRIGGER_BARK, CURRENT_ROOM, 30, true),
+        def(BarkEvent.BRUGG_KEEP_TO_TRAIL, BRUGG, "Just keep to the trail.", SAFE_BARK, CURRENT_ROOM, 30, true),
+        def(BarkEvent.BRUGG_EXPERIENCE_IS_HOW_WE_GROW, BRUGG, "Experience is how we grow.", SAFE_BARK, CURRENT_ROOM, 30, true),
+        def(BarkEvent.VELLUM_CREATURES_IN_WOODS, VELLUM, "There are all manner of creature in these woods.", SAFE_BARK, CURRENT_ROOM, 30, true),
+        def(BarkEvent.VELLUM_ELEMENTS_MINE_TO_COMMAND, VELLUM, "The elements are mine to command.", TRIGGER_BARK, CURRENT_ROOM, 30, true),
+        def(BarkEvent.VELLUM_CALLS_FOR_LIGHTNING, VELLUM, "This calls for lightning!", UTILITY_BARK, CURRENT_ROOM, 25, true),
+        def(BarkEvent.VELLUM_SO_THATS_HOW_IT_IS, VELLUM, "So that's how it is then.", SAFE_BARK, CURRENT_ROOM, 30, true),
+        def(BarkEvent.VELLUM_BALANCE_LIFE_DEATH, VELLUM, "The balance of life and death sits on a knife's edge.", SAFE_BARK, CURRENT_ROOM, 30, true),
+        def(BarkEvent.MERCHANT_SEE_IF_THIS_STRIKES_FANCY, BRUGG, "See if any of this strikes your fancy.", SAFE_BARK, CURRENT_ROOM, 0, true),
+        def(BarkEvent.MERCHANT_MAKE_ME_AN_OFFER, BRUGG, "Make me an offer.", SAFE_BARK, CURRENT_ROOM, 0, true),
+        def(BarkEvent.MERCHANT_NAME_YOUR_PRICE, BRUGG, "Name your price.", SAFE_BARK, CURRENT_ROOM, 0, true),
+        def(BarkEvent.GUARD_BACK_ALREADY, BRUGG, "Been playing in the sewers, have we?", SAFE_BARK, CURRENT_ROOM, 0, true)
     ).associateBy { it.key }
 
     init {

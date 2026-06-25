@@ -1,0 +1,39 @@
+{
+  "id": "FEAT-002",
+  "type": "feat",
+  "description": "Chapter 2 gameplay flow: Wire the SliceScreen state machine to transition from VICTORY into Chapter 2, implement the full Market -> Forest -> Shrine -> Boss -> Return sequence with NPC dialogues, combat encounters, and the Questbook Page 2 reveal.",
+  "status": "pending",
+  "steps": [
+    "1. Modify SliceScreen.kt: Change the VICTORY phase to become a transition point. After Chapter 1 boss is defeated and QUESTBOOK_FULL is shown, instead of going to RETURN_CUTSCENE -> VICTORY (end), go to RETURN_CUTSCENE -> CHAPTER2_MARKET. Keep VICTORY as the final end state after Chapter 2 completes. Add a flag like 'chapter2Complete' to distinguish: if chapter2Complete=true, VICTORY shows end screen; if false, RETURN_CUTSCENE transitions to CHAPTER2_MARKET.",
+    "2. Add Chapter 2 dialogue line arrays in SliceScreen.kt (following the pattern of INTRO_LINES, POST_BOSS_LINES etc): CHAPTER2_MARKET_INTRO_LINES (party exits tavern, Questbook demands a new page), CHAPTER2_MERCHANT_LINES (merchant NPC gruff voice lines with bark audio paths), CHAPTER2_GUARD_LINES (guard NPC tells party to go to forest), CHAPTER2_POST_BOSS_LINES (Page 2 pickup, Questbook overlay text about 47 outstanding quests), CHAPTER2_RETURN_LINES (back at market, guard says 'back already?').",
+    "3. Create the Chapter 2 market world (GridWorld) in SliceScreen.kt: Instantiate GridWorld(GameMaps.stokeportMarket()), add NPC entities for merchant and guard (GridEntityType.NPC). Define MARKET_CTX = RoomContext('stokeport_market', ROOM_MARKET, hasInteractableTarget=true). Wire marketScene with onTrigger for TRIGGER_MARKET_EXIT (transitions to CHAPTER2_FOREST) and onEntityInteraction for merchant/guard NPCs (transitions to CHAPTER2_MARKET_NPC with appropriate dialogue lines, fires NIB_SMELL_GOLD when approaching merchant, BRUGG_SPEAK_TO_GUARD when approaching guard).",
+    "4. Create the Chapter 2 forest world (GridWorld) in SliceScreen.kt: Instantiate GridWorld(GameMaps.forestTrail()), add wolf enemy entities (3 wolves on main path, boss entity at east end). Define FOREST_CTX = RoomContext('forest_trail', ROOM_FOREST, hasEnemies=true, hasPuzzleElement=true). Wire forestScene with: onTrigger for TRIGGER_FOREST_SHRINE (fire VELLUM_ELEMENTS_MINE_TO_COMMAND, transition to CHAPTER2_SHRINE), onTrigger for TRIGGER_FOREST_BOSS (transition to CHAPTER2_BOSS_INTRO). Wire onEntityInteraction for wolf entities -> start combat with 3 FOREST_WOLF enemies, transition to CHAPTER2_FOREST_COMBAT.",
+    "5. Implement CHAPTER2_SHRINE phase: The shrine puzzle requires the player to use a VELLUM_CALLS_FOR_LIGHTNING utility bark button. Render an ExploreView with barkButtons=[VELLUM_CALLS_FOR_LIGHTNING to 'Vellum: Lightning']. When the bark fires, the shrine activates (RevealHidden effect from QuestbookProcessor), fire a flash with the Questbook reaction text, then auto-progress back to CHAPTER2_FOREST (shrine solved). Track shrineActivated state.",
+    "6. Implement CHAPTER2_BOSS_INTRO and CHAPTER2_BOSS_COMBAT: When entering boss area, fire BRUGG_DROP_YOUR_WEAPONS as auto-bark (Questbook: 'Surrender Filing: Rejected'). Create CombatEngine with party, emptyList(), TAX_COLLECTOR_BADGER.spawn('tax_badger'), TaxCollectorController(). Handle victory: fire BRUGG_EXPERIENCE_IS_HOW_WE_GROW, transition to CHAPTER2_POST_BOSS. Handle defeat: GAME_OVER.",
+    "7. Implement CHAPTER2_POST_BOSS: Show POST_BOSS dialogue lines (Page 2 pickup). Fire VELLUM_SO_THATS_HOW_IT_IS. Then transition to CHAPTER2_QUESTBOOK_PAGE2.",
+    "8. Implement CHAPTER2_QUESTBOOK_PAGE2: Show a full Questbook overlay (similar to QUESTBOOK_FULL) with text: 'Outstanding Quest Balance: 47. Payment: Additional heroism (non-negotiable)'. On dismiss, transition to CHAPTER2_RETURN.",
+    "9. Implement CHAPTER2_RETURN: Show CHAPTER2_RETURN_LINES dialogue. Fire GUARD_BACK_ALREADY bark. On completion, set chapter2Complete=true, transition to VICTORY.",
+    "10. Wire auto-barks for exploration phases: CHAPTER2_MARKET entry -> fire VELLUM_CREATURES_IN_WOODS is wrong, that should be forest entry. On CHAPTER2_FOREST entry fire VELLUM_CREATURES_IN_WOODS. On market, fire NIB_SMELL_GOLD auto on first enter. Add idle bark pools for CHAPTER2_MARKET and CHAPTER2_FOREST in pickIdleBark(). CHAPTER2_MARKET idles: NIB_HOW_MUCH, BRUGG_KEEP_TO_TRAIL, BRUGG_BARKEEP_A_FLAGON, NIB_I_LOVE_GOLD. CHAPTER2_FOREST idles: VELLUM_TREES_HAVE_EYES, BRUGG_THE_DEEPER_WE_GO, NIB_THIS_THING_LOOKS_INTERESTING.",
+    "11. Update the handleCombatAction function to handle CHAPTER2_FOREST_COMBAT victory (remove wolf entities from forest world, transition back to CHAPTER2_FOREST) and CHAPTER2_BOSS_COMBAT victory (remove boss entity, transition to CHAPTER2_POST_BOSS).",
+    "12. Update the when(phase) block in the Box composable to render appropriate views for all new Chapter 2 phases: CHAPTER2_MARKET -> ExploreView with title 'Stokeport Market', CHAPTER2_MARKET_NPC -> ExploreView + DialogueOverlay, CHAPTER2_FOREST -> ExploreView with title 'The Forest Trail', CHAPTER2_FOREST_COMBAT -> CombatView, CHAPTER2_SHRINE -> ExploreView with lightning bark button, CHAPTER2_BOSS_INTRO -> DialogueOverlay, CHAPTER2_BOSS_COMBAT -> CombatView, CHAPTER2_POST_BOSS -> DialogueOverlay, CHAPTER2_QUESTBOOK_PAGE2 -> QuestbookFullView, CHAPTER2_RETURN -> DialogueOverlay.",
+    "13. Update keyboard event handler to include CHAPTER2_MARKET, CHAPTER2_FOREST, CHAPTER2_SHRINE in the exploration world-map routing (so WASD movement works in those phases)."
+  ],
+  "acceptance_criteria": [
+    "./gradlew build compiles successfully with the complete Chapter 2 flow wired",
+    "./gradlew desktopTest passes all tests",
+    "The VICTORY phase at the end of Chapter 1 now transitions to Chapter 2 instead of ending",
+    "Chapter 2 has the full sequence: Market -> Forest -> Shrine -> Boss -> Return",
+    "NPC interactions on the market fire the correct barks and show dialogue",
+    "Forest combat uses FOREST_WOLF archetype",
+    "Shrine puzzle requires VELLUM_CALLS_FOR_LIGHTNING utility bark",
+    "Boss fight uses TaxCollectorController with 3 phases",
+    "Questbook Page 2 overlay shows the '47 outstanding quests' humor text",
+    "Chapter 2 return transitions to VICTORY end state"
+  ],
+  "verification": [
+    "Run ./gradlew desktopTest and confirm all tests pass",
+    "Run ./gradlew build and confirm compilation succeeds"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

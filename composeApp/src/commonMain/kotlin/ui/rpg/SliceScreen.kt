@@ -619,6 +619,20 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
                     onRestart = onReset
                 )
 
+            // --- Chapter 2 (data-layer stub, wired in FEAT-002/003) ---
+            SlicePhase.CHAPTER2_MARKET,
+            SlicePhase.CHAPTER2_MARKET_NPC,
+            SlicePhase.CHAPTER2_FOREST,
+            SlicePhase.CHAPTER2_FOREST_COMBAT,
+            SlicePhase.CHAPTER2_SHRINE,
+            SlicePhase.CHAPTER2_BOSS_INTRO,
+            SlicePhase.CHAPTER2_BOSS_COMBAT,
+            SlicePhase.CHAPTER2_POST_BOSS,
+            SlicePhase.CHAPTER2_QUESTBOOK_PAGE2,
+            SlicePhase.CHAPTER2_RETURN -> {
+                // Placeholder: Chapter 2 UI will be wired in a subsequent feature.
+            }
+
             SlicePhase.GAME_OVER ->
                 EndView(
                     title    = "Quest Status: Unresolved.",

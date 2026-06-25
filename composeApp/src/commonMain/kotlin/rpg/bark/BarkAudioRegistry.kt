@@ -209,7 +209,25 @@ object BarkAudioRegistry {
         BarkEvent.VELLUM_WHAT_NEWS to "what_news.wav",
         BarkEvent.NIB_WHERES_THE_PRIVVY to "wheres_the_privvy.wav",
         BarkEvent.BRUGG_WHERES_THE_PRIVVY to "wheres_the_privvy.wav",
-        BarkEvent.VELLUM_WHERES_THE_NEAREST_INN to "wheres_the_nearest_inn.wav"
+        BarkEvent.VELLUM_WHERES_THE_NEAREST_INN to "wheres_the_nearest_inn.wav",
+
+        // ═══ Chapter 2 ══════════════════════════════════════════════════
+        BarkEvent.NIB_SMELL_GOLD to "i_smell_gold.wav",
+        BarkEvent.NIB_HOW_MUCH to "how_much_do_you_want_for_this.wav",
+        BarkEvent.NIB_SECRET_ENTRANCE to "this_looks_like_a_secret_entrance.wav",
+        BarkEvent.BRUGG_WHO_RUNS_THIS_CITY to "who_runs_this_city.wav",
+        BarkEvent.BRUGG_SPEAK_TO_GUARD to "i_need_to_speak_to_the_town_guard.wav",
+        BarkEvent.BRUGG_KEEP_TO_TRAIL to "just_keep_to_the_trail.wav",
+        BarkEvent.BRUGG_EXPERIENCE_IS_HOW_WE_GROW to "experience_is_how_we_grow.wav",
+        BarkEvent.VELLUM_CREATURES_IN_WOODS to "there_are_all_manner_of_creature_in_these_woods.wav",
+        BarkEvent.VELLUM_ELEMENTS_MINE_TO_COMMAND to "the_elements_are_mine_to_command.wav",
+        BarkEvent.VELLUM_CALLS_FOR_LIGHTNING to "this_calls_for_lightning.wav",
+        BarkEvent.VELLUM_SO_THATS_HOW_IT_IS to "so_thats_how_it_is_then.wav",
+        BarkEvent.VELLUM_BALANCE_LIFE_DEATH to "the_balance_of_life_and_death_sits_on_a_knifes_edge.wav",
+        BarkEvent.MERCHANT_SEE_IF_THIS_STRIKES_FANCY to "see_if_any_of_this_strikes_your_fancy.wav",
+        BarkEvent.MERCHANT_MAKE_ME_AN_OFFER to "make_me_an_offer.wav",
+        BarkEvent.MERCHANT_NAME_YOUR_PRICE to "name_your_price.wav",
+        BarkEvent.GUARD_BACK_ALREADY to "been_playing_in_the_sewers_have_we.wav"
     )
 
     init {

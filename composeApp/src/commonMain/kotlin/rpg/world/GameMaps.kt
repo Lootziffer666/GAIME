@@ -119,4 +119,87 @@ object GameMaps {
 
     /** The Rat Accountant's arena: chokepoint wall forces engagement, page pickup post-boss. */
     fun bossRoom(): TileMap = TileMapParser.fromAscii(bossRows, bossLegend)
+
+    // --- Chapter 2: Stokeport Market ---
+
+    const val TRIGGER_MARKET_EXIT     = "market_exit"
+    const val TRIGGER_FOREST_SHRINE   = "forest_shrine"
+    const val TRIGGER_FOREST_BOSS     = "forest_boss"
+    const val TRIGGER_CHAPTER2_PAGE   = "chapter2_page"
+    const val TRIGGER_CHAPTER2_EXIT   = "chapter2_exit"
+
+    private val marketLegend = mapOf(
+        '#' to TileSpec(atlasIndex = 14, blocked = true),
+        '.' to TileSpec(atlasIndex = 48),
+        '@' to TileSpec(atlasIndex = 48, spawn = true),
+        'M' to TileSpec(atlasIndex = 48, trigger = "merchant_npc"),
+        'G' to TileSpec(atlasIndex = 48, trigger = "guard_npc"),
+        'E' to TileSpec(atlasIndex = 45, trigger = TRIGGER_MARKET_EXIT)
+    )
+
+    // 25 wide x 20 tall. Spawn at (2,2). Merchant at (12,10). Guard at (6,15). Exit on east.
+    private val marketRows = listOf(
+        "#########################",
+        "#.......................#",
+        "#.@.....................#",
+        "#.......................#",
+        "#...####...####...####.#",
+        "#...#..#...#..#...#..#.#",
+        "#...####...####...####.#",
+        "#.......................#",
+        "#.......................#",
+        "#.......................#",
+        "#...........M...........#",
+        "#.......................#",
+        "#.......................#",
+        "#.......................#",
+        "#.......................#",
+        "#.....G.................#",
+        "#.......................#",
+        "#.......................#",
+        "#.......................E",
+        "#########################"
+    )
+
+    /** Stokeport Market: merchant NPC, guard NPC, exit to forest trail on east side. */
+    fun stokeportMarket(): TileMap = TileMapParser.fromAscii(marketRows, marketLegend)
+
+    // --- Chapter 2: Forest Trail ---
+
+    private val forestLegend = mapOf(
+        '#' to TileSpec(atlasIndex = 14, blocked = true),
+        '.' to TileSpec(atlasIndex = 48),
+        '@' to TileSpec(atlasIndex = 48, spawn = true),
+        'H' to TileSpec(atlasIndex = 48, trigger = TRIGGER_FOREST_SHRINE),
+        'B' to TileSpec(atlasIndex = 48, trigger = TRIGGER_FOREST_BOSS),
+        'P' to TileSpec(atlasIndex = 48, trigger = TRIGGER_CHAPTER2_PAGE)
+    )
+
+    // 30 wide x 20 tall. Spawn at (1,10). Main path goes east. Branch north to shrine.
+    // Boss area at east end. Page pickup near boss.
+    private val forestRows = listOf(
+        "##############################",
+        "#........#..........#########",
+        "#........#....H.....#########",
+        "#........#..........#########",
+        "#........#..........#########",
+        "#........#...########........#",
+        "#........#...#..............#",
+        "#........#...#..............#",
+        "#............#..............#",
+        "#............#..............#",
+        "#@...........................#",
+        "#............#..............#",
+        "#............#..............#",
+        "#........#...#..............#",
+        "#........#...#..............#",
+        "#........#...########.......#",
+        "#........#..........#.P....#",
+        "#........#..........#......#",
+        "#........#..........#..B...#",
+        "##############################"
+    )
+
+    /** Forest Trail: linear main path with shrine branch (north) and boss area (east). */
+    fun forestTrail(): TileMap = TileMapParser.fromAscii(forestRows, forestLegend)
 }

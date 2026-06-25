@@ -1,0 +1,7 @@
+{
+  "task_id": "task-chapter-2",
+  "task_description": "Implement Chapter 2: 'The Market of Mandatory Commerce'. Full play sequence from Stokeport Market through Forest Trail, Shrine puzzle, Tax Collector Badger boss fight, and Questbook Page 2 return. Includes new maps, enemies, BarkEvents, Questbook reactions, and UI state machine wiring.",
+  "status": "in_progress",
+  "feature_order": ["FEAT-001", "FEAT-002", "FEAT-003"],
+  "blocked_reason": null
+}
