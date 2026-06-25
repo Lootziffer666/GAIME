@@ -131,7 +131,41 @@ Keep it to 3-4 duels of 2-4 rounds — more would be a game inside the game.
 
 ---
 
-## Tone summary
+## Dramatic Entrances (staging system)
+
+Over-the-top reveals as a scripted, renderer-agnostic sequence (`:core`
+`rpg.staging`). The renderer (KorGE) plays the beats: looming shadows, effect
+storms, close-ups (extra sprites), pathos proclamations, the reveal, and a
+deflating punchline.
+
+**Ridiculousness with system** is measurable: every entrance has a
+`buildupIntensity` (1..10) and an `actualThreat` (1..10). The `ironyGap`
+(buildup minus threat) is the joke — the bigger the gap, the funnier. The engine
+*enforces* that an overhyped entrance (gap >= 4) ends on a `DEFLATE` beat, so
+pathos is always punctured.
+
+Beat types: `SHADOW_LOOM`, `EFFECT_STORM` (effects + intensity), `CLOSE_UP`
+(extra sprite), `TITLE_CARD`, `PROCLAMATION` (the self-important speech),
+`REVEAL` (often a tiny mook), `DEFLATE` (a party member's dumb, honest line).
+
+Authored entrances (`EntranceLibrary`):
+- **The Dread Shadow of the Deep** — the signature *missed expectation*: a single
+  Sewer Rat staged as the apocalypse (buildup 10 / threat 1). Huge shadow +
+  full effect storm + title card + "I AM THE END OF ALL THINGS" → reveal: a rat
+  → Nib: "It's a rat."
+- **The Administragon** — earned, maximal pathos (10/9). The litany, then Nib:
+  "So... no treasure?" (Not overhyped — but still punctured.)
+- **Rat Accountant**, **Captain Formbeard**, **The Helpful Tree** (9/4,
+  far-too-celebratory), **Guard Captain** (8/3, maximum martial buildup for
+  someone who then cannot legally move → Brugg: "He cannot move.").
+
+`EntranceLibrary.forBoss(boss)` returns the entrance to play before each boss.
+Sprite keys (`administragon_eye`, `formbeard_beard`, ...) name the extra art the
+renderer must supply.
+
+---
+
+
 
 Platt, böse, klug, dumm, systemisch — in that mix. Stamp the holy thing, file
 it, sewer it, and let Nib ask if it drops loot.
