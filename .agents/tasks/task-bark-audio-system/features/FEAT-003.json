@@ -1,0 +1,31 @@
+{
+  "id": "FEAT-003",
+  "type": "feat",
+  "description": "Implement a cross-platform audio playback system for Kotlin Multiplatform (Desktop JVM + Android) using the expect/actual pattern. The system should be able to play bark WAV files on demand when a BarkEvent fires, with proper lifecycle management.",
+  "status": "in_progress",
+  "steps": [
+    "Create composeApp/src/commonMain/kotlin/rpg/bark/audio/AudioPlayer.kt - an expect class or interface with methods: play(resourcePath: String), stop(), isPlaying(): Boolean, release(). The resourcePath is relative to composeResources/files/ (e.g. 'bark/nib/i_smell_treasure.wav').",
+    "Create composeApp/src/commonMain/kotlin/rpg/bark/audio/BarkAudioPlayer.kt - a higher-level class that integrates with BarkAudioRegistry. It takes a BarkEvent + PartyCharacter, looks up the WAV path from BarkAudioRegistry, and plays it via AudioPlayer. Includes volume control and a way to cancel/interrupt a playing bark.",
+    "Create composeApp/src/desktopMain/kotlin/rpg/bark/audio/AudioPlayer.desktop.kt - the actual implementation for JVM Desktop using javax.sound.sampled (Clip/AudioSystem). Load WAV from classpath resources (composeResources files are available on classpath at runtime). Implementation should: open AudioInputStream from the resource, create a Clip, play it, handle completion callbacks.",
+    "Create composeApp/src/androidMain/kotlin/rpg/bark/audio/AudioPlayer.android.kt - the actual implementation for Android using android.media.SoundPool or MediaPlayer. Load WAV from assets (composeResources files are bundled as Android assets). Use SoundPool for short clips (barks are typically 1-5 seconds).",
+    "Wire BarkAudioPlayer into SliceDirector: when fireBark() results in BarkOutcome.Fired, also trigger audio playback for the bark. The audio is fire-and-forget (non-blocking). Make the audio player optional/injectable so tests still work without audio.",
+    "Add composeApp/src/commonTest/kotlin/BarkAudioPlayerTest.kt - test that BarkAudioPlayer correctly resolves WAV paths from BarkAudioRegistry for given BarkEvent+PartyCharacter combinations. Use a mock/no-op AudioPlayer implementation for testing.",
+    "Add desktopMain/androidMain dependencies if needed: javax.sound.sampled is part of JDK so no extra dep for desktop. For Android, SoundPool is part of the framework. No external audio libraries needed."
+  ],
+  "acceptance_criteria": [
+    "AudioPlayer expect/actual compiles for both desktop and android targets",
+    "BarkAudioPlayer resolves correct WAV path for any BarkEvent + PartyCharacter combination",
+    "Desktop implementation uses javax.sound.sampled.Clip for WAV playback",
+    "Android implementation uses SoundPool or MediaPlayer for WAV playback",
+    "SliceDirector optionally triggers audio on bark fire without breaking existing tests",
+    "BarkAudioPlayerTest passes verifying path resolution logic",
+    "./gradlew allTests passes",
+    "./gradlew build compiles both targets successfully"
+  ],
+  "verification": [
+    "Run ./gradlew allTests and verify all tests pass",
+    "Run ./gradlew build to verify compilation for both desktop and android targets"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}
