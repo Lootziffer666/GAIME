@@ -1,0 +1,35 @@
+{
+  "id": "FEAT-001",
+  "type": "feat",
+  "description": "Wire BarkAudioPlayer into SliceScreen, add combat bark triggers (taunts, damage, death, healing, victory), add exploration barks on room transitions and enemy encounters, and add idle bark timer. This is the complete voice-line playback integration.",
+  "status": "in_progress",
+  "steps": [
+    "Step 1: Create expect/actual AudioPlayer factory. Create composeApp/src/commonMain/kotlin/rpg/bark/audio/PlatformAudioPlayer.kt with `expect fun createPlatformAudioPlayer(): AudioPlayer`. Create composeApp/src/desktopMain/kotlin/rpg/bark/audio/PlatformAudioPlayer.kt with `actual fun createPlatformAudioPlayer(): AudioPlayer = DesktopAudioPlayer()`. Create composeApp/src/androidMain/kotlin/rpg/bark/audio/PlatformAudioPlayer.kt with `actual fun createPlatformAudioPlayer(): AudioPlayer = AndroidAudioPlayer()`.",
+    "Step 2: In SliceScreen.kt, within SliceContent composable, instantiate BarkAudioPlayer using `remember { BarkAudioPlayer(createPlatformAudioPlayer()) }` and assign it to `director.barkAudioPlayer`. Add a DisposableEffect to call release() on cleanup.",
+    "Step 3: Add combat bark logic to CombatEngine. The engine should emit BarkTriggered events at these points: (a) On first tick of combat (the init or first tick call): emit a random taunt from the character-appropriate set (NIB_FROM_THE_SHADOWS/NIB_IS_THAT_ALL_YOUVE_GOT/NIB_YOUR_DEFENSES_ARE_WEAK, BRUGG_HAVE_AT_THEE/BRUGG_SURRENDER_OR_DIE/BRUGG_SHOW_YOURSELVES, VELLUM_LETS_SEE_IF_YOU_CAN_DODGE/VELLUM_YOUR_DEFENSES_ARE_FUTILE/VELLUM_I_SMITE_YOU) - pick one randomly. (b) When a party member takes damage in strikeParty: based on damage severity and target's remaining HP: low HP (hpFraction < 0.25) -> I_DONT_HAVE_MUCH_LEFT/I_NEED_A_HEALER equivalent for that character; medium damage (dealt > target.maxHp * 0.3) -> THATS_GOING_TO_LEAVE_A_MARK/IM_GOING_TO_FEEL_THAT/THAT_STINGS; light damage -> THAT_DREW_BLOOD/LUCKY_HIT. Not every hit triggers a bark - use a probability (e.g. 40% chance) to avoid spam. (c) When a party member dies (hp reaches 0 after takeDamage in strikeParty): AVENGE_ME/I_DIDNT_THINK_IT_WOULD_END based on character. (d) On VICTORY result: emit NIB_IS_THAT_ALL_YOUVE_GOT or similar victory bark. Add a random seed parameter or use kotlin.random.Random to pick from bark lists. The BarkEventBus cooldowns will naturally prevent overlap.",
+    "Step 4: Add a Heal combat action. In CombatAction.kt add `data object Heal : CombatAction()`. In CombatEngine.tick(), handle Heal: restore some HP to the lowest-HP party member (e.g. 8 HP), emit a healing bark (NIB_GOOD_AS_NEW, BRUGG_I_FEEL_BETTER_THAN_EVER, VELLUM_IM_BACK_ON_MY_FEET based on who was healed). Add a `heal(amount: Int): Int` method to Combatant that caps at maxHp and returns amount actually healed. Add a Heal button to the CombatView in SliceScreen.kt.",
+    "Step 5: Fire exploration barks in SliceScreen. In the sewer exploration: when player enters sewer (in the FALLING_CUTSCENE -> SEWER transition or when enterRoom(SEWER_CTX) is called), fire BRUGG_THE_DEEPER_WE_GO or VELLUM_TREES_HAVE_EYES randomly. When encountering enemies (in sewerScene.onEntityInteraction before starting combat), fire BRUGG_THIS_LOOKS_LIKE_TROUBLE or NIB_THEYRE_ONTO_US. In bossScene.onEntityInteraction, fire NIB_WHAT_DO_WE_HAVE_HERE or VELLUM_HMM_WONDER_WHAT_THIS_IS before starting boss combat.",
+    "Step 6: Implement idle bark timer in SliceScreen. Add a LaunchedEffect keyed on phase that, during exploration phases (TAVERN, SEWER, BOSS_ROOM), starts a coroutine loop: after 30 seconds of inactivity, fire a random ambient/idle bark. The idle barks should be contextual: in TAVERN -> BRUGG_BARKEEP_A_FLAGON, NIB_STEW_AGAIN, VELLUM_NOW_WHAT_WAS_THAT_INCANTATION; in SEWER/BOSS_ROOM -> BRUGG_GRAB_YOUR_TORCH, NIB_THERES_A_HOLE_IN_MY_BOOT, VELLUM_TIME_WAITS_FOR_NO_MAN etc. Reset the timer when any action happens (movement key, bark button, combat). Use a `lastActivityTime` mutableState that gets updated on key events and bark button clicks.",
+    "Step 7: Write tests in commonTest. Create CombatBarkIntegrationTest.kt that verifies: (a) combat start fires a taunt bark (check CombatEvent.BarkTriggered in first tick), (b) party damage can trigger a damage reaction bark, (c) party death triggers death bark, (d) victory triggers victory bark, (e) heal action heals and triggers healing bark. Also test the idle bark timer logic conceptually (test the helper functions if any are extracted, or test that SliceDirector correctly fires idle barks through the bus)."
+  ],
+  "acceptance_criteria": [
+    "BarkAudioPlayer is instantiated in SliceScreen and assigned to director.barkAudioPlayer",
+    "Audio resources are released on composable disposal via DisposableEffect",
+    "Combat start fires a random taunt bark event via CombatEvent.BarkTriggered",
+    "Party member taking damage has a chance to fire a damage-reaction bark appropriate to severity",
+    "Party member death fires a death bark (AVENGE_ME or I_DIDNT_THINK_IT_WOULD_END variant)",
+    "Combat victory fires a victory bark",
+    "Heal action exists, restores HP, and fires a healing bark for the healed character",
+    "Entering the sewer fires an exploration bark (THE_DEEPER_WE_GO or TREES_HAVE_EYES)",
+    "Encountering enemies fires a warning bark (THIS_LOOKS_LIKE_TROUBLE or THEYRE_ONTO_US)",
+    "Idle timer fires random ambient barks after 30s of inactivity in exploration phases",
+    "BarkEventBus cooldowns prevent bark overlap (existing system handles this)",
+    "All existing tests still pass (./gradlew desktopTest)",
+    "New tests cover combat bark triggers and heal action"
+  ],
+  "verification": [
+    "Run ./gradlew desktopTest and confirm all tests pass including new CombatBarkIntegrationTest"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

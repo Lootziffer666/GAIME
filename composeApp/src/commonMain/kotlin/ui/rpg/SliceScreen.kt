@@ -37,6 +37,8 @@ import rpg.BarkOutcome
 import rpg.SliceDirector
 import rpg.SlicePhase
 import rpg.bark.BarkEvent
+import rpg.bark.audio.BarkAudioPlayer
+import rpg.bark.audio.createPlatformAudioPlayer
 import rpg.combat.BossController
 import rpg.combat.CombatAction
 import rpg.combat.CombatEngine
@@ -54,6 +56,7 @@ import rpg.world.GridEntity
 import rpg.world.GridEntityType
 import rpg.world.GridWorld
 import ui.GameCanvas
+import kotlin.random.Random
 import kotlin.time.TimeSource
 
 // --- Scripted dialogue lines ---
@@ -82,6 +85,29 @@ private val RETURN_LINES = listOf(
 // --- Room contexts ---
 
 private val TAVERN_CTX = RoomContext("tavern", RoomContext.ROOM_TAVERN, hasInteractableTarget = true)
+
+// --- Idle bark selection ---
+
+private fun pickIdleBark(phase: SlicePhase): BarkEvent? {
+    val barks = when (phase) {
+        SlicePhase.TAVERN -> listOf(
+            BarkEvent.BRUGG_BARKEEP_A_FLAGON,
+            BarkEvent.NIB_STEW_AGAIN,
+            BarkEvent.VELLUM_NOW_WHAT_WAS_THAT_INCANTATION,
+            BarkEvent.NIB_I_LOVE_GOLD,
+            BarkEvent.BRUGG_WHERE_DID_I_PUT_THAT_MAP
+        )
+        SlicePhase.SEWER, SlicePhase.BOSS_ROOM -> listOf(
+            BarkEvent.BRUGG_GRAB_YOUR_TORCH,
+            BarkEvent.NIB_THERES_A_HOLE_IN_MY_BOOT,
+            BarkEvent.VELLUM_TIME_WAITS_FOR_NO_MAN,
+            BarkEvent.VELLUM_OF_ALL_THE_ARCANE_LORE,
+            BarkEvent.NIB_I_LOVE_GOLD
+        )
+        else -> return null
+    }
+    return barks[Random.nextInt(barks.size)]
+}
 private val SEWER_CTX = RoomContext(
     "sewer", RoomContext.ROOM_MINI_DUNGEON,
     hasEnemies = true, hasPuzzleElement = true, hasBreakableObstacle = true
@@ -133,6 +159,19 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
     val director = remember { SliceDirector(clock) }
     val party = remember { freshSliceParty() }
 
+    // Wire up bark audio playback
+    val barkAudioPlayer = remember { BarkAudioPlayer(createPlatformAudioPlayer()) }
+    DisposableEffect(Unit) {
+        director.barkAudioPlayer = barkAudioPlayer
+        onDispose {
+            barkAudioPlayer.release()
+            director.barkAudioPlayer = null
+        }
+    }
+
+    // Idle bark timer state
+    var lastActivityTime by remember { mutableStateOf(clock()) }
+
     // Worlds
     val tavernWorld = remember {
         GridWorld(GameMaps.tavern()).also { w ->
@@ -171,6 +210,7 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
     // --- helpers ---
 
     fun fireAndFlash(bark: BarkEvent) {
+        lastActivityTime = clock()
         when (val out = director.fireBark(bark)) {
             is BarkOutcome.Fired    -> { flashText = out.reaction.questbookText; version++ }
             is BarkOutcome.Suppressed -> {}
@@ -181,9 +221,29 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
         if (flashText != null) { delay(2800); flashText = null }
     }
 
+    // Idle bark timer: fire a random ambient bark after 30s of inactivity
+    LaunchedEffect(phase) {
+        while (true) {
+            delay(1000)
+            val isExplorationPhase = phase in listOf(
+                SlicePhase.TAVERN, SlicePhase.SEWER, SlicePhase.BOSS_ROOM
+            )
+            if (!isExplorationPhase) continue
+            val elapsed = clock() - lastActivityTime
+            if (elapsed >= 30_000L) {
+                val idleBark = pickIdleBark(phase)
+                if (idleBark != null) {
+                    fireAndFlash(idleBark)
+                    lastActivityTime = clock()
+                }
+            }
+        }
+    }
+
     // --- dialogue / phase transitions ---
 
     fun advanceDialogue() {
+        lastActivityTime = clock()
         val isLast = dialogueIndex >= dialogueLines.size - 1
         if (!isLast) {
             dialogueIndex++
@@ -208,6 +268,7 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
     // --- combat ---
 
     fun handleCombatAction(action: CombatAction) {
+        lastActivityTime = clock()
         val turn = director.combatAction(action)
         turn.events.filterIsInstance<CombatEvent.Message>().lastOrNull()?.let { combatMessage = it.text }
         turn.events.filterIsInstance<CombatEvent.BarkTriggered>().lastOrNull()?.let {
@@ -247,8 +308,12 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
 
     tavernScene.onTrigger = { id ->
         if (id == GameMaps.TRIGGER_CELLAR_DOOR && phase == SlicePhase.TAVERN) {
+            lastActivityTime = clock()
             fireAndFlash(BarkEvent.NIB_SMELL_TREASURE)
             director.enterRoom(SEWER_CTX)
+            // Exploration bark: entering the sewers
+            val sewerEntryBarks = listOf(BarkEvent.BRUGG_THE_DEEPER_WE_GO, BarkEvent.VELLUM_TREES_HAVE_EYES)
+            fireAndFlash(sewerEntryBarks[Random.nextInt(sewerEntryBarks.size)])
             phase = SlicePhase.FALLING_CUTSCENE
             dialogueLines = FALLING_LINES
             dialogueIndex = 0
@@ -257,15 +322,22 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
     tavernScene.onEntityInteraction = { /* NPCs: no interaction needed */ }
 
     sewerScene.onTrigger = { id ->
-        if (phase == SlicePhase.SEWER) when (id) {
-            GameMaps.TRIGGER_VELLUM_PUZZLE -> fireAndFlash(BarkEvent.VELLUM_KNOWLEDGE_IS_THE_ANSWER)
-            GameMaps.TRIGGER_SEWER_EXIT    -> { director.enterRoom(BOSS_CTX); phase = SlicePhase.BOSS_ROOM }
+        if (phase == SlicePhase.SEWER) {
+            lastActivityTime = clock()
+            when (id) {
+                GameMaps.TRIGGER_VELLUM_PUZZLE -> fireAndFlash(BarkEvent.VELLUM_KNOWLEDGE_IS_THE_ANSWER)
+                GameMaps.TRIGGER_SEWER_EXIT    -> { director.enterRoom(BOSS_CTX); phase = SlicePhase.BOSS_ROOM }
+            }
         }
     }
     sewerScene.onEntityInteraction = { entity ->
         if (phase == SlicePhase.SEWER) {
+            lastActivityTime = clock()
             when {
                 entity.id.startsWith("rat_corridor") -> {
+                    // Exploration bark: encountering enemies
+                    val warningBarks = listOf(BarkEvent.BRUGG_THIS_LOOKS_LIKE_TROUBLE, BarkEvent.NIB_THEYRE_ONTO_US)
+                    fireAndFlash(warningBarks[Random.nextInt(warningBarks.size)])
                     director.startCombat(CombatEngine(party, listOf(
                         EnemyArchetype.SEWER_RAT.spawn("rat_corridor_1"),
                         EnemyArchetype.SEWER_RAT.spawn("rat_corridor_2")
@@ -274,6 +346,9 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
                     phase = SlicePhase.SEWER_COMBAT
                 }
                 entity.id.startsWith("rat_mini") || entity.id == "blob_mini" -> {
+                    // Exploration bark: encountering enemies
+                    val warningBarks = listOf(BarkEvent.BRUGG_THIS_LOOKS_LIKE_TROUBLE, BarkEvent.NIB_THEYRE_ONTO_US)
+                    fireAndFlash(warningBarks[Random.nextInt(warningBarks.size)])
                     director.startCombat(CombatEngine(party, listOf(
                         EnemyArchetype.SEWER_RAT.spawn("rat_mini_1"),
                         EnemyArchetype.SEWER_RAT.spawn("rat_mini_2"),
@@ -290,6 +365,10 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
     bossScene.onTrigger = { _ -> /* page_pickup handled programmatically via post-boss flow */ }
     bossScene.onEntityInteraction = { entity ->
         if (phase == SlicePhase.BOSS_ROOM && entity.id == "rat_accountant") {
+            lastActivityTime = clock()
+            // Exploration bark: discovering the boss
+            val discoveryBarks = listOf(BarkEvent.NIB_WHAT_DO_WE_HAVE_HERE, BarkEvent.VELLUM_HMM_WONDER_WHAT_THIS_IS)
+            fireAndFlash(discoveryBarks[Random.nextInt(discoveryBarks.size)])
             director.startCombat(CombatEngine(party, emptyList(), EnemyArchetype.RAT_ACCOUNTANT.spawn("rat_accountant"), BossController()))
             combatMessage = "The Rat Accountant looks up from its desk of garbage."
             phase = SlicePhase.BOSS_COMBAT
@@ -311,6 +390,7 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
             .focusable()
             .onKeyEvent { e ->
                 if (e.type != KeyEventType.KeyDown) return@onKeyEvent false
+                lastActivityTime = clock()
                 val world = when (phase) {
                     SlicePhase.TAVERN    -> tavernWorld
                     SlicePhase.SEWER     -> sewerWorld
@@ -357,6 +437,7 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
                         BarkEvent.VELLUM_CALLS_FOR_FLAME to "Vellum: Flame"
                     ),
                     onBark = { bark ->
+                        lastActivityTime = clock()
                         if (bark == BarkEvent.BRUGG_ATTACK) {
                             when (val out = director.fireBark(bark)) {
                                 is BarkOutcome.Fired -> {
@@ -512,6 +593,7 @@ private fun CombatView(
                         val target = engine.livingEnemies().firstOrNull()?.id
                         SliceSmallButton("Attack") { target?.let { onAction(CombatAction.Attack(it)) } }
                         SliceSmallButton("Dodge")  { onAction(CombatAction.Dodge) }
+                        SliceSmallButton("Heal", Color(0xFF2E7D32)) { onAction(CombatAction.Heal) }
                         SliceSmallButton("Flame", Color(0xFF4A3F73)) {
                             onAction(CombatAction.UtilityBark(BarkEvent.VELLUM_CALLS_FOR_FLAME))
                         }

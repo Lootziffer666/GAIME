@@ -1,0 +1,7 @@
+{
+  "task_id": "task-bark-voice-playback",
+  "task_description": "Wire bark voice-line audio playback into the running game: instantiate BarkAudioPlayer in SliceScreen, fire combat barks (taunts, damage reactions, death, healing, victory), fire exploration barks on room/enemy encounters, and fire ambient idle barks after 30s of inactivity.",
+  "status": "in_progress",
+  "feature_order": ["FEAT-001"],
+  "blocked_reason": null
+}

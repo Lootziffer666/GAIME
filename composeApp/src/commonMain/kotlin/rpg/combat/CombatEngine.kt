@@ -1,6 +1,7 @@
 package rpg.combat
 
 import rpg.bark.BarkEvent
+import kotlin.random.Random
 
 /**
  * Deterministic, tick-based combat core. No real-time loop and no uncontrolled
@@ -16,7 +17,8 @@ class CombatEngine(
     val party: List<Combatant>,
     enemies: List<Combatant>,
     val boss: Combatant? = null,
-    private val bossController: BossController? = null
+    private val bossController: BossController? = null,
+    private val random: Random = Random
 ) {
     private val _enemies: MutableList<Combatant> = enemies.toMutableList()
     val enemies: List<Combatant> get() = _enemies.toList()
@@ -27,6 +29,10 @@ class CombatEngine(
     val bossPhase: BossPhase? get() = bossController?.currentPhase
 
     private val pending = mutableListOf<CombatEvent>()
+    private var hasFiredTaunt = false
+
+    /** Heal amount per Heal action. */
+    private val healAmount = 8
 
     init {
         require((boss == null) == (bossController == null)) {
@@ -58,6 +64,12 @@ class CombatEngine(
             pending.clear()
         }
 
+        // Fire a taunt bark on the first tick of combat
+        if (!hasFiredTaunt) {
+            hasFiredTaunt = true
+            pickTauntBark()?.let { events += CombatEvent.BarkTriggered(it) }
+        }
+
         var dodging = false
         when (action) {
             is CombatAction.Attack -> {
@@ -76,11 +88,13 @@ class CombatEngine(
             }
             is CombatAction.UtilityBark -> applyUtilityBark(action.bark, events)
             CombatAction.Wait -> { /* pass */ }
+            CombatAction.Heal -> applyHeal(events)
         }
 
         if (livingEnemies().isEmpty()) {
             result = CombatResult.VICTORY
             events += CombatEvent.Message("Encounter won.")
+            pickVictoryBark()?.let { events += CombatEvent.BarkTriggered(it) }
             return events
         }
 
@@ -113,6 +127,65 @@ class CombatEngine(
         }
     }
 
+    private fun applyHeal(events: MutableList<CombatEvent>) {
+        val target = livingParty().minByOrNull { it.hp } ?: return
+        val healed = target.heal(healAmount)
+        events += CombatEvent.Message("${target.name} is healed for $healed HP.")
+        val bark = healingBarkFor(target.id)
+        if (bark != null) {
+            events += CombatEvent.BarkTriggered(bark)
+        }
+    }
+
+    private fun healingBarkFor(characterId: String): BarkEvent? = when (characterId) {
+        "nib" -> BarkEvent.NIB_GOOD_AS_NEW
+        "brugg" -> BarkEvent.BRUGG_I_FEEL_BETTER_THAN_EVER
+        "vellum" -> BarkEvent.VELLUM_IM_BACK_ON_MY_FEET
+        else -> null
+    }
+
+    private fun pickTauntBark(): BarkEvent? {
+        val living = livingParty()
+        if (living.isEmpty()) return null
+        val speaker = living[random.nextInt(living.size)]
+        val taunts = tauntsFor(speaker.id)
+        return if (taunts.isNotEmpty()) taunts[random.nextInt(taunts.size)] else null
+    }
+
+    private fun tauntsFor(characterId: String): List<BarkEvent> = when (characterId) {
+        "nib" -> listOf(
+            BarkEvent.NIB_FROM_THE_SHADOWS,
+            BarkEvent.NIB_IS_THAT_ALL_YOUVE_GOT,
+            BarkEvent.NIB_YOUR_DEFENSES_ARE_WEAK
+        )
+        "brugg" -> listOf(
+            BarkEvent.BRUGG_HAVE_AT_THEE,
+            BarkEvent.BRUGG_SURRENDER_OR_DIE,
+            BarkEvent.BRUGG_SHOW_YOURSELVES
+        )
+        "vellum" -> listOf(
+            BarkEvent.VELLUM_LETS_SEE_IF_YOU_CAN_DODGE,
+            BarkEvent.VELLUM_YOUR_DEFENSES_ARE_FUTILE,
+            BarkEvent.VELLUM_I_SMITE_YOU
+        )
+        else -> emptyList()
+    }
+
+    private fun pickVictoryBark(): BarkEvent? {
+        val living = livingParty()
+        if (living.isEmpty()) return null
+        val speaker = living[random.nextInt(living.size)]
+        val victories = victoriesFor(speaker.id)
+        return if (victories.isNotEmpty()) victories[random.nextInt(victories.size)] else null
+    }
+
+    private fun victoriesFor(characterId: String): List<BarkEvent> = when (characterId) {
+        "nib" -> listOf(BarkEvent.NIB_IS_THAT_ALL_YOUVE_GOT)
+        "brugg" -> listOf(BarkEvent.BRUGG_SURRENDER_OR_DIE)
+        "vellum" -> listOf(BarkEvent.VELLUM_YOUR_DEFENSES_ARE_FUTILE)
+        else -> emptyList()
+    }
+
     private fun enemyTurn(dodging: Boolean, events: MutableList<CombatEvent>) {
         // Boss acts first (phase update + scaled attack), then remaining enemies.
         if (boss != null && boss.isAlive && bossController != null) {
@@ -132,5 +205,54 @@ class CombatEngine(
         val target = livingParty().firstOrNull() ?: return
         val dealt = target.takeDamage(damage)
         events += CombatEvent.Message("${attacker.name} hits ${target.name} for $dealt.")
+
+        // Emit damage/death barks for party members
+        if (target.side == Side.PLAYER && dealt > 0) {
+            if (!target.isAlive) {
+                // Death bark (always fires on death)
+                deathBarkFor(target.id)?.let { events += CombatEvent.BarkTriggered(it) }
+            } else if (random.nextFloat() < 0.4f) {
+                // 40% chance to fire a damage reaction bark
+                val bark = damageBarkFor(target.id, dealt, target)
+                if (bark != null) {
+                    events += CombatEvent.BarkTriggered(bark)
+                }
+            }
+        }
+    }
+
+    private fun deathBarkFor(characterId: String): BarkEvent? = when (characterId) {
+        "nib" -> BarkEvent.NIB_AVENGE_ME
+        "brugg" -> BarkEvent.BRUGG_I_DONT_HAVE_MUCH_LEFT
+        "vellum" -> BarkEvent.VELLUM_I_DIDNT_THINK_IT_WOULD_END
+        else -> null
+    }
+
+    private fun damageBarkFor(characterId: String, dealt: Int, target: Combatant): BarkEvent? {
+        // Low HP: urgent bark
+        if (target.hpFraction < 0.25f) {
+            return when (characterId) {
+                "nib" -> BarkEvent.NIB_THAT_STINGS
+                "brugg" -> BarkEvent.BRUGG_I_DONT_HAVE_MUCH_LEFT
+                "vellum" -> BarkEvent.VELLUM_I_NEED_A_HEALER
+                else -> null
+            }
+        }
+        // Medium damage (>30% of maxHp): painful bark
+        if (dealt > target.maxHp * 0.3f) {
+            return when (characterId) {
+                "nib" -> BarkEvent.NIB_THAT_STINGS
+                "brugg" -> BarkEvent.BRUGG_THATS_GOING_TO_LEAVE_A_MARK
+                "vellum" -> BarkEvent.VELLUM_IM_GOING_TO_FEEL_THAT
+                else -> null
+            }
+        }
+        // Light damage: minor bark
+        return when (characterId) {
+            "nib" -> BarkEvent.NIB_LUCKY_HIT
+            "brugg" -> BarkEvent.BRUGG_THAT_DREW_BLOOD
+            "vellum" -> BarkEvent.VELLUM_IM_GOING_TO_FEEL_THAT
+            else -> null
+        }
     }
 }

@@ -40,6 +40,14 @@ class Combatant(
         return dealt
     }
 
+    /** Restores [amount] HP, capped at [maxHp]. Returns the amount actually healed. */
+    fun heal(amount: Int): Int {
+        if (amount <= 0 || !isAlive) return 0
+        val healed = minOf(amount, maxHp - hp)
+        hp += healed
+        return healed
+    }
+
     /** Instantly removes this combatant (e.g. burned by flame). */
     fun kill() {
         hp = 0
