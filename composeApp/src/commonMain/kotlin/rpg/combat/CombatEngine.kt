@@ -17,7 +17,7 @@ class CombatEngine(
     val party: List<Combatant>,
     enemies: List<Combatant>,
     val boss: Combatant? = null,
-    private val bossController: BossController? = null,
+    private val bossController: BossControllerInterface? = null,
     private val random: Random = Random
 ) {
     private val _enemies: MutableList<Combatant> = enemies.toMutableList()

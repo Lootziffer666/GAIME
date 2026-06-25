@@ -2,7 +2,7 @@
   "id": "FEAT-002",
   "type": "feat",
   "description": "Chapter 2 gameplay flow: Wire the SliceScreen state machine to transition from VICTORY into Chapter 2, implement the full Market -> Forest -> Shrine -> Boss -> Return sequence with NPC dialogues, combat encounters, and the Questbook Page 2 reveal.",
-  "status": "pending",
+  "status": "in_progress",
   "steps": [
     "1. Modify SliceScreen.kt: Change the VICTORY phase to become a transition point. After Chapter 1 boss is defeated and QUESTBOOK_FULL is shown, instead of going to RETURN_CUTSCENE -> VICTORY (end), go to RETURN_CUTSCENE -> CHAPTER2_MARKET. Keep VICTORY as the final end state after Chapter 2 completes. Add a flag like 'chapter2Complete' to distinguish: if chapter2Complete=true, VICTORY shows end screen; if false, RETURN_CUTSCENE transitions to CHAPTER2_MARKET.",
     "2. Add Chapter 2 dialogue line arrays in SliceScreen.kt (following the pattern of INTRO_LINES, POST_BOSS_LINES etc): CHAPTER2_MARKET_INTRO_LINES (party exits tavern, Questbook demands a new page), CHAPTER2_MERCHANT_LINES (merchant NPC gruff voice lines with bark audio paths), CHAPTER2_GUARD_LINES (guard NPC tells party to go to forest), CHAPTER2_POST_BOSS_LINES (Page 2 pickup, Questbook overlay text about 47 outstanding quests), CHAPTER2_RETURN_LINES (back at market, guard says 'back already?').",

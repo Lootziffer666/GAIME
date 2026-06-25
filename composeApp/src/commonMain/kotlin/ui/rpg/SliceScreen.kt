@@ -53,6 +53,7 @@ import rpg.bark.BarkEvent
 import rpg.bark.audio.BarkAudioPlayer
 import rpg.bark.audio.createPlatformAudioPlayer
 import rpg.combat.BossController
+import rpg.combat.BossControllerInterface
 import rpg.combat.CombatAction
 import rpg.combat.CombatEngine
 import rpg.combat.CombatEvent
@@ -60,6 +61,7 @@ import rpg.combat.CombatResult
 import rpg.combat.Combatant
 import rpg.combat.EnemyArchetype
 import rpg.combat.Side
+import rpg.combat.TaxCollectorController
 import rpg.questbook.QuestPressure
 import rpg.questbook.QuestbookEffect
 import rpg.questbook.RoomContext
@@ -95,6 +97,38 @@ private val RETURN_LINES = listOf(
     DialogueLine("", "Quest Pressure: Reset. New quests pending. The Questbook is always listening.")
 )
 
+// --- Chapter 2 dialogue lines ---
+
+private val CHAPTER2_MARKET_INTRO_LINES = listOf(
+    DialogueLine("", "The party exits into the market square of Stokeport."),
+    DialogueLine("Nib", "Fresh air! And fresh pockets to pick."),
+    DialogueLine("Vellum", "The Questbook is restless. It demands a new page.")
+)
+
+private val CHAPTER2_MERCHANT_LINES = listOf(
+    DialogueLine("Merchant", "See if any of this strikes your fancy.", "bark/brugg/see_if_any_of_this_strikes_your_fancy.wav"),
+    DialogueLine("Merchant", "Make me an offer. I won't bite.", "bark/brugg/make_me_an_offer.wav"),
+    DialogueLine("Nib", "How much do you want for this?", "bark/nib/how_much_do_you_want_for_this.wav")
+)
+
+private val CHAPTER2_GUARD_LINES = listOf(
+    DialogueLine("Guard", "The forest trail east of here has been overrun by wolves."),
+    DialogueLine("Guard", "If you're looking for trouble, you'll find it there."),
+    DialogueLine("Brugg", "Just keep to the trail.", "bark/brugg/just_keep_to_the_trail.wav")
+)
+
+private val CHAPTER2_POST_BOSS_LINES = listOf(
+    DialogueLine("", "The Tax Collector Badger has been defeated."),
+    DialogueLine("", "A second glowing page flutters from its stamp collection."),
+    DialogueLine("Vellum", "So that's how it is then.", "bark/vellum/so_thats_how_it_is_then.wav")
+)
+
+private val CHAPTER2_RETURN_LINES = listOf(
+    DialogueLine("", "The party returns to Stokeport Market."),
+    DialogueLine("Guard", "Back already? Been playing in the sewers, have we?", "bark/brugg/been_playing_in_the_sewers_have_we.wav"),
+    DialogueLine("", "Quest Pressure: Reset. Page 2 secured. The Questbook grows heavier.")
+)
+
 // --- NPC dialogue lines ---
 
 private val BARKEEP_PRE_SEWER_LINES = listOf(
@@ -113,6 +147,8 @@ private val PATRON_LINES = listOf(
 // --- Room contexts ---
 
 private val TAVERN_CTX = RoomContext("tavern", RoomContext.ROOM_TAVERN, hasInteractableTarget = true)
+private val MARKET_CTX = RoomContext("stokeport_market", RoomContext.ROOM_MARKET, hasInteractableTarget = true)
+private val FOREST_CTX = RoomContext("forest_trail", RoomContext.ROOM_FOREST, hasEnemies = true, hasPuzzleElement = true)
 
 // --- Idle bark selection ---
 
@@ -143,6 +179,17 @@ private fun pickIdleBark(phase: SlicePhase): BarkEvent? {
             BarkEvent.VELLUM_THIS_THING_LOOKS_INTERESTING,
             BarkEvent.NIB_LETS_GET_OUT_OF_HERE,
             BarkEvent.BRUGG_LETS_GET_OUT_OF_HERE
+        )
+        SlicePhase.CHAPTER2_MARKET -> listOf(
+            BarkEvent.NIB_HOW_MUCH,
+            BarkEvent.BRUGG_KEEP_TO_TRAIL,
+            BarkEvent.BRUGG_BARKEEP_A_FLAGON,
+            BarkEvent.NIB_I_LOVE_GOLD
+        )
+        SlicePhase.CHAPTER2_FOREST, SlicePhase.CHAPTER2_SHRINE -> listOf(
+            BarkEvent.VELLUM_CREATURES_IN_WOODS,
+            BarkEvent.BRUGG_KEEP_TO_TRAIL,
+            BarkEvent.NIB_THIS_THING_LOOKS_INTERESTING
         )
         else -> return null
     }
@@ -195,6 +242,8 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
     var combatMessage by remember { mutableStateOf("") }
     var version by remember { mutableStateOf(0) }
     var hasReturnedFromSewer by remember { mutableStateOf(false) }
+    var chapter2Complete by remember { mutableStateOf(false) }
+    var shrineActivated by remember { mutableStateOf(false) }
 
     // Engine + persistent party (HP carries across encounters)
     val director = remember { SliceDirector(clock) }
@@ -238,15 +287,37 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
         }
     }
 
+    // Chapter 2 worlds
+    val marketWorld = remember {
+        GridWorld(GameMaps.stokeportMarket()).also { w ->
+            w.entities.add(GridEntity("merchant", 12, 10, GridEntityType.NPC, "hero_brugg"))
+            w.entities.add(GridEntity("guard", 6, 15, GridEntityType.NPC, "hero_brugg"))
+        }
+    }
+    val forestWorld = remember {
+        GridWorld(GameMaps.forestTrail()).also { w ->
+            w.entities.addAll(listOf(
+                GridEntity("wolf_1", 16, 8, GridEntityType.ENEMY, "enemy_rat"),
+                GridEntity("wolf_2", 18, 11, GridEntityType.ENEMY, "enemy_rat"),
+                GridEntity("wolf_3", 20, 9, GridEntityType.ENEMY, "enemy_rat"),
+                GridEntity("tax_badger", 24, 18, GridEntityType.ENEMY, "boss_rat_accountant")
+            ))
+        }
+    }
+
     // Scenes (created once per resource load; callbacks re-assigned each recomposition)
     val tavernScene = remember(tileset, playerSprite) { WorldScene(tavernWorld, tileset, playerSprite) }
     val sewerScene  = remember(tileset, playerSprite) { WorldScene(sewerWorld,  tileset, playerSprite) }
     val bossScene   = remember(tileset, playerSprite) { WorldScene(bossWorld,   tileset, playerSprite) }
+    val marketScene = remember(tileset, playerSprite) { WorldScene(marketWorld,  tileset, playerSprite) }
+    val forestScene = remember(tileset, playerSprite) { WorldScene(forestWorld,  tileset, playerSprite) }
 
     // Keep sprite maps current
     tavernScene.spriteMap = spriteMap
     sewerScene.spriteMap  = spriteMap
     bossScene.spriteMap   = spriteMap
+    marketScene.spriteMap = spriteMap
+    forestScene.spriteMap = spriteMap
 
     // --- helpers ---
 
@@ -267,7 +338,8 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
         while (true) {
             delay(1000)
             val isExplorationPhase = phase in listOf(
-                SlicePhase.TAVERN, SlicePhase.SEWER, SlicePhase.BOSS_ROOM
+                SlicePhase.TAVERN, SlicePhase.SEWER, SlicePhase.BOSS_ROOM,
+                SlicePhase.CHAPTER2_MARKET, SlicePhase.CHAPTER2_FOREST, SlicePhase.CHAPTER2_SHRINE
             )
             if (!isExplorationPhase) continue
             val elapsed = clock() - lastActivityTime
@@ -302,9 +374,29 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
                 SlicePhase.POST_BOSS        -> phase = SlicePhase.QUESTBOOK_FULL
                 SlicePhase.RETURN_CUTSCENE  -> {
                     hasReturnedFromSewer = true
-                    phase = SlicePhase.VICTORY
+                    // Transition to Chapter 2 market instead of ending
+                    director.enterRoom(MARKET_CTX)
+                    fireAndFlash(BarkEvent.NIB_SMELL_GOLD)
+                    dialogueLines = CHAPTER2_MARKET_INTRO_LINES
+                    dialogueIndex = 0
+                    phase = SlicePhase.CHAPTER2_MARKET_NPC
                 }
                 SlicePhase.NPC_DIALOGUE     -> phase = SlicePhase.TAVERN
+                SlicePhase.CHAPTER2_MARKET_NPC -> phase = SlicePhase.CHAPTER2_MARKET
+                SlicePhase.CHAPTER2_BOSS_INTRO -> {
+                    director.startCombat(CombatEngine(
+                        party, emptyList(),
+                        EnemyArchetype.TAX_COLLECTOR_BADGER.spawn("tax_badger"),
+                        TaxCollectorController()
+                    ))
+                    combatMessage = "The Tax Collector Badger demands payment!"
+                    phase = SlicePhase.CHAPTER2_BOSS_COMBAT
+                }
+                SlicePhase.CHAPTER2_POST_BOSS -> phase = SlicePhase.CHAPTER2_QUESTBOOK_PAGE2
+                SlicePhase.CHAPTER2_RETURN -> {
+                    chapter2Complete = true
+                    phase = SlicePhase.VICTORY
+                }
                 else -> {}
             }
         }
@@ -341,6 +433,19 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
                     dialogueLines = POST_BOSS_LINES
                     dialogueIndex = 0
                     phase = SlicePhase.POST_BOSS
+                }
+                SlicePhase.CHAPTER2_FOREST_COMBAT -> {
+                    listOf("wolf_1", "wolf_2", "wolf_3").forEach(forestWorld::removeEntity)
+                    director.clearCombat()
+                    phase = SlicePhase.CHAPTER2_FOREST
+                }
+                SlicePhase.CHAPTER2_BOSS_COMBAT -> {
+                    forestWorld.removeEntity("tax_badger")
+                    director.clearCombat()
+                    fireAndFlash(BarkEvent.BRUGG_EXPERIENCE_IS_HOW_WE_GROW)
+                    dialogueLines = CHAPTER2_POST_BOSS_LINES
+                    dialogueIndex = 0
+                    phase = SlicePhase.CHAPTER2_POST_BOSS
                 }
                 else -> {}
             }
@@ -462,6 +567,94 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
         }
     }
 
+    // Chapter 2: Market scene callbacks
+    marketScene.onTrigger = { id ->
+        if (phase == SlicePhase.CHAPTER2_MARKET) {
+            lastActivityTime = clock()
+            when (id) {
+                GameMaps.TRIGGER_MARKET_EXIT -> {
+                    director.enterRoom(FOREST_CTX)
+                    fireAndFlash(BarkEvent.VELLUM_CREATURES_IN_WOODS)
+                    phase = SlicePhase.CHAPTER2_FOREST
+                }
+            }
+        }
+    }
+    marketScene.onEntityInteraction = { entity ->
+        if (phase == SlicePhase.CHAPTER2_MARKET) {
+            lastActivityTime = clock()
+            when (entity.id) {
+                "merchant" -> {
+                    fireAndFlash(BarkEvent.NIB_SMELL_GOLD)
+                    dialogueLines = CHAPTER2_MERCHANT_LINES
+                    dialogueIndex = 0
+                    phase = SlicePhase.CHAPTER2_MARKET_NPC
+                }
+                "guard" -> {
+                    fireAndFlash(BarkEvent.BRUGG_SPEAK_TO_GUARD)
+                    dialogueLines = CHAPTER2_GUARD_LINES
+                    dialogueIndex = 0
+                    phase = SlicePhase.CHAPTER2_MARKET_NPC
+                }
+            }
+        }
+    }
+
+    // Chapter 2: Forest scene callbacks
+    forestScene.onTrigger = { id ->
+        if (phase == SlicePhase.CHAPTER2_FOREST) {
+            lastActivityTime = clock()
+            when (id) {
+                GameMaps.TRIGGER_FOREST_SHRINE -> {
+                    fireAndFlash(BarkEvent.VELLUM_ELEMENTS_MINE_TO_COMMAND)
+                    phase = SlicePhase.CHAPTER2_SHRINE
+                }
+                GameMaps.TRIGGER_FOREST_BOSS -> {
+                    fireAndFlash(BarkEvent.BRUGG_DROP_YOUR_WEAPONS)
+                    dialogueLines = listOf(
+                        DialogueLine("", "A massive badger in a waistcoat blocks the path."),
+                        DialogueLine("Tax Collector", "You owe 47 outstanding quest fees. Pay up or face audit."),
+                        DialogueLine("Brugg", "Drop your weapons!", "bark/brugg/drop_your_weapons.wav")
+                    )
+                    dialogueIndex = 0
+                    phase = SlicePhase.CHAPTER2_BOSS_INTRO
+                }
+            }
+        }
+    }
+    forestScene.onEntityInteraction = { entity ->
+        if (phase == SlicePhase.CHAPTER2_FOREST) {
+            lastActivityTime = clock()
+            when {
+                entity.id.startsWith("wolf") -> {
+                    val warningBarks = listOf(
+                        BarkEvent.BRUGG_THIS_LOOKS_LIKE_TROUBLE,
+                        BarkEvent.NIB_THEYRE_ONTO_US,
+                        BarkEvent.NIB_LOOK_OUT
+                    )
+                    fireAndFlash(warningBarks[Random.nextInt(warningBarks.size)])
+                    director.startCombat(CombatEngine(party, listOf(
+                        EnemyArchetype.FOREST_WOLF.spawn("wolf_1"),
+                        EnemyArchetype.FOREST_WOLF.spawn("wolf_2"),
+                        EnemyArchetype.FOREST_WOLF.spawn("wolf_3")
+                    )))
+                    combatMessage = "Three Forest Wolves emerge from the undergrowth!"
+                    phase = SlicePhase.CHAPTER2_FOREST_COMBAT
+                }
+                entity.id == "tax_badger" -> {
+                    fireAndFlash(BarkEvent.BRUGG_DROP_YOUR_WEAPONS)
+                    dialogueLines = listOf(
+                        DialogueLine("", "A massive badger in a waistcoat blocks the path."),
+                        DialogueLine("Tax Collector", "You owe 47 outstanding quest fees. Pay up or face audit."),
+                        DialogueLine("Brugg", "Drop your weapons!", "bark/brugg/drop_your_weapons.wav")
+                    )
+                    dialogueIndex = 0
+                    phase = SlicePhase.CHAPTER2_BOSS_INTRO
+                }
+            }
+        }
+    }
+
     // --- keyboard shortcut for exploration phases ---
 
     val focus = remember { FocusRequester() }
@@ -482,6 +675,9 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
                     SlicePhase.TAVERN    -> tavernWorld
                     SlicePhase.SEWER     -> sewerWorld
                     SlicePhase.BOSS_ROOM -> bossWorld
+                    SlicePhase.CHAPTER2_MARKET  -> marketWorld
+                    SlicePhase.CHAPTER2_FOREST  -> forestWorld
+                    SlicePhase.CHAPTER2_SHRINE  -> forestWorld
                     else -> null
                 } ?: return@onKeyEvent false
                 when (e.key) {
@@ -494,6 +690,8 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
                         if (npc != null) {
                             when (phase) {
                                 SlicePhase.TAVERN -> tavernScene.onEntityInteraction?.invoke(npc)
+                                SlicePhase.CHAPTER2_MARKET -> marketScene.onEntityInteraction?.invoke(npc)
+                                SlicePhase.CHAPTER2_FOREST -> forestScene.onEntityInteraction?.invoke(npc)
                                 else -> {}
                             }
                         }
@@ -613,25 +811,110 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
             // --- End states ---
             SlicePhase.VICTORY ->
                 EndView(
-                    title    = "Quest Status: Resolved.",
+                    title    = if (chapter2Complete) "Quest Status: Fully Resolved." else "Quest Status: Resolved.",
                     subtitle = "Party: ${director.partyName ?: "Unknown"}",
                     color    = Color(0xFF7FD17F),
                     onRestart = onReset
                 )
 
-            // --- Chapter 2 (data-layer stub, wired in FEAT-002/003) ---
-            SlicePhase.CHAPTER2_MARKET,
-            SlicePhase.CHAPTER2_MARKET_NPC,
-            SlicePhase.CHAPTER2_FOREST,
-            SlicePhase.CHAPTER2_FOREST_COMBAT,
-            SlicePhase.CHAPTER2_SHRINE,
-            SlicePhase.CHAPTER2_BOSS_INTRO,
-            SlicePhase.CHAPTER2_BOSS_COMBAT,
-            SlicePhase.CHAPTER2_POST_BOSS,
-            SlicePhase.CHAPTER2_QUESTBOOK_PAGE2,
-            SlicePhase.CHAPTER2_RETURN -> {
-                // Placeholder: Chapter 2 UI will be wired in a subsequent feature.
+            // --- Chapter 2 phases ---
+            SlicePhase.CHAPTER2_MARKET ->
+                ExploreView(
+                    title    = "Stokeport Market",
+                    scene    = marketScene,
+                    pressure = director.pressure,
+                    falseMarkers = director.falseMarkers,
+                    onStep   = marketWorld::requestStep,
+                    barkButtons = listOf(BarkEvent.NIB_SMELL_GOLD to "Nib: Smell Gold"),
+                    onBark   = ::fireAndFlash
+                )
+
+            SlicePhase.CHAPTER2_MARKET_NPC -> {
+                ExploreView(
+                    title    = "Stokeport Market",
+                    scene    = marketScene,
+                    pressure = director.pressure,
+                    falseMarkers = director.falseMarkers,
+                    onStep   = marketWorld::requestStep,
+                    barkButtons = emptyList(),
+                    onBark   = ::fireAndFlash
+                )
+                DialogueOverlay(
+                    lines = dialogueLines,
+                    currentIndex = dialogueIndex,
+                    onAdvance = ::advanceDialogue,
+                    barkAudioPlayer = barkAudioPlayer
+                )
             }
+
+            SlicePhase.CHAPTER2_FOREST ->
+                ExploreView(
+                    title    = "The Forest Trail",
+                    scene    = forestScene,
+                    pressure = director.pressure,
+                    falseMarkers = director.falseMarkers,
+                    onStep   = forestWorld::requestStep,
+                    barkButtons = listOf(BarkEvent.BRUGG_ATTACK to "Brugg: Attack!"),
+                    onBark   = ::fireAndFlash
+                )
+
+            SlicePhase.CHAPTER2_FOREST_COMBAT ->
+                CombatView(director = director, message = combatMessage, onAction = ::handleCombatAction)
+
+            SlicePhase.CHAPTER2_SHRINE ->
+                ExploreView(
+                    title    = "Ancient Shrine",
+                    scene    = forestScene,
+                    pressure = director.pressure,
+                    falseMarkers = director.falseMarkers,
+                    onStep   = forestWorld::requestStep,
+                    barkButtons = listOf(BarkEvent.VELLUM_CALLS_FOR_LIGHTNING to "Vellum: Lightning"),
+                    onBark   = { bark ->
+                        lastActivityTime = clock()
+                        if (bark == BarkEvent.VELLUM_CALLS_FOR_LIGHTNING && !shrineActivated) {
+                            shrineActivated = true
+                            fireAndFlash(bark)
+                            phase = SlicePhase.CHAPTER2_FOREST
+                        } else {
+                            fireAndFlash(bark)
+                        }
+                    }
+                )
+
+            SlicePhase.CHAPTER2_BOSS_INTRO ->
+                DialogueOverlay(
+                    lines = dialogueLines,
+                    currentIndex = dialogueIndex,
+                    onAdvance = ::advanceDialogue,
+                    barkAudioPlayer = barkAudioPlayer
+                )
+
+            SlicePhase.CHAPTER2_BOSS_COMBAT ->
+                CombatView(director = director, message = combatMessage, onAction = ::handleCombatAction)
+
+            SlicePhase.CHAPTER2_POST_BOSS ->
+                DialogueOverlay(
+                    lines = dialogueLines,
+                    currentIndex = dialogueIndex,
+                    onAdvance = ::advanceDialogue,
+                    barkAudioPlayer = barkAudioPlayer
+                )
+
+            SlicePhase.CHAPTER2_QUESTBOOK_PAGE2 ->
+                QuestbookFullView(partyName = "Outstanding Quest Balance: 47.\nPayment: Additional heroism (non-negotiable)") {
+                    fireAndFlash(BarkEvent.GUARD_BACK_ALREADY)
+                    dialogueLines = CHAPTER2_RETURN_LINES
+                    dialogueIndex = 0
+                    phase = SlicePhase.CHAPTER2_RETURN
+                }
+
+            SlicePhase.CHAPTER2_RETURN ->
+                DialogueOverlay(
+                    lines = dialogueLines,
+                    currentIndex = dialogueIndex,
+                    onAdvance = ::advanceDialogue,
+                    barkAudioPlayer = barkAudioPlayer
+                )
 
             SlicePhase.GAME_OVER ->
                 EndView(

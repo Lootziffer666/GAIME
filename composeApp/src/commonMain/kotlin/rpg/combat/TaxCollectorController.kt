@@ -10,15 +10,15 @@ import rpg.bark.BarkEvent
  * - PHASE_2 (50%-25%): escalate pressure to HIGH, spawn false marker, base damage.
  * - PHASE_3 (25%-0%): heavy stamp attack (attackPower * 3), emit VELLUM_BALANCE_LIFE_DEATH.
  */
-class TaxCollectorController {
+class TaxCollectorController : BossControllerInterface {
 
-    var currentPhase: BossPhase = BossPhase.PHASE_1
+    override var currentPhase: BossPhase = BossPhase.PHASE_1
         private set
 
     private var summonedAdds = false
 
     /** Phase 1 opener: summon two Forest Wolf adds. */
-    fun onCombatStart(engine: CombatEngine, events: MutableList<CombatEvent>) {
+    override fun onCombatStart(engine: CombatEngine, events: MutableList<CombatEvent>) {
         if (summonedAdds) return
         summonedAdds = true
         engine.addEnemy(EnemyArchetype.FOREST_WOLF.spawn("add_wolf_1"))
@@ -31,7 +31,7 @@ class TaxCollectorController {
      * Updates the phase from the boss's current HP and returns the damage the
      * boss deals this tick. Phase transitions emit appropriate events.
      */
-    fun takeTurn(boss: Combatant, events: MutableList<CombatEvent>): Int {
+    override fun takeTurn(boss: Combatant, events: MutableList<CombatEvent>): Int {
         val phase = BossPhase.forHpFraction(boss.hpFraction)
         if (phase != currentPhase) {
             currentPhase = phase

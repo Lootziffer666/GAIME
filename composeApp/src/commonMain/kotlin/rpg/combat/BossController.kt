@@ -7,15 +7,15 @@ import rpg.bark.BarkEvent
  * the boss's HP fraction; transitions surface [CombatEvent]s the SliceDirector
  * reacts to (e.g. raising Quest Pressure to HIGH in Phase 2).
  */
-class BossController {
+class BossController : BossControllerInterface {
 
-    var currentPhase: BossPhase = BossPhase.PHASE_1
+    override var currentPhase: BossPhase = BossPhase.PHASE_1
         private set
 
     private var summonedAdds = false
 
     /** Phase 1 opener: summon two flammable paper-rat adds. */
-    fun onCombatStart(engine: CombatEngine, events: MutableList<CombatEvent>) {
+    override fun onCombatStart(engine: CombatEngine, events: MutableList<CombatEvent>) {
         if (summonedAdds) return
         summonedAdds = true
         engine.addEnemy(EnemyArchetype.SEWER_RAT.spawn("add_paper_1", isPaperAdd = true))
@@ -29,7 +29,7 @@ class BossController {
      * boss deals this tick. Phase 3's desk throw hits much harder (one big
      * telegraphed attack that a dodge fully avoids).
      */
-    fun takeTurn(boss: Combatant, events: MutableList<CombatEvent>): Int {
+    override fun takeTurn(boss: Combatant, events: MutableList<CombatEvent>): Int {
         val phase = BossPhase.forHpFraction(boss.hpFraction)
         if (phase != currentPhase) {
             currentPhase = phase
