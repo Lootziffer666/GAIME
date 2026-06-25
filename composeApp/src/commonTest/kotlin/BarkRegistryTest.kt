@@ -29,7 +29,10 @@ class BarkRegistryTest {
             BarkEvent.VELLUM_KNOWLEDGE_IS_THE_ANSWER,
             BarkEvent.BRUGG_ATTACK,
             BarkEvent.VELLUM_CALLS_FOR_FLAME,
-            BarkEvent.VELLUM_THIS_CHANGES_EVERYTHING
+            BarkEvent.VELLUM_THIS_CHANGES_EVERYTHING,
+            BarkEvent.BARKEEP_SPEND_SOME_COIN,
+            BarkEvent.BARKEEP_BEEN_PLAYING_IN_SEWERS,
+            BarkEvent.PATRON_HE_SURE_IS_SLOW
         )
         val actualSliceBarks = BarkRegistry.all().filter { it.usedInSlice }.map { it.key }.toSet()
         assertEquals(expectedSliceBarks, actualSliceBarks)
@@ -37,16 +40,16 @@ class BarkRegistryTest {
 
     @Test
     fun totalBarkEventCountIsCorrect() {
-        // 20 original + 39 new (combat taunts, combat reactions, exploration, ambient)
-        assertEquals(59, BarkEvent.entries.size)
-        assertEquals(59, BarkRegistry.all().size)
+        // 20 original + 39 new (combat taunts, combat reactions, exploration, ambient) + 3 NPC dialogue
+        assertEquals(62, BarkEvent.entries.size)
+        assertEquals(62, BarkRegistry.all().size)
     }
 
     @Test
     fun newBarksAreNotMarkedAsSliceBarks() {
-        // Only the original 7 should be usedInSlice
+        // 7 original slice barks + 3 NPC dialogue barks
         val sliceCount = BarkRegistry.all().count { it.usedInSlice }
-        assertEquals(7, sliceCount)
+        assertEquals(10, sliceCount)
     }
 
     @Test

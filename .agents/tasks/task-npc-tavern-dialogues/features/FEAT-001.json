@@ -1,0 +1,38 @@
+{
+  "id": "FEAT-001",
+  "type": "feat",
+  "description": "Add NPC dialogue system with voice lines for Barkeep and Patron in the tavern. This includes: extending DialogueLine with optional audioPath, adding NPC_DIALOGUE SlicePhase, implementing NPC interaction in tavernScene, adding NPC-specific BarkEvents for the Barkeep (pre-sewer and post-sewer) and Patron, and updating RETURN_LINES with Barkeep post-sewer audio.",
+  "status": "in_progress",
+  "steps": [
+    "1. Extend DialogueLine data class in composeApp/src/commonMain/kotlin/ui/rpg/DialogueLine.kt: add `val audioPath: String? = null` as a third field. This keeps backward compat since existing DialogueLine() calls without audioPath still work.",
+    "2. Update DialogueOverlay composable in the same file to accept a `barkAudioPlayer: BarkAudioPlayer?` parameter (defaulting to null). When a dialogue line displays and has a non-null audioPath, call the audio player's underlying AudioPlayer.play(audioPath). Import BarkAudioPlayer and use its internal audioPlayer via a new `playRawPath(path: String)` method to be added to BarkAudioPlayer.",
+    "3. Add a `playRawPath(path: String)` method to BarkAudioPlayer in composeApp/src/commonMain/kotlin/rpg/bark/audio/BarkAudioPlayer.kt. This allows playing an arbitrary WAV path (for NPC lines that are not BarkEvent-based). It should stop any current playback and play the given path.",
+    "4. Add NPC_DIALOGUE to SlicePhase enum in composeApp/src/commonMain/kotlin/rpg/SlicePhase.kt (insert after TAVERN). This phase represents when an NPC dialogue overlay is active in the tavern.",
+    "5. Add new BarkEvent entries to composeApp/src/commonMain/kotlin/rpg/bark/BarkEvent.kt in a new NPC Dialogue section: BARKEEP_SPEND_SOME_COIN, BARKEEP_BEEN_PLAYING_IN_SEWERS, PATRON_HE_SURE_IS_SLOW. These represent NPC voice lines triggered during dialogue.",
+    "6. Add BarkRegistry definitions for the 3 new BarkEvent entries in composeApp/src/commonMain/kotlin/rpg/bark/BarkRegistry.kt. Use PartyCharacter.BRUGG for barkeep lines (gruff = Brugg voice) and PartyCharacter.VELLUM for patron (raspy). Mark them as SAFE_BARK, CURRENT_ROOM scope, 0s cooldown (dialogue-driven, not player-fired), usedInSlice=true.",
+    "7. Add BarkAudioRegistry entries for the 3 new events in composeApp/src/commonMain/kotlin/rpg/bark/BarkAudioRegistry.kt: BARKEEP_SPEND_SOME_COIN -> 'spend_some_coin_or_get_out.wav', BARKEEP_BEEN_PLAYING_IN_SEWERS -> 'been_playing_in_the_sewers_have_we.wav', PATRON_HE_SURE_IS_SLOW -> 'he_sure_is_slow_for_a_four_armed_bartender.wav'.",
+    "8. In SliceScreen.kt, implement tavernScene.onEntityInteraction: When entity.id == 'barkeep', check if the game has returned from the sewer (use a tracked boolean `hasReturnedFromSewer` set true when phase transitions from RETURN_CUTSCENE to VICTORY or when RETURN_LINES finish). Pre-sewer: set dialogueLines to BARKEEP_PRE_SEWER_LINES, dialogueIndex=0, phase=NPC_DIALOGUE. Post-sewer: set dialogueLines to BARKEEP_POST_SEWER_LINES. When entity.id == 'patron': set dialogueLines to PATRON_LINES, phase=NPC_DIALOGUE.",
+    "9. Define the NPC dialogue line lists in SliceScreen.kt: BARKEEP_PRE_SEWER_LINES = [DialogueLine('Barkeep', 'Spend some coin or get out.', 'bark/brugg/spend_some_coin_or_get_out.wav'), DialogueLine('Brugg', 'Barkeep! A flagon of ale!', 'bark/brugg/barkeep_a_flagon_of_ale.wav')]. BARKEEP_POST_SEWER_LINES = [DialogueLine('Barkeep', 'Been playing in the sewers, have we?', 'bark/brugg/been_playing_in_the_sewers_have_we.wav')]. PATRON_LINES = [DialogueLine('Patron', 'He sure is slow for a four-armed bartender.', 'bark/vellum/he_sure_is_slow_for_a_four_armed_bartender.wav')].",
+    "10. Handle SlicePhase.NPC_DIALOGUE in the when(phase) block of SliceContent: render the ExploreView for the tavern WITH the DialogueOverlay on top, passing barkAudioPlayer to it. When dialogue finishes (advanceDialogue hits end of NPC lines), revert phase back to TAVERN.",
+    "11. Update RETURN_LINES in SliceScreen.kt: change the Barkeep line to include audioPath: DialogueLine('Barkeep', 'Back already? Smells like sewer.', 'bark/brugg/been_playing_in_the_sewers_have_we.wav'). This maps the scripted text to the closest matching WAV.",
+    "12. Wire the DialogueOverlay to receive and use the barkAudioPlayer. In SliceScreen.kt, pass the barkAudioPlayer to DialogueOverlay. In DialogueOverlay, when a new line is displayed (index changes), if the line has audioPath, call barkAudioPlayer.playRawPath(audioPath).",
+    "13. Add tests in composeApp/src/commonTest/kotlin/NpcDialogueTest.kt: Test that DialogueLine with audioPath retains the path. Test that NPC BarkEvent entries exist in BarkRegistry and BarkAudioRegistry. Test that BarkAudioPlayer.playRawPath routes to the underlying AudioPlayer."
+  ],
+  "acceptance_criteria": [
+    "DialogueLine data class has an optional audioPath field defaulting to null",
+    "BarkAudioPlayer has a playRawPath(path: String) method that delegates to AudioPlayer.play()",
+    "SlicePhase.NPC_DIALOGUE exists in the enum",
+    "BarkEvent.BARKEEP_SPEND_SOME_COIN, BARKEEP_BEEN_PLAYING_IN_SEWERS, and PATRON_HE_SURE_IS_SLOW are registered in BarkRegistry and BarkAudioRegistry",
+    "tavernScene.onEntityInteraction triggers NPC dialogue based on entity.id and game state",
+    "DialogueOverlay plays audio when a line has audioPath",
+    "RETURN_LINES includes the Barkeep's post-sewer line with audioPath",
+    "NPC_DIALOGUE phase shows dialogue overlay on top of tavern view and returns to TAVERN when done",
+    "All existing and new tests pass with ./gradlew desktopTest"
+  ],
+  "verification": [
+    "Run ./gradlew desktopTest and confirm all tests pass",
+    "Verify new NpcDialogueTest.kt tests cover DialogueLine.audioPath, BarkAudioPlayer.playRawPath, and NPC bark registry entries"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

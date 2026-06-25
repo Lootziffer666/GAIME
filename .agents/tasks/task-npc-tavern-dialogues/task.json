@@ -1,0 +1,7 @@
+{
+  "task_id": "task-npc-tavern-dialogues",
+  "task_description": "Implement NPC dialogue system with voice-line playback for Barkeep (pre-sewer and post-sewer) and Patron in the tavern. Extend DialogueLine with audioPath, add NPC_DIALOGUE phase, wire entity interaction, and update RETURN_LINES with audio.",
+  "status": "in_progress",
+  "feature_order": ["FEAT-001"],
+  "blocked_reason": null
+}

@@ -78,8 +78,23 @@ private val POST_BOSS_LINES = listOf(
 )
 private val RETURN_LINES = listOf(
     DialogueLine("", "The party climbs back to The Limping Cockatrice."),
-    DialogueLine("Barkeep", "Back already? Smells like sewer."),
+    DialogueLine("Barkeep", "Back already? Smells like sewer.", "bark/brugg/been_playing_in_the_sewers_have_we.wav"),
     DialogueLine("", "Quest Pressure: Reset. New quests pending. The Questbook is always listening.")
+)
+
+// --- NPC dialogue lines ---
+
+private val BARKEEP_PRE_SEWER_LINES = listOf(
+    DialogueLine("Barkeep", "Spend some coin or get out.", "bark/brugg/spend_some_coin_or_get_out.wav"),
+    DialogueLine("Brugg", "Barkeep! A flagon of ale!", "bark/brugg/barkeep_a_flagon_of_ale.wav")
+)
+
+private val BARKEEP_POST_SEWER_LINES = listOf(
+    DialogueLine("Barkeep", "Been playing in the sewers, have we?", "bark/brugg/been_playing_in_the_sewers_have_we.wav")
+)
+
+private val PATRON_LINES = listOf(
+    DialogueLine("Patron", "He sure is slow for a four-armed bartender.", "bark/vellum/he_sure_is_slow_for_a_four_armed_bartender.wav")
 )
 
 // --- Room contexts ---
@@ -154,6 +169,7 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
     var flashText by remember { mutableStateOf<String?>(null) }
     var combatMessage by remember { mutableStateOf("") }
     var version by remember { mutableStateOf(0) }
+    var hasReturnedFromSewer by remember { mutableStateOf(false) }
 
     // Engine + persistent party (HP carries across encounters)
     val director = remember { SliceDirector(clock) }
@@ -259,7 +275,11 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
                 }
                 SlicePhase.FALLING_CUTSCENE -> phase = SlicePhase.SEWER
                 SlicePhase.POST_BOSS        -> phase = SlicePhase.QUESTBOOK_FULL
-                SlicePhase.RETURN_CUTSCENE  -> phase = SlicePhase.VICTORY
+                SlicePhase.RETURN_CUTSCENE  -> {
+                    hasReturnedFromSewer = true
+                    phase = SlicePhase.VICTORY
+                }
+                SlicePhase.NPC_DIALOGUE     -> phase = SlicePhase.TAVERN
                 else -> {}
             }
         }
@@ -319,7 +339,23 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
             dialogueIndex = 0
         }
     }
-    tavernScene.onEntityInteraction = { /* NPCs: no interaction needed */ }
+    tavernScene.onEntityInteraction = { entity ->
+        if (phase == SlicePhase.TAVERN) {
+            lastActivityTime = clock()
+            when (entity.id) {
+                "barkeep" -> {
+                    dialogueLines = if (hasReturnedFromSewer) BARKEEP_POST_SEWER_LINES else BARKEEP_PRE_SEWER_LINES
+                    dialogueIndex = 0
+                    phase = SlicePhase.NPC_DIALOGUE
+                }
+                "patron" -> {
+                    dialogueLines = PATRON_LINES
+                    dialogueIndex = 0
+                    phase = SlicePhase.NPC_DIALOGUE
+                }
+            }
+        }
+    }
 
     sewerScene.onTrigger = { id ->
         if (phase == SlicePhase.SEWER) {
@@ -402,6 +438,16 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
                     Key.S, Key.DirectionDown  -> world.requestStep(Direction.DOWN)
                     Key.A, Key.DirectionLeft  -> world.requestStep(Direction.LEFT)
                     Key.D, Key.DirectionRight -> world.requestStep(Direction.RIGHT)
+                    Key.E -> {
+                        val npc = world.requestInteraction()
+                        if (npc != null) {
+                            when (phase) {
+                                SlicePhase.TAVERN -> tavernScene.onEntityInteraction?.invoke(npc)
+                                else -> {}
+                            }
+                        }
+                        return@onKeyEvent npc != null
+                    }
                     else -> return@onKeyEvent false
                 }
                 true
@@ -413,7 +459,12 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
             SlicePhase.FALLING_CUTSCENE,
             SlicePhase.POST_BOSS,
             SlicePhase.RETURN_CUTSCENE ->
-                DialogueOverlay(lines = dialogueLines, currentIndex = dialogueIndex, onAdvance = ::advanceDialogue)
+                DialogueOverlay(
+                    lines = dialogueLines,
+                    currentIndex = dialogueIndex,
+                    onAdvance = ::advanceDialogue,
+                    barkAudioPlayer = barkAudioPlayer
+                )
 
             // --- Exploration ---
             SlicePhase.TAVERN ->
@@ -425,6 +476,23 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
                     barkButtons = listOf(BarkEvent.NIB_SMELL_TREASURE to "Nib: Smell Treasure"),
                     onBark   = ::fireAndFlash
                 )
+
+            SlicePhase.NPC_DIALOGUE -> {
+                ExploreView(
+                    title    = "The Limping Cockatrice",
+                    scene    = tavernScene,
+                    pressure = director.pressure,
+                    onStep   = tavernWorld::requestStep,
+                    barkButtons = emptyList(),
+                    onBark   = ::fireAndFlash
+                )
+                DialogueOverlay(
+                    lines = dialogueLines,
+                    currentIndex = dialogueIndex,
+                    onAdvance = ::advanceDialogue,
+                    barkAudioPlayer = barkAudioPlayer
+                )
+            }
 
             SlicePhase.SEWER ->
                 ExploreView(

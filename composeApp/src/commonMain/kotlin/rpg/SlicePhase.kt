@@ -4,6 +4,7 @@ package rpg
 enum class SlicePhase {
     INTRO_CUTSCENE,      // Opening text box before tavern
     TAVERN,              // Free-roam tavern
+    NPC_DIALOGUE,        // NPC dialogue overlay active in the tavern
     FALLING_CUTSCENE,    // Cellar floor gives way
     SEWER,               // Free-roam sewer corridor + mini-dungeon
     SEWER_COMBAT,        // Corridor rat encounter

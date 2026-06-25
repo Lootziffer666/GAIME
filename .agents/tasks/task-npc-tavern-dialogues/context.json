@@ -1,0 +1,31 @@
+{
+  "project_type": "Kotlin Multiplatform (KMP) game with Compose Multiplatform UI",
+  "language": "Kotlin",
+  "build_system": "Gradle (KMP), uses ./gradlew commands",
+  "test_framework": "kotlin.test with commonTest source set, no special test runner",
+  "build_command": "./gradlew build",
+  "test_command": "./gradlew desktopTest",
+  "verification_instructions": "Run ./gradlew desktopTest to verify all tests pass. The project does not have Docker-based builds.",
+  "snapshot_or_generated_files": null,
+  "setup_instructions": "Project is already set up. Use ./gradlew commands directly.",
+  "environment_constraints": "OPEN_INTERNET network mode. Gradle build may be slow (120s+ for first run). Tests are pure unit tests in commonTest.",
+  "contribution_requirements": "Branch: feat/bark-audio-system. All changes go on this branch. No PR creation needed.",
+  "key_patterns": "DialogueLine(speaker, text) is a data class in ui/rpg/DialogueLine.kt. BarkEvents are enum values with registrations in BarkRegistry and BarkAudioRegistry. SliceDirector.fireBark() routes barks through the bus -> questbook -> audio player pipeline. WorldScene.onEntityInteraction is a callback set per-scene. SlicePhase enum drives the game state machine. Scripted dialogues use DialogueOverlay composable with a list of DialogueLine and currentIndex.",
+  "relevant_files": [
+    "composeApp/src/commonMain/kotlin/ui/rpg/DialogueLine.kt",
+    "composeApp/src/commonMain/kotlin/ui/rpg/SliceScreen.kt",
+    "composeApp/src/commonMain/kotlin/rpg/SlicePhase.kt",
+    "composeApp/src/commonMain/kotlin/rpg/SliceDirector.kt",
+    "composeApp/src/commonMain/kotlin/rpg/bark/BarkEvent.kt",
+    "composeApp/src/commonMain/kotlin/rpg/bark/BarkRegistry.kt",
+    "composeApp/src/commonMain/kotlin/rpg/bark/BarkAudioRegistry.kt",
+    "composeApp/src/commonMain/kotlin/rpg/bark/PartyCharacter.kt",
+    "composeApp/src/commonMain/kotlin/rpg/bark/audio/BarkAudioPlayer.kt",
+    "composeApp/src/commonMain/kotlin/rpg/bark/audio/AudioPlayer.kt",
+    "composeApp/src/commonMain/kotlin/rpg/world/GridWorld.kt",
+    "composeApp/src/commonMain/kotlin/ui/rpg/WorldScene.kt",
+    "composeApp/src/commonTest/kotlin/SlicePipelineTest.kt",
+    "composeApp/src/commonTest/kotlin/BarkAudioPlayerTest.kt"
+  ],
+  "directory_structure": "composeApp/src/commonMain/kotlin/ contains main sources (rpg/ for game logic, ui/rpg/ for UI). composeApp/src/commonTest/kotlin/ has tests. composeApp/src/commonMain/composeResources/files/bark/{nib,brugg,vellum}/ has WAV files."
+}
