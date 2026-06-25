@@ -37,9 +37,9 @@ class BarkRegistryTest {
 
     @Test
     fun totalBarkEventCountIsCorrect() {
-        // 20 original + 39 new (combat taunts, combat reactions, exploration, ambient)
-        assertEquals(59, BarkEvent.entries.size)
-        assertEquals(59, BarkRegistry.all().size)
+        // 20 original + 39 (combat/exploration/ambient) + 41 campaign = 100 total
+        assertEquals(100, BarkEvent.entries.size)
+        assertEquals(100, BarkRegistry.all().size)
     }
 
     @Test

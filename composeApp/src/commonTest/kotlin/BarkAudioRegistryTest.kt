@@ -81,7 +81,7 @@ class BarkAudioRegistryTest {
 
     @Test
     fun totalBarkEventCountMatchesExpected() {
-        // 20 original + 39 new = 59 total
-        assertEquals(59, BarkEvent.entries.size)
+        // 20 original + 39 (combat/exploration/ambient) + 41 campaign = 100 total
+        assertEquals(100, BarkEvent.entries.size)
     }
 }

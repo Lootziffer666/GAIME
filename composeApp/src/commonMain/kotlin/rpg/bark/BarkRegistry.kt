@@ -91,7 +91,60 @@ object BarkRegistry {
         def(BarkEvent.BRUGG_WHERE_DID_I_PUT_THAT_MAP, BRUGG, "Where did I put that map?", SAFE_BARK, CURRENT_ROOM, 20, false),
         def(BarkEvent.VELLUM_NOW_WHAT_WAS_THAT_INCANTATION, VELLUM, "Now what was that incantation?", SAFE_BARK, CURRENT_ROOM, 20, false),
         def(BarkEvent.VELLUM_OF_ALL_THE_ARCANE_LORE, VELLUM, "Of all the arcane lore...", SAFE_BARK, CURRENT_ROOM, 25, false),
-        def(BarkEvent.VELLUM_TIME_WAITS_FOR_NO_MAN, VELLUM, "Time waits for no man.", SAFE_BARK, CURRENT_ROOM, 30, false)
+        def(BarkEvent.VELLUM_TIME_WAITS_FOR_NO_MAN, VELLUM, "Time waits for no man.", SAFE_BARK, CURRENT_ROOM, 30, false),
+
+        // ═══ Chapter quest barks (docs/CAMPAIGN.md) ══════════════════════
+        def(BarkEvent.BRUGG_OBJECTIVE_COMPLETE, BRUGG, "Objective complete.", SAFE_BARK, CURRENT_ROOM, 30, false),
+        def(BarkEvent.VELLUM_HARD_WON_KNOWLEDGE, VELLUM, "Hard-won knowledge.", SAFE_BARK, CURRENT_ROOM, 30, false),
+
+        // ─── Chapter 2: The Town Guard That Arrested Itself ──────────────
+        def(BarkEvent.BRUGG_SPEAK_TO_TOWN_GUARD, BRUGG, "I need to speak to the town guard.", TRIGGER_BARK, CURRENT_ROOM, 30, false),
+        def(BarkEvent.BRUGG_WHO_GOES_THERE, BRUGG, "Who goes there?", SAFE_BARK, CURRENT_ROOM, 20, false),
+        def(BarkEvent.BRUGG_YOUR_ORDERS_SIR, BRUGG, "Your orders, sir.", PRESSURE_BARK, CURRENT_MAP, 60, false),
+        def(BarkEvent.BRUGG_DROP_WEAPONS, BRUGG, "Drop your weapons and surrender.", TRIGGER_BARK, CURRENT_ROOM, 20, false),
+        def(BarkEvent.BRUGG_CONSTRUCTION_COMPLETE, BRUGG, "Construction complete.", SAFE_BARK, CURRENT_ROOM, 30, false),
+        def(BarkEvent.NIB_IF_IT_GLOWS, NIB, "If it glows, does that make it more expensive?", TRIGGER_BARK, CURRENT_ROOM, 30, false),
+
+        // ─── Chapter 3: The Woods That Had Opinions ──────────────────────
+        def(BarkEvent.NIB_SECRET_ENTRANCE, NIB, "This looks like a secret entrance.", TRIGGER_BARK, CURRENT_ROOM, 30, false),
+        def(BarkEvent.BRUGG_JUST_KEEP_TO_THE_TRAIL, BRUGG, "Just keep to the trail.", SAFE_BARK, CURRENT_ROOM, 20, false),
+        def(BarkEvent.VELLUM_WHICH_DIRECTION, VELLUM, "Which direction?", TRIGGER_BARK, CURRENT_ROOM, 15, false),
+        def(BarkEvent.VELLUM_THIS_LOOKS_LIKE_A_MAP, VELLUM, "This looks like a map.", TRIGGER_BARK, CURRENT_ROOM, 25, false),
+        def(BarkEvent.VELLUM_CALLS_FOR_LIGHTNING, VELLUM, "This calls for lightning.", UTILITY_BARK, CURRENT_ROOM, 25, false),
+
+        // ─── Chapter 4: The Ship That Was Technically Seaworthy ──────────
+        def(BarkEvent.NIB_FRESH_SEA_AIR, NIB, "I love the fresh sea air.", SAFE_BARK, CURRENT_ROOM, 30, false),
+        def(BarkEvent.NIB_NOT_FOND_OF_DEEP_WATER, NIB, "I've never been fond of deep water.", SAFE_BARK, CURRENT_ROOM, 25, false),
+        def(BarkEvent.NIB_ANOTHER_BARREL, NIB, "Ooo, another barrel.", DANGER_BARK, CURRENT_ROOM, 20, false),
+        def(BarkEvent.BRUGG_IS_SHE_SEAWORTHY, BRUGG, "Is she seaworthy?", SAFE_BARK, CURRENT_ROOM, 25, false),
+        def(BarkEvent.BRUGG_DROP_ANCHOR, BRUGG, "Drop anchor.", UTILITY_BARK, CURRENT_ROOM, 20, false),
+        def(BarkEvent.BRUGG_HOIST_ANCHOR, BRUGG, "Hoist anchor.", UTILITY_BARK, CURRENT_ROOM, 20, false),
+        def(BarkEvent.BRUGG_RAISE_THE_SAIL, BRUGG, "Raise the sail.", UTILITY_BARK, CURRENT_ROOM, 20, false),
+        def(BarkEvent.BRUGG_LETS_BE_UNDERWAY, BRUGG, "Let's be underway.", TRIGGER_BARK, CURRENT_ROOM, 30, false),
+        def(BarkEvent.BRUGG_OUT_MANEUVERED, BRUGG, "We're out maneuvered.", DANGER_BARK, CURRENT_ROOM, 30, false),
+        def(BarkEvent.BRUGG_RETREAT, BRUGG, "Retreat.", DANGER_BARK, CURRENT_ROOM, 15, false),
+        def(BarkEvent.VELLUM_SEA_IS_ANGRY_MISTRESS, VELLUM, "The sea is an angry mistress.", SAFE_BARK, CURRENT_ROOM, 30, false),
+
+        // ─── Chapter 5: The Dragon That Was Accidentally Summoned ────────
+        def(BarkEvent.NIB_SMELL_DRAGON, NIB, "I smell dragon.", TRIGGER_BARK, CURRENT_MAP, 45, false),
+        def(BarkEvent.NIB_SMELL_GOLD, NIB, "I smell gold.", TRIGGER_BARK, CURRENT_ROOM, 30, false),
+        def(BarkEvent.NIB_SMELL_MONSTERS, NIB, "I smell monsters.", DANGER_BARK, CURRENT_ROOM, 30, false),
+        def(BarkEvent.BRUGG_HOLD_THE_LINE, BRUGG, "Hold the line.", PRESSURE_BARK, CURRENT_MAP, 30, false),
+        def(BarkEvent.BRUGG_PROTECT_THE_ASSET, BRUGG, "Protect the asset.", PRESSURE_BARK, CURRENT_MAP, 30, false),
+        def(BarkEvent.BRUGG_LOW_ON_HEALTH, BRUGG, "Low on health.", SAFE_BARK, CURRENT_ROOM, 20, false),
+        def(BarkEvent.VELLUM_REEKS_OF_DEATH, VELLUM, "This place reeks of death.", SAFE_BARK, CURRENT_ROOM, 30, false),
+        def(BarkEvent.VELLUM_DARKNESS_TAKE_YOU, VELLUM, "Darkness take you.", SAFE_BARK, CURRENT_ROOM, 25, false),
+        def(BarkEvent.VELLUM_SUMMON_YOUR_STRENGTH, VELLUM, "Summon your strength.", SAFE_BARK, CURRENT_ROOM, 25, false),
+
+        // ─── Finale: System Overload (deliberately banal, contradictory) ──
+        def(BarkEvent.NIB_WHERES_THE_PRIVVY, NIB, "Where's the privvy?", TRIGGER_BARK, CURRENT_ROOM, 5, false),
+        def(BarkEvent.NIB_IS_THAT_ROAST, NIB, "Is that roast I smell?", TRIGGER_BARK, CURRENT_ROOM, 5, false),
+        def(BarkEvent.NIB_NOT_A_HORSE, NIB, "Hey, that's not a horse.", TRIGGER_BARK, CURRENT_ROOM, 5, false),
+        def(BarkEvent.NIB_WHO_RUNS_THIS_CITY, NIB, "Who runs this city?", TRIGGER_BARK, CURRENT_ROOM, 5, false),
+        def(BarkEvent.NIB_THIS_LOOKS_LIKE_GOLD, NIB, "This looks like gold.", TRIGGER_BARK, CURRENT_ROOM, 5, false),
+        def(BarkEvent.NIB_THIS_LOOKS_LIKE_TREASURE, NIB, "This looks like treasure.", TRIGGER_BARK, CURRENT_ROOM, 5, false),
+        def(BarkEvent.NIB_CHEST_ALMOST_UNLOCKED, NIB, "This chest is almost certainly unlocked.", UTILITY_BARK, CURRENT_ROOM, 5, false),
+        def(BarkEvent.NIB_DOOR_ALMOST_UNLOCKED, NIB, "This door is almost certainly unlocked.", UTILITY_BARK, CURRENT_ROOM, 5, false)
     ).associateBy { it.key }
 
     init {

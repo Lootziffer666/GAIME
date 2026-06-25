@@ -90,7 +90,63 @@ object BarkAudioRegistry {
         BarkEvent.BRUGG_WHERE_DID_I_PUT_THAT_MAP to "where_did_i_put_that_map.wav",
         BarkEvent.VELLUM_NOW_WHAT_WAS_THAT_INCANTATION to "now_what_was_that_incantation.wav",
         BarkEvent.VELLUM_OF_ALL_THE_ARCANE_LORE to "of_all_the_arcane_lore.wav",
-        BarkEvent.VELLUM_TIME_WAITS_FOR_NO_MAN to "time_waits_for_no_man.wav"
+        BarkEvent.VELLUM_TIME_WAITS_FOR_NO_MAN to "time_waits_for_no_man.wav",
+
+        // ═══ Campaign barks (docs/CAMPAIGN.md) ════════════════════════════
+        // NOTE: these reuse existing WAVs as placeholders until dedicated voice
+        // lines are recorded. Mapping presence is what BarkAudioRegistry
+        // requires; swap in real files per character later.
+        BarkEvent.BRUGG_OBJECTIVE_COMPLETE to "stay_down.wav",
+        BarkEvent.VELLUM_HARD_WON_KNOWLEDGE to "hard-won_knowledge.wav",
+
+        // ─── Chapter 2 ───────────────────────────────────────────────────
+        BarkEvent.BRUGG_SPEAK_TO_TOWN_GUARD to "what_are_your_orders.wav",
+        BarkEvent.BRUGG_WHO_GOES_THERE to "show_yourselves.wav",
+        BarkEvent.BRUGG_YOUR_ORDERS_SIR to "what_are_your_orders.wav",
+        BarkEvent.BRUGG_DROP_WEAPONS to "surrender_or_die.wav",
+        BarkEvent.BRUGG_CONSTRUCTION_COMPLETE to "stay_down.wav",
+        BarkEvent.NIB_IF_IT_GLOWS to "i_love_gold.wav",
+
+        // ─── Chapter 3 ───────────────────────────────────────────────────
+        BarkEvent.NIB_SECRET_ENTRANCE to "this_way.wav",
+        BarkEvent.BRUGG_JUST_KEEP_TO_THE_TRAIL to "grab_your_torch_theres_work_to_be_done.wav",
+        BarkEvent.VELLUM_WHICH_DIRECTION to "now_what_was_that_incantation.wav",
+        BarkEvent.VELLUM_THIS_LOOKS_LIKE_A_MAP to "this_looks_like_a_glyph.wav",
+        BarkEvent.VELLUM_CALLS_FOR_LIGHTNING to "this_calls_for_ice.wav",
+
+        // ─── Chapter 4 ───────────────────────────────────────────────────
+        BarkEvent.NIB_FRESH_SEA_AIR to "i_love_gold.wav",
+        BarkEvent.NIB_NOT_FOND_OF_DEEP_WATER to "its_a_trap.wav",
+        BarkEvent.NIB_ANOTHER_BARREL to "what_do_we_have_here.wav",
+        BarkEvent.BRUGG_IS_SHE_SEAWORTHY to "this_looks_like_trouble.wav",
+        BarkEvent.BRUGG_DROP_ANCHOR to "attack.wav",
+        BarkEvent.BRUGG_HOIST_ANCHOR to "attack.wav",
+        BarkEvent.BRUGG_RAISE_THE_SAIL to "attack.wav",
+        BarkEvent.BRUGG_LETS_BE_UNDERWAY to "grab_your_torch_theres_work_to_be_done.wav",
+        BarkEvent.BRUGG_OUT_MANEUVERED to "fall_back.wav",
+        BarkEvent.BRUGG_RETREAT to "fall_back.wav",
+        BarkEvent.VELLUM_SEA_IS_ANGRY_MISTRESS to "of_all_the_arcane_lore.wav",
+
+        // ─── Chapter 5 ───────────────────────────────────────────────────
+        BarkEvent.NIB_SMELL_DRAGON to "i_smell_treasure.wav",
+        BarkEvent.NIB_SMELL_GOLD to "i_love_gold.wav",
+        BarkEvent.NIB_SMELL_MONSTERS to "theyre_onto_us.wav",
+        BarkEvent.BRUGG_HOLD_THE_LINE to "stay_down.wav",
+        BarkEvent.BRUGG_PROTECT_THE_ASSET to "stay_down.wav",
+        BarkEvent.BRUGG_LOW_ON_HEALTH to "i_dont_have_much_left_in_me.wav",
+        BarkEvent.VELLUM_REEKS_OF_DEATH to "i_didnt_think_it_would_end_like_this.wav",
+        BarkEvent.VELLUM_DARKNESS_TAKE_YOU to "i_smite_you.wav",
+        BarkEvent.VELLUM_SUMMON_YOUR_STRENGTH to "i_smite_you.wav",
+
+        // ─── Finale: System Overload ─────────────────────────────────────
+        BarkEvent.NIB_WHERES_THE_PRIVVY to "nothing_to_see_here.wav",
+        BarkEvent.NIB_IS_THAT_ROAST to "stew_again.wav",
+        BarkEvent.NIB_NOT_A_HORSE to "what_do_we_have_here.wav",
+        BarkEvent.NIB_WHO_RUNS_THIS_CITY to "theyre_onto_us.wav",
+        BarkEvent.NIB_THIS_LOOKS_LIKE_GOLD to "i_love_gold.wav",
+        BarkEvent.NIB_THIS_LOOKS_LIKE_TREASURE to "i_smell_treasure.wav",
+        BarkEvent.NIB_CHEST_ALMOST_UNLOCKED to "what_do_we_have_here.wav",
+        BarkEvent.NIB_DOOR_ALMOST_UNLOCKED to "this_way.wav"
     )
 
     init {
