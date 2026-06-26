@@ -4,6 +4,8 @@
 
 **The Completely Official Quest of Questionable Importance**
 
+![GAIME — in-game screenshot of the HD-2D top-down world](docs/qa/artifacts/screenshot-2026-06-23T16-21-13-589Z.png)
+
 A dry, British-bureaucratic fantasy comedy RPG in an 8/16-bit SNES/Mega-Drive
 top-down pixel style. Three misfit adventurers in the harbour town of
 **Stokeport** are declared an official hero party by a **broken magical
