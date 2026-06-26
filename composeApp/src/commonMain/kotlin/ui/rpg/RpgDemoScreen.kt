@@ -150,7 +150,7 @@ fun RpgDemoScreen() {
             Spacer(Modifier.height(10.dp))
 
             CombatPanel(
-                director = director,
+                engine = director.currentCombat,
                 onStartRats = ::startRatFight,
                 onStartBoss = ::startBossFight,
                 onAction = ::combat
@@ -285,7 +285,7 @@ private fun FlowBarkRow(items: List<Pair<BarkEvent, String>>, onFire: (BarkEvent
 
 @Composable
 private fun CombatPanel(
-    director: SliceDirector,
+    engine: CombatEngine?,
     onStartRats: () -> Unit,
     onStartBoss: () -> Unit,
     onAction: (CombatAction) -> Unit
@@ -298,8 +298,6 @@ private fun CombatPanel(
                 SmallButton("Start Rat Fight", onClick = onStartRats)
                 SmallButton("Start Boss Fight", onClick = onStartBoss)
             }
-
-            val engine = director.currentCombat
             if (engine != null) {
                 Spacer(Modifier.height(8.dp))
                 engine.bossPhase?.let {

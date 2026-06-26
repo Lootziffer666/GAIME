@@ -42,6 +42,7 @@ import gaime.resources.hero_brugg
 import gaime.resources.hero_nib
 import gaime.resources.hero_vellum
 import gaime.resources.tileset_dungeon
+import gaime.resources.title_screen
 import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.imageResource
@@ -195,7 +196,7 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
     }
 
     // Phase + narrative state
-    var phase by remember { mutableStateOf(SlicePhase.INTRO_CUTSCENE) }
+    var phase by remember { mutableStateOf(SlicePhase.TITLE_SCREEN) }
     var dialogueLines by remember { mutableStateOf(INTRO_LINES) }
     var dialogueIndex by remember { mutableStateOf(0) }
     var flashText by remember { mutableStateOf<String?>(null) }
@@ -640,6 +641,10 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
             }
     ) {
         when (phase) {
+            // --- Title screen ---
+            SlicePhase.TITLE_SCREEN ->
+                TitleView { phase = SlicePhase.INTRO_CUTSCENE }
+
             // --- Cutscenes ---
             SlicePhase.INTRO_CUTSCENE,
             SlicePhase.FALLING_CUTSCENE,
@@ -1136,6 +1141,52 @@ private fun SliceSmallButton(label: String, color: Color = Color(0xFF3A4A6B), on
         contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp)
     ) {
         Text(label, fontSize = 12.sp, color = Color.White)
+    }
+}
+
+@Composable
+private fun TitleView(onStart: () -> Unit) {
+    val infiniteTransition = rememberInfiniteTransition()
+    val promptAlpha by infiniteTransition.animateFloat(
+        initialValue = 0.3f,
+        targetValue = 1.0f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 900),
+            repeatMode = RepeatMode.Reverse
+        )
+    )
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black)
+            .onKeyEvent { e ->
+                if (e.type == KeyEventType.KeyDown) { onStart(); true } else false
+            }
+            .focusable(),
+        contentAlignment = Alignment.Center
+    ) {
+        Image(
+            painter = painterResource(Res.drawable.title_screen),
+            contentDescription = "Quest Accepted: Unfortunately",
+            contentScale = ContentScale.Fit,
+            modifier = Modifier.fillMaxSize()
+        )
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
+            Button(
+                onClick = onStart,
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xCC241E12)),
+                modifier = Modifier
+                    .padding(bottom = 32.dp)
+                    .alpha(promptAlpha)
+            ) {
+                Text(
+                    "— PRESS ANY KEY TO BEGIN —",
+                    color = Color(0xFFE8C170),
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp
+                )
+            }
+        }
     }
 }
 

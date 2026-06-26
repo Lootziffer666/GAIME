@@ -1,5 +1,7 @@
 # GAIME — *Quest Accepted: Unfortunately*
 
+![Quest Accepted: Unfortunately — title screen](composeApp/src/commonMain/composeResources/drawable/title_screen.png)
+
 **The Completely Official Quest of Questionable Importance**
 
 A dry, British-bureaucratic fantasy comedy RPG in an 8/16-bit SNES/Mega-Drive
