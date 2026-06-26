@@ -40,13 +40,22 @@ class BarkEventBus(
     /**
      * Attempt to fire [bark]. Returns whether it was emitted or suppressed by
      * its cooldown. On success the bark is published to [emitted].
+     *
+     * When [bypassCooldown] is true the per-key cooldown is ignored and the
+     * bark always emits. This is used for combat-origin barks (taunts, death,
+     * victory, damage reactions): those are driven by deterministic game state
+     * rather than player spam, and the engine may legitimately reuse a key
+     * within the cooldown window (e.g. a taunt key that also appears in the
+     * victory set). Suppressing them would silently drop story-critical lines
+     * (see review issues #1 and #2). The timestamp is still recorded so any
+     * subsequent player-initiated bark of the same key respects the cooldown.
      */
-    fun fire(bark: BarkEvent): BarkFireResult {
+    fun fire(bark: BarkEvent, bypassCooldown: Boolean = false): BarkFireResult {
         val now = clockMillis()
         val cooldownMillis = BarkRegistry[bark].cooldownSeconds * 1000L
         val last = lastFiredAt[bark]
 
-        if (last != null) {
+        if (!bypassCooldown && last != null) {
             val elapsed = now - last
             if (elapsed < cooldownMillis) {
                 return BarkFireResult.OnCooldown(bark, cooldownMillis - elapsed)

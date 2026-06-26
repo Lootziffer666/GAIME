@@ -50,6 +50,7 @@ import rpg.BarkOutcome
 import rpg.SliceDirector
 import rpg.SlicePhase
 import rpg.bark.BarkEvent
+import rpg.bark.AmbientBarks
 import rpg.bark.audio.BarkAudioPlayer
 import rpg.bark.audio.createPlatformAudioPlayer
 import rpg.combat.BossController
@@ -151,50 +152,9 @@ private val MARKET_CTX = RoomContext("stokeport_market", RoomContext.ROOM_MARKET
 private val FOREST_CTX = RoomContext("forest_trail", RoomContext.ROOM_FOREST, hasEnemies = true, hasPuzzleElement = true)
 
 // --- Idle bark selection ---
+// (Ambient/exploration/idle bark pools now live in rpg.bark.AmbientBarks so the
+//  selection logic is testable with a seeded Random — see review issue #3.)
 
-private fun pickIdleBark(phase: SlicePhase): BarkEvent? {
-    val barks = when (phase) {
-        SlicePhase.TAVERN -> listOf(
-            BarkEvent.BRUGG_BARKEEP_A_FLAGON,
-            BarkEvent.NIB_STEW_AGAIN,
-            BarkEvent.VELLUM_NOW_WHAT_WAS_THAT_INCANTATION,
-            BarkEvent.NIB_I_LOVE_GOLD,
-            BarkEvent.BRUGG_WHERE_DID_I_PUT_THAT_MAP,
-            BarkEvent.NIB_IS_THAT_ROAST,
-            BarkEvent.BRUGG_IS_THAT_ROAST,
-            BarkEvent.VELLUM_YOUVE_GOT_TO_TRY_ROAST,
-            BarkEvent.BRUGG_THATS_NOTHING_ALE_WONT_FIX,
-            BarkEvent.NIB_WHERES_THE_PRIVVY,
-            BarkEvent.BRUGG_WHAT_NEWS,
-            BarkEvent.VELLUM_WHERES_THE_NEAREST_INN
-        )
-        SlicePhase.SEWER, SlicePhase.BOSS_ROOM -> listOf(
-            BarkEvent.BRUGG_GRAB_YOUR_TORCH,
-            BarkEvent.NIB_THERES_A_HOLE_IN_MY_BOOT,
-            BarkEvent.VELLUM_TIME_WAITS_FOR_NO_MAN,
-            BarkEvent.VELLUM_OF_ALL_THE_ARCANE_LORE,
-            BarkEvent.NIB_I_LOVE_GOLD,
-            BarkEvent.NIB_THIS_THING_LOOKS_INTERESTING,
-            BarkEvent.BRUGG_THIS_THING_LOOKS_INTERESTING,
-            BarkEvent.VELLUM_THIS_THING_LOOKS_INTERESTING,
-            BarkEvent.NIB_LETS_GET_OUT_OF_HERE,
-            BarkEvent.BRUGG_LETS_GET_OUT_OF_HERE
-        )
-        SlicePhase.CHAPTER2_MARKET -> listOf(
-            BarkEvent.NIB_HOW_MUCH,
-            BarkEvent.BRUGG_KEEP_TO_TRAIL,
-            BarkEvent.BRUGG_BARKEEP_A_FLAGON,
-            BarkEvent.NIB_I_LOVE_GOLD
-        )
-        SlicePhase.CHAPTER2_FOREST, SlicePhase.CHAPTER2_SHRINE -> listOf(
-            BarkEvent.VELLUM_CREATURES_IN_WOODS,
-            BarkEvent.BRUGG_KEEP_TO_TRAIL,
-            BarkEvent.NIB_THIS_THING_LOOKS_INTERESTING
-        )
-        else -> return null
-    }
-    return barks[Random.nextInt(barks.size)]
-}
 private val SEWER_CTX = RoomContext(
     "sewer", RoomContext.ROOM_MINI_DUNGEON,
     hasEnemies = true, hasPuzzleElement = true, hasBreakableObstacle = true
@@ -261,6 +221,8 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
 
     // Idle bark timer state
     var lastActivityTime by remember { mutableStateOf(clock()) }
+    // Long-lived RNG for ambient/exploration/idle bark selection
+    val barkRandom = remember { Random.Default }
 
     // Worlds
     val tavernWorld = remember {
@@ -344,7 +306,7 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
             if (!isExplorationPhase) continue
             val elapsed = clock() - lastActivityTime
             if (elapsed >= 30_000L) {
-                val idleBark = pickIdleBark(phase)
+                val idleBark = AmbientBarks.pickIdle(phase, barkRandom)
                 if (idleBark != null) {
                     fireAndFlash(idleBark)
                     lastActivityTime = clock()
@@ -463,8 +425,7 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
             fireAndFlash(BarkEvent.NIB_THIS_CHEST_UNLOCKED)
             director.enterRoom(SEWER_CTX)
             // Exploration bark: entering the sewers
-            val sewerEntryBarks = listOf(BarkEvent.BRUGG_THE_DEEPER_WE_GO, BarkEvent.VELLUM_TREES_HAVE_EYES)
-            fireAndFlash(sewerEntryBarks[Random.nextInt(sewerEntryBarks.size)])
+            AmbientBarks.pick(AmbientBarks.SEWER_ENTRY, barkRandom)?.let { fireAndFlash(it) }
             phase = SlicePhase.FALLING_CUTSCENE
             dialogueLines = FALLING_LINES
             dialogueIndex = 0
@@ -495,15 +456,7 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
                 GameMaps.TRIGGER_VELLUM_PUZZLE -> fireAndFlash(BarkEvent.VELLUM_KNOWLEDGE_IS_THE_ANSWER)
                 GameMaps.TRIGGER_SEWER_EXIT    -> {
                     // Exploration atmosphere bark on entering boss room
-                    val atmosphereBarks = listOf(
-                        BarkEvent.NIB_THIS_PLACE_REEKS_OF_DEATH,
-                        BarkEvent.BRUGG_THIS_PLACE_REEKS_OF_DEATH,
-                        BarkEvent.VELLUM_THIS_PLACE_REEKS_OF_DEATH,
-                        BarkEvent.NIB_WHAT_DARK_DEALINGS,
-                        BarkEvent.BRUGG_WHAT_DARK_DEALINGS,
-                        BarkEvent.VELLUM_WHAT_DARK_DEALINGS
-                    )
-                    fireAndFlash(atmosphereBarks[Random.nextInt(atmosphereBarks.size)])
+                    AmbientBarks.pick(AmbientBarks.SEWER_ATMOSPHERE, barkRandom)?.let { fireAndFlash(it) }
                     director.enterRoom(BOSS_CTX)
                     phase = SlicePhase.BOSS_ROOM
                 }
@@ -516,14 +469,7 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
             when {
                 entity.id.startsWith("rat_corridor") -> {
                     // Exploration bark: encountering enemies
-                    val warningBarks = listOf(
-                        BarkEvent.BRUGG_THIS_LOOKS_LIKE_TROUBLE,
-                        BarkEvent.NIB_THEYRE_ONTO_US,
-                        BarkEvent.NIB_LOOK_OUT,
-                        BarkEvent.BRUGG_LOOK_OUT,
-                        BarkEvent.VELLUM_LOOK_OUT
-                    )
-                    fireAndFlash(warningBarks[Random.nextInt(warningBarks.size)])
+                    AmbientBarks.pick(AmbientBarks.ENEMY_WARNING, barkRandom)?.let { fireAndFlash(it) }
                     director.startCombat(CombatEngine(party, listOf(
                         EnemyArchetype.SEWER_RAT.spawn("rat_corridor_1"),
                         EnemyArchetype.SEWER_RAT.spawn("rat_corridor_2")
@@ -533,14 +479,7 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
                 }
                 entity.id.startsWith("rat_mini") || entity.id == "blob_mini" -> {
                     // Exploration bark: encountering enemies
-                    val warningBarks = listOf(
-                        BarkEvent.BRUGG_THIS_LOOKS_LIKE_TROUBLE,
-                        BarkEvent.NIB_THEYRE_ONTO_US,
-                        BarkEvent.NIB_LOOK_OUT,
-                        BarkEvent.BRUGG_LOOK_OUT,
-                        BarkEvent.VELLUM_LOOK_OUT
-                    )
-                    fireAndFlash(warningBarks[Random.nextInt(warningBarks.size)])
+                    AmbientBarks.pick(AmbientBarks.ENEMY_WARNING, barkRandom)?.let { fireAndFlash(it) }
                     director.startCombat(CombatEngine(party, listOf(
                         EnemyArchetype.SEWER_RAT.spawn("rat_mini_1"),
                         EnemyArchetype.SEWER_RAT.spawn("rat_mini_2"),
@@ -559,8 +498,7 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
         if (phase == SlicePhase.BOSS_ROOM && entity.id == "rat_accountant") {
             lastActivityTime = clock()
             // Exploration bark: discovering the boss
-            val discoveryBarks = listOf(BarkEvent.NIB_WHAT_DO_WE_HAVE_HERE, BarkEvent.VELLUM_HMM_WONDER_WHAT_THIS_IS)
-            fireAndFlash(discoveryBarks[Random.nextInt(discoveryBarks.size)])
+            AmbientBarks.pick(AmbientBarks.BOSS_DISCOVERY, barkRandom)?.let { fireAndFlash(it) }
             director.startCombat(CombatEngine(party, emptyList(), EnemyArchetype.RAT_ACCOUNTANT.spawn("rat_accountant"), BossController()))
             combatMessage = "The Rat Accountant looks up from its desk of garbage."
             phase = SlicePhase.BOSS_COMBAT
@@ -629,12 +567,8 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
             lastActivityTime = clock()
             when {
                 entity.id.startsWith("wolf") -> {
-                    val warningBarks = listOf(
-                        BarkEvent.BRUGG_THIS_LOOKS_LIKE_TROUBLE,
-                        BarkEvent.NIB_THEYRE_ONTO_US,
-                        BarkEvent.NIB_LOOK_OUT
-                    )
-                    fireAndFlash(warningBarks[Random.nextInt(warningBarks.size)])
+                    val warningBarks = AmbientBarks.FOREST_WARNING
+                    AmbientBarks.pick(warningBarks, barkRandom)?.let { fireAndFlash(it) }
                     director.startCombat(CombatEngine(party, listOf(
                         EnemyArchetype.FOREST_WOLF.spawn("wolf_1"),
                         EnemyArchetype.FOREST_WOLF.spawn("wolf_2"),
