@@ -2,6 +2,7 @@ package rpg
 
 /** Tracks the narrative progression through the M3 vertical slice. */
 enum class SlicePhase {
+    TITLE_SCREEN,        // Splash / title image before game starts
     INTRO_CUTSCENE,      // Opening text box before tavern
     TAVERN,              // Free-roam tavern
     NPC_DIALOGUE,        // NPC dialogue overlay active in the tavern
