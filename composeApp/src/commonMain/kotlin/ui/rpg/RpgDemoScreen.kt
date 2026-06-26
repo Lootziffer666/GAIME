@@ -2,6 +2,7 @@ package ui.rpg
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -13,6 +14,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontFamily
@@ -124,7 +126,9 @@ fun RpgDemoScreen() {
     @Suppress("UNUSED_EXPRESSION") version
 
     val scroll = rememberScrollState()
-    Box(modifier = Modifier.fillMaxSize().background(Color(0xFF1A1726))) {
+    Box(modifier = Modifier.fillMaxSize().background(
+        Brush.verticalGradient(listOf(Color(0xFF100A1E), Color(0xFF1A1726)))
+    )) {
         Column(
             modifier = Modifier.fillMaxSize().padding(12.dp).verticalScroll(scroll),
             horizontalAlignment = Alignment.CenterHorizontally
@@ -202,15 +206,29 @@ private fun RoomScene(director: SliceDirector) {
         Column(Modifier.padding(10.dp)) {
             Text("Room: ${director.context.roomId}", color = Color(0xFFB0A8D0), fontSize = 12.sp)
             Spacer(Modifier.height(6.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Sprite(Res.drawable.tile_wall, 40)
-                Sprite(Res.drawable.tile_floor, 40)
-                Sprite(Res.drawable.hero_nib, 40)
-                Sprite(Res.drawable.hero_brugg, 40)
-                Sprite(Res.drawable.hero_vellum, 40)
-                Sprite(Res.drawable.tile_floor, 40)
-                if (director.questMarkers.isNotEmpty()) Sprite(Res.drawable.marker_quest, 36)
-                Sprite(Res.drawable.tile_wall, 40)
+            // 5×4 tile grid: wall border, floor interior, heroes in row 2
+            val tileSize = 36
+            val hasMarker = director.questMarkers.isNotEmpty()
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                for (row in 0..3) {
+                    Row {
+                        for (col in 0..6) {
+                            val isWall = row == 0 || row == 3 || col == 0 || col == 6
+                            val isHero = row == 2 && col in 2..4
+                            val isMarker = hasMarker && row == 1 && col == 5
+                            when {
+                                isMarker -> Sprite(Res.drawable.marker_quest, tileSize)
+                                isHero   -> when (col) {
+                                    2 -> Sprite(Res.drawable.hero_nib,    tileSize)
+                                    3 -> Sprite(Res.drawable.hero_brugg,  tileSize)
+                                    else -> Sprite(Res.drawable.hero_vellum, tileSize)
+                                }
+                                isWall   -> Sprite(Res.drawable.tile_wall,  tileSize)
+                                else     -> Sprite(Res.drawable.tile_floor, tileSize)
+                            }
+                        }
+                    }
+                }
             }
             Spacer(Modifier.height(6.dp))
             Text(
@@ -343,10 +361,10 @@ private fun CombatPanel(
 
 @Composable
 private fun HpRow(res: DrawableResource, name: String, hp: Int, maxHp: Int, barColor: Color) {
-    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 2.dp)) {
-        Sprite(res, 24)
-        Spacer(Modifier.width(6.dp))
-        Text(name, color = Color.White, fontSize = 12.sp, modifier = Modifier.width(70.dp))
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 3.dp)) {
+        Sprite(res, 48)
+        Spacer(Modifier.width(8.dp))
+        Text(name, color = Color.White, fontSize = 12.sp, modifier = Modifier.width(90.dp))
         Box(
             modifier = Modifier.weight(1f).height(12.dp)
                 .background(Color(0xFF44405C), RoundedCornerShape(4.dp))
@@ -369,12 +387,13 @@ private fun DialogueBox(text: String) {
         shape = RoundedCornerShape(8.dp),
         color = Color(0xFF000000),
         modifier = Modifier.fillMaxWidth()
+            .border(2.dp, Color(0xFF5A5090), RoundedCornerShape(8.dp))
     ) {
         Text(
             text,
             color = Color(0xFFE0E0E0),
             fontFamily = FontFamily.Monospace,
-            fontSize = 13.sp,
+            fontSize = 14.sp,
             modifier = Modifier.padding(12.dp)
         )
     }
