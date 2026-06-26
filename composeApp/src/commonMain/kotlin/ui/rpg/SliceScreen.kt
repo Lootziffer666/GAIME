@@ -288,12 +288,13 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
     marketScene.spriteMap = spriteMap
     forestScene.spriteMap = spriteMap
 
-    // HD-2D ambient glow colour per map (set once; scenes keep their type).
-    tavernScene.glowColor = Color(0xFFFFD98A)   // warm amber lamp
-    sewerScene.glowColor  = Color(0xFF3A8FE0)   // cold blue drain light
-    bossScene.glowColor   = Color(0xFFE53030)   // danger red for boss room
-    marketScene.glowColor = Color(0xFFFFD98A)   // warm daylight market
-    forestScene.glowColor = Color(0xFF7FD17F)   // muted green canopy
+    // Cinematic atmosphere preset per map (lighting, motes, grade, fog) — the
+    // "Odd Tales / The Last Night" real-time layer on top of the pixel art.
+    tavernScene.atmosphere = SceneAtmosphere.TAVERN
+    sewerScene.atmosphere  = SceneAtmosphere.SEWER
+    bossScene.atmosphere   = SceneAtmosphere.BOSS
+    marketScene.atmosphere = SceneAtmosphere.MARKET
+    forestScene.atmosphere = SceneAtmosphere.FOREST
 
     // --- helpers ---
 
