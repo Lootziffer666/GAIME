@@ -1,5 +1,10 @@
 package ui.rpg
 
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.drawscope.DrawScope
@@ -10,6 +15,7 @@ import rpg.world.Camera
 import rpg.world.GridEntity
 import rpg.world.GridEntityType
 import rpg.world.GridWorld
+import kotlin.math.sin
 
 /**
  * Renders a [GridWorld] onto a Compose canvas, reusing the existing
@@ -31,10 +37,15 @@ class WorldScene(
     var onEntityInteraction: ((GridEntity) -> Unit)? = null
     var spriteMap: Map<String, ImageBitmap> = emptyMap()
 
+    /** Set per-map for the right ambient glow: warm amber = tavern, cold blue = sewer, green = forest. */
+    var glowColor: Color = Color(0xFFFFD98A)
+
     private val camera = Camera()
     private val columns = (tileset.width / srcTile).coerceAtLeast(1)
+    private var time = 0f
 
     override fun update(deltaTime: Float) {
+        time += deltaTime.coerceAtMost(0.05f)
         world.update(deltaTime)
         val triggered = world.consumeTriggers()
         if (triggered.isNotEmpty()) {
@@ -83,6 +94,65 @@ class WorldScene(
         // Player (with a small bob while sliding between tiles).
         val bob = if (world.player.moving) -3f else 0f
         drawSprite(drawScope, playerSprite, pCenterX - tilePx / 2f - camX, pCenterY - tilePx / 2f - camY + bob)
+
+        drawHd2dOverlays(drawScope, vw, vh)
+    }
+
+    private fun drawHd2dOverlays(ds: DrawScope, w: Float, h: Float) {
+        // Pulsing ambient glow — colour set by host per map.
+        val pulse = 0.7f + 0.3f * sin(time * 1.8f)
+        val glowCenter = Offset(w * 0.5f, h * 0.4f)
+        ds.drawCircle(
+            brush = Brush.radialGradient(
+                0f to glowColor.copy(alpha = 0.28f * pulse),
+                0.6f to glowColor.copy(alpha = 0.10f * pulse),
+                1f to Color.Transparent,
+                center = glowCenter,
+                radius = w * 0.55f
+            ),
+            radius = w * 0.55f,
+            center = glowCenter,
+            blendMode = BlendMode.Screen
+        )
+
+        // Tilt-shift fake DoF: dark gradient bands at top and bottom.
+        ds.drawRect(
+            brush = Brush.verticalGradient(
+                0f to Color(0xFF100A1E).copy(alpha = 0.60f),
+                0.15f to Color.Transparent
+            ),
+            size = Size(w, h)
+        )
+        ds.drawRect(
+            brush = Brush.verticalGradient(
+                0.85f to Color.Transparent,
+                1f to Color(0xFF100A1E).copy(alpha = 0.65f)
+            ),
+            size = Size(w, h)
+        )
+
+        // Vignette: darken edges.
+        ds.drawRect(
+            brush = Brush.radialGradient(
+                0.45f to Color.Transparent,
+                1f to Color.Black.copy(alpha = 0.70f),
+                center = Offset(w / 2f, h / 2f),
+                radius = maxOf(w, h) * 0.72f
+            ),
+            size = Size(w, h)
+        )
+
+        // Scanlines: horizontal lines every 3 px at low alpha.
+        var y = 0f
+        while (y < h) {
+            ds.drawLine(
+                color = Color.Black.copy(alpha = 0.09f),
+                start = Offset(0f, y),
+                end = Offset(w, y),
+                strokeWidth = 1f
+            )
+            y += 3f
+        }
     }
 
     private fun blit(ds: DrawScope, atlasIndex: Int, dstX: Float, dstY: Float) {

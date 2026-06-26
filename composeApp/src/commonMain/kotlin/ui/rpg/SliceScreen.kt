@@ -282,6 +282,13 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
     marketScene.spriteMap = spriteMap
     forestScene.spriteMap = spriteMap
 
+    // HD-2D ambient glow colour per map (set once; scenes keep their type).
+    tavernScene.glowColor = Color(0xFFFFD98A)   // warm amber lamp
+    sewerScene.glowColor  = Color(0xFF3A8FE0)   // cold blue drain light
+    bossScene.glowColor   = Color(0xFFE53030)   // danger red for boss room
+    marketScene.glowColor = Color(0xFFFFD98A)   // warm daylight market
+    forestScene.glowColor = Color(0xFF7FD17F)   // muted green canopy
+
     // --- helpers ---
 
     fun fireAndFlash(bark: BarkEvent) {
