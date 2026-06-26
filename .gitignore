@@ -39,12 +39,12 @@ Thumbs.db
 *.part3
 *.7z
 
-# Art / audio are now tracked via Git LFS (see .gitattributes):
-#   *.png *.gif *.aseprite *.tmx *.tsx *.otf *.ttf *.wav *.ogg *.mp3
-# so they are intentionally NOT ignored here anymore.
+# Art / audio are routed through Git LFS in LFS-capable environments
+# (see .gitattributes). In this sandbox LFS is unavailable, so PNGs are
+# force-added as plain blobs; PNG is therefore NOT ignored here.
 
 # Heavy editing sources & vendor promo junk we never load at runtime.
-# (Recoverable from the original asset zips if ever needed.)
+# (PSDs are recoverable from the original asset zips if ever needed.)
 *.psd
 *.svg
 **/COUPON.pdf

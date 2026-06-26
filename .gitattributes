@@ -1,10 +1,11 @@
-# Git LFS — binary art/asset tracking
+# Git LFS — binary art/asset tracking (kept for LFS-capable environments).
 #
-# Raster/vector art and animation/source files are stored via Git LFS so the
-# working tree stays usable while large binaries live in the LFS store.
-# Note: PNGs committed before LFS was enabled (e.g. composeApp composeResources
-# placeholder drawables) remain plain git blobs until they are next modified.
-# We deliberately do NOT history-rewrite (git lfs migrate) the shared `main`.
+# NOTE: the current connections gateway does NOT implement the Git LFS API, so
+# in this sandbox LFS is left *uninstalled* locally and binaries are committed
+# as plain Git blobs (force-added, like the existing asset zips / bark WAVs).
+# These attributes are retained so that in an LFS-capable clone/sandbox new
+# binaries are routed through LFS automatically. Existing plain-blob files stay
+# as-is (no history rewrite / git lfs migrate on shared `main`).
 
 # Pixel art / sprites / atlases / UI
 *.png       filter=lfs diff=lfs merge=lfs -text
