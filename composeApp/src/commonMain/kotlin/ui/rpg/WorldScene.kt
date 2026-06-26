@@ -11,6 +11,7 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import engine.Scene
+import rpg.render.RenderMetrics
 import rpg.world.Camera
 import rpg.world.GridEntity
 import rpg.world.GridEntityType
@@ -27,8 +28,8 @@ class WorldScene(
     val world: GridWorld,
     private val tileset: ImageBitmap,
     private val playerSprite: ImageBitmap,
-    private val srcTile: Int = 16,
-    private val tilePx: Float = 48f
+    private val srcTile: Int = RenderMetrics.LEGACY_TILE,
+    private val tilePx: Float = RenderMetrics.SCREEN_TILE
 ) : Scene {
 
     override val name: String = "World"

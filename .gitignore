@@ -27,19 +27,29 @@ local.properties
 # OS
 Thumbs.db
 .DS_Store
-*.mp3
+
+# Large archives / split parts (asset source zips are force-added on main)
 *.mp4
-*.ogg
-*.png
-*.jpg
-*.jpeg
-*.svg
 *.zip
 *.rar
+*.jpg
+*.jpeg
 *.part1
 *.part2
 *.part3
 *.7z
+
+# Art / audio are now tracked via Git LFS (see .gitattributes):
+#   *.png *.gif *.aseprite *.tmx *.tsx *.otf *.ttf *.wav *.ogg *.mp3
+# so they are intentionally NOT ignored here anymore.
+
+# Heavy editing sources & vendor promo junk we never load at runtime.
+# (Recoverable from the original asset zips if ever needed.)
+*.psd
+*.svg
+**/COUPON.pdf
+**/COUPON.png
+**/*.url
 
 # Extracted audio archives (temporary)
 .extracted/
