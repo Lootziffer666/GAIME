@@ -29,7 +29,14 @@ class WorldScene(
     private val tileset: ImageBitmap,
     private val playerSprite: ImageBitmap,
     private val srcTile: Int = RenderMetrics.LEGACY_TILE,
-    private val tilePx: Float = RenderMetrics.SCREEN_TILE
+    private val tilePx: Float = RenderMetrics.SCREEN_TILE,
+    /**
+     * Optional pre-rendered HD scene (baked from a Tiled map). When set, the
+     * whole map is drawn by scaling this image to the world size instead of
+     * blitting the [tileset] atlas per cell. Its native size must be
+     * map.width*srcTile x map.height*srcTile.
+     */
+    private val background: ImageBitmap? = null
 ) : Scene {
 
     override val name: String = "World"
@@ -78,9 +85,16 @@ class WorldScene(
         val x1 = ((camX + vw) / tilePx).toInt().coerceAtMost(map.width - 1)
         val y1 = ((camY + vh) / tilePx).toInt().coerceAtMost(map.height - 1)
 
-        for (ty in y0..y1) {
-            for (tx in x0..x1) {
-                blit(drawScope, map.tileAt(tx, ty), tx * tilePx - camX, ty * tilePx - camY)
+        val bg = background
+        if (bg != null) {
+            // Baked HD scene: scale the whole image to world size (nearest-neighbour
+            // keeps the pixel art crisp), offset by the camera.
+            drawImageScaled(drawScope, bg, -camX, -camY, worldW, worldH)
+        } else {
+            for (ty in y0..y1) {
+                for (tx in x0..x1) {
+                    blit(drawScope, map.tileAt(tx, ty), tx * tilePx - camX, ty * tilePx - camY)
+                }
             }
         }
 
@@ -154,6 +168,17 @@ class WorldScene(
             )
             y += 3f
         }
+    }
+
+    private fun drawImageScaled(ds: DrawScope, img: ImageBitmap, dstX: Float, dstY: Float, dstW: Float, dstH: Float) {
+        ds.drawImage(
+            image = img,
+            srcOffset = IntOffset.Zero,
+            srcSize = IntSize(img.width, img.height),
+            dstOffset = IntOffset(dstX.toInt(), dstY.toInt()),
+            dstSize = IntSize(dstW.toInt(), dstH.toInt()),
+            filterQuality = FilterQuality.None
+        )
     }
 
     private fun blit(ds: DrawScope, atlasIndex: Int, dstX: Float, dstY: Float) {

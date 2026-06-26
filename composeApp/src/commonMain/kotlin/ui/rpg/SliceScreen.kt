@@ -43,6 +43,7 @@ import gaime.resources.hero_nib
 import gaime.resources.hero_vellum
 import gaime.resources.tileset_dungeon
 import gaime.resources.title_screen
+import gaime.resources.world_tavern
 import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.imageResource
@@ -68,6 +69,7 @@ import rpg.questbook.QuestPressure
 import rpg.questbook.QuestbookEffect
 import rpg.questbook.RoomContext
 import rpg.world.Direction
+import rpg.world.BakedMaps
 import rpg.world.GameMaps
 import rpg.world.GridEntity
 import rpg.world.GridEntityType
@@ -191,6 +193,7 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
     val playerSprite = imageResource(Res.drawable.hero_nib)
     val enemyRatImg = imageResource(Res.drawable.enemy_rat)
     val bossRatImg = imageResource(Res.drawable.boss_rat_accountant)
+    val tavernBg = imageResource(Res.drawable.world_tavern)
     val spriteMap = remember(enemyRatImg, bossRatImg) {
         mapOf("enemy_rat" to enemyRatImg, "boss_rat_accountant" to bossRatImg)
     }
@@ -227,9 +230,9 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
 
     // Worlds
     val tavernWorld = remember {
-        GridWorld(GameMaps.tavern()).also { w ->
-            w.entities.add(GridEntity("barkeep", 5, 3, GridEntityType.NPC, "hero_brugg"))
-            w.entities.add(GridEntity("patron", 3, 6, GridEntityType.NPC, "hero_vellum"))
+        GridWorld(BakedMaps.tavern()).also { w ->
+            w.entities.add(GridEntity("barkeep", BakedMaps.TAVERN_BARKEEP_X, BakedMaps.TAVERN_BARKEEP_Y, GridEntityType.NPC, "hero_brugg"))
+            w.entities.add(GridEntity("patron", BakedMaps.TAVERN_PATRON_X, BakedMaps.TAVERN_PATRON_Y, GridEntityType.NPC, "hero_vellum"))
         }
     }
     val sewerWorld = remember {
@@ -269,7 +272,7 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
     }
 
     // Scenes (created once per resource load; callbacks re-assigned each recomposition)
-    val tavernScene = remember(tileset, playerSprite) { WorldScene(tavernWorld, tileset, playerSprite) }
+    val tavernScene = remember(tileset, playerSprite, tavernBg) { WorldScene(tavernWorld, tileset, playerSprite, background = tavernBg) }
     val sewerScene  = remember(tileset, playerSprite) { WorldScene(sewerWorld,  tileset, playerSprite) }
     val bossScene   = remember(tileset, playerSprite) { WorldScene(bossWorld,   tileset, playerSprite) }
     val marketScene = remember(tileset, playerSprite) { WorldScene(marketWorld,  tileset, playerSprite) }
