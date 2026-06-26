@@ -15,15 +15,18 @@ import java.io.FileInputStream
  * Playback is fire-and-forget; calling [play] while audio is active
  * interrupts the previous playback.
  *
- * ## Temp-file approach (current)
+ * ## Temp-file caching (current)
  *
  * The classpath-based resource loading requires writing bytes to a temp file
- * because MediaPlayer needs a seekable file descriptor. This adds disk I/O
- * latency on each bark playback.
+ * because MediaPlayer needs a seekable file descriptor. To avoid re-writing the
+ * same WAV on every trigger (review issue #4), decoded temp files are cached by
+ * resource path: the first playback of a bark writes its temp file, and every
+ * subsequent playback of the same bark reuses it. This bounds disk I/O to one
+ * write per distinct bark for the lifetime of the player.
  *
  * ## Streaming alternative
  *
- * For reduced latency and memory usage, consider streaming directly via
+ * For even lower latency and memory usage, consider streaming directly via
  * AssetFileDescriptor when an Android Context is available. Compose Resources
  * maps `files/` content into Android assets, allowing:
  *
@@ -41,24 +44,15 @@ import java.io.FileInputStream
 class AndroidAudioPlayer : AudioPlayer {
 
     private var mediaPlayer: MediaPlayer? = null
-    private var tempFile: File? = null
+
+    /** Cache of resource path -> on-disk temp WAV, written once and reused. */
+    private val tempFileCache = mutableMapOf<String, File>()
 
     override fun play(resourcePath: String, onComplete: (() -> Unit)?) {
         stop()
 
         try {
-            // Load from classpath (Compose Resources makes files available this way)
-            val bytes = this::class.java.classLoader
-                ?.getResourceAsStream("files/$resourcePath")
-                ?.readBytes()
-                ?: return // Resource not found; silently skip
-
-            // TODO: Replace with AssetFileDescriptor approach (see class doc) to
-            // eliminate temp-file I/O overhead and enable true streaming playback.
-            val tmp = File.createTempFile("bark_audio_", ".wav")
-            tmp.deleteOnExit()
-            tmp.writeBytes(bytes)
-            tempFile = tmp
+            val tmp = tempFileForResource(resourcePath) ?: return
 
             val player = MediaPlayer()
             val fis = FileInputStream(tmp)
@@ -67,7 +61,7 @@ class AndroidAudioPlayer : AudioPlayer {
             player.setOnCompletionListener {
                 onComplete?.invoke()
                 it.release()
-                tmp.delete()
+                if (mediaPlayer === it) mediaPlayer = null
             }
             player.prepare()
             player.start()
@@ -75,6 +69,30 @@ class AndroidAudioPlayer : AudioPlayer {
         } catch (_: Exception) {
             // Audio playback is best-effort; never crash the game loop
         }
+    }
+
+    /**
+     * Returns the cached temp file for [resourcePath], writing it on first use.
+     * Returns null if the resource cannot be found on the classpath.
+     */
+    private fun tempFileForResource(resourcePath: String): File? {
+        tempFileCache[resourcePath]?.let { cached ->
+            if (cached.exists()) return cached
+            // Cache entry was evicted from disk; fall through and rewrite.
+            tempFileCache.remove(resourcePath)
+        }
+
+        // Load from classpath (Compose Resources makes files available this way)
+        val bytes = this::class.java.classLoader
+            ?.getResourceAsStream("files/$resourcePath")
+            ?.readBytes()
+            ?: return null // Resource not found; silently skip
+
+        val tmp = File.createTempFile("bark_audio_", ".wav")
+        tmp.deleteOnExit()
+        tmp.writeBytes(bytes)
+        tempFileCache[resourcePath] = tmp
+        return tmp
     }
 
     override fun stop() {
@@ -89,8 +107,6 @@ class AndroidAudioPlayer : AudioPlayer {
             }
         }
         mediaPlayer = null
-        tempFile?.delete()
-        tempFile = null
     }
 
     override fun isPlaying(): Boolean = try {
@@ -101,5 +117,8 @@ class AndroidAudioPlayer : AudioPlayer {
 
     override fun release() {
         stop()
+        // Drop cached temp files on full release.
+        tempFileCache.values.forEach { runCatching { it.delete() } }
+        tempFileCache.clear()
     }
 }

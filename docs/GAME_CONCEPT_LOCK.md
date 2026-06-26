@@ -99,7 +99,7 @@ Quest Pressure is a single global meter with exactly three levels:
 - No complex inventory system
 - No procedural content generation
 - No multiplayer
-- No new chapters beyond what is already defined (Prologue + 3 Chapters)
+- No new chapters beyond what is defined in the canonical campaign (Prologue + 5 Chapters + Finale; see docs/CAMPAIGN.md)
 - No new party members beyond Nib, Brugg, Vellum
 - No new mechanics beyond BarkEvent-to-Questbook pipeline
 - No random event system
@@ -113,4 +113,9 @@ Quest Pressure is a single global meter with exactly three levels:
 
 ## Design Lock
 
-This document represents the locked concept. No additions, expansions, or "wouldn't it be cool if" changes are permitted without explicit scope review. The concept is complete. The task is to build it small and prove it works.
+This document represents the locked concept. The buildable proof is the vertical
+slice (Prologue + Chapter 1). The full campaign (Prologue + 5 Chapters + Finale)
+is defined canonically in docs/CAMPAIGN.md and is built out chapter by chapter on
+top of the proven slice pipeline. No additions beyond the campaign defined there
+are permitted without explicit scope review. Build it small and prove each piece
+works.

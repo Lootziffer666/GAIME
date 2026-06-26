@@ -88,8 +88,8 @@ class SliceDirector(
     }
 
     /** Fires a bark and applies the Questbook's reaction to local world state. */
-    fun fireBark(bark: BarkEvent): BarkOutcome =
-        when (val fired = bus.fire(bark)) {
+    fun fireBark(bark: BarkEvent, bypassCooldown: Boolean = false): BarkOutcome =
+        when (val fired = bus.fire(bark, bypassCooldown)) {
             is BarkFireResult.OnCooldown -> BarkOutcome.Suppressed(fired.remainingMillis)
             is BarkFireResult.Emitted -> {
                 val reaction = questbook.process(bark, context)
@@ -139,7 +139,7 @@ class SliceDirector(
     private fun handleCombatEvents(events: List<CombatEvent>) {
         for (event in events) {
             when (event) {
-                is CombatEvent.BarkTriggered -> fireBark(event.bark)
+                is CombatEvent.BarkTriggered -> fireBark(event.bark, bypassCooldown = true)
                 is CombatEvent.BossPhaseChanged ->
                     if (event.phase == rpg.combat.BossPhase.PHASE_2) {
                         // The Accountant files objections: pressure spikes to HIGH
