@@ -4,6 +4,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
@@ -43,6 +44,9 @@ import gaime.resources.hero_nib
 import gaime.resources.hero_vellum
 import gaime.resources.tileset_dungeon
 import gaime.resources.title_screen
+import gaime.resources.questbook_open
+import gaime.resources.questbook_closed
+import gaime.resources.world_tavern
 import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.imageResource
@@ -68,6 +72,7 @@ import rpg.questbook.QuestPressure
 import rpg.questbook.QuestbookEffect
 import rpg.questbook.RoomContext
 import rpg.world.Direction
+import rpg.world.BakedMaps
 import rpg.world.GameMaps
 import rpg.world.GridEntity
 import rpg.world.GridEntityType
@@ -191,6 +196,7 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
     val playerSprite = imageResource(Res.drawable.hero_nib)
     val enemyRatImg = imageResource(Res.drawable.enemy_rat)
     val bossRatImg = imageResource(Res.drawable.boss_rat_accountant)
+    val tavernBg = imageResource(Res.drawable.world_tavern)
     val spriteMap = remember(enemyRatImg, bossRatImg) {
         mapOf("enemy_rat" to enemyRatImg, "boss_rat_accountant" to bossRatImg)
     }
@@ -227,9 +233,9 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
 
     // Worlds
     val tavernWorld = remember {
-        GridWorld(GameMaps.tavern()).also { w ->
-            w.entities.add(GridEntity("barkeep", 5, 3, GridEntityType.NPC, "hero_brugg"))
-            w.entities.add(GridEntity("patron", 3, 6, GridEntityType.NPC, "hero_vellum"))
+        GridWorld(BakedMaps.tavern()).also { w ->
+            w.entities.add(GridEntity("barkeep", BakedMaps.TAVERN_BARKEEP_X, BakedMaps.TAVERN_BARKEEP_Y, GridEntityType.NPC, "hero_brugg"))
+            w.entities.add(GridEntity("patron", BakedMaps.TAVERN_PATRON_X, BakedMaps.TAVERN_PATRON_Y, GridEntityType.NPC, "hero_vellum"))
         }
     }
     val sewerWorld = remember {
@@ -269,7 +275,7 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
     }
 
     // Scenes (created once per resource load; callbacks re-assigned each recomposition)
-    val tavernScene = remember(tileset, playerSprite) { WorldScene(tavernWorld, tileset, playerSprite) }
+    val tavernScene = remember(tileset, playerSprite, tavernBg) { WorldScene(tavernWorld, tileset, playerSprite, background = tavernBg) }
     val sewerScene  = remember(tileset, playerSprite) { WorldScene(sewerWorld,  tileset, playerSprite) }
     val bossScene   = remember(tileset, playerSprite) { WorldScene(bossWorld,   tileset, playerSprite) }
     val marketScene = remember(tileset, playerSprite) { WorldScene(marketWorld,  tileset, playerSprite) }
@@ -282,12 +288,13 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
     marketScene.spriteMap = spriteMap
     forestScene.spriteMap = spriteMap
 
-    // HD-2D ambient glow colour per map (set once; scenes keep their type).
-    tavernScene.glowColor = Color(0xFFFFD98A)   // warm amber lamp
-    sewerScene.glowColor  = Color(0xFF3A8FE0)   // cold blue drain light
-    bossScene.glowColor   = Color(0xFFE53030)   // danger red for boss room
-    marketScene.glowColor = Color(0xFFFFD98A)   // warm daylight market
-    forestScene.glowColor = Color(0xFF7FD17F)   // muted green canopy
+    // Cinematic atmosphere preset per map (lighting, motes, grade, fog) — the
+    // "Odd Tales / The Last Night" real-time layer on top of the pixel art.
+    tavernScene.atmosphere = SceneAtmosphere.TAVERN
+    sewerScene.atmosphere  = SceneAtmosphere.SEWER
+    bossScene.atmosphere   = SceneAtmosphere.BOSS
+    marketScene.atmosphere = SceneAtmosphere.MARKET
+    forestScene.atmosphere = SceneAtmosphere.FOREST
 
     // --- helpers ---
 
@@ -995,24 +1002,107 @@ private fun CombatView(
 
 @Composable
 private fun QuestbookFullView(partyName: String, onDismiss: () -> Unit) {
+    // Animated magic book = the Questbook of the story (assets/HD/props/magic-book).
+    // Sequence: dim in -> closed book settles -> cross-fades open -> page ink appears.
+    var opened by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { delay(550); opened = true }
+
+    val bookScale by animateFloatAsState(
+        targetValue = if (opened) 1f else 0.9f,
+        animationSpec = tween(durationMillis = 650)
+    )
+    val openAlpha by animateFloatAsState(
+        targetValue = if (opened) 1f else 0f,
+        animationSpec = tween(durationMillis = 500)
+    )
+    val inkAlpha by animateFloatAsState(
+        targetValue = if (opened) 1f else 0f,
+        animationSpec = tween(durationMillis = 700, delayMillis = 350)
+    )
+    val glow = rememberInfiniteTransition()
+    val glowPulse by glow.animateFloat(
+        initialValue = 0.45f, targetValue = 0.85f,
+        animationSpec = infiniteRepeatable(tween(2200), RepeatMode.Reverse)
+    )
+
     Box(
-        modifier = Modifier.fillMaxSize().background(Color(0xF5241E12)),
+        modifier = Modifier.fillMaxSize().background(Color(0xF20A0712)),
         contentAlignment = Alignment.Center
     ) {
-        Column(Modifier.padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("Official Registry of Heroes", color = Color(0xFFE8C170), fontWeight = FontWeight.Bold, fontSize = 20.sp)
-            Spacer(Modifier.height(16.dp))
-            Text("Page 1:", color = Color(0xFFF5E9C8), fontSize = 16.sp)
-            Spacer(Modifier.height(8.dp))
-            Text(partyName, color = Color(0xFFFFD700), fontWeight = FontWeight.Bold, fontSize = 24.sp)
-            Spacer(Modifier.height(8.dp))
-            Text("(This page cannot be unread.)", color = Color(0xFFB0A8D0), fontSize = 12.sp)
-            Spacer(Modifier.height(24.dp))
+        BoxWithConstraints(
+            modifier = Modifier
+                .fillMaxWidth(0.94f)
+                .aspectRatio(1088f / 816f)
+                .graphicsLayer(scaleX = bookScale, scaleY = bookScale)
+        ) {
+            val w = maxWidth
+            val h = maxHeight
+
+            // Warm magical glow behind the tome.
+            Box(
+                Modifier.fillMaxSize().alpha(glowPulse * 0.5f)
+                    .background(
+                        androidx.compose.ui.graphics.Brush.radialGradient(
+                            0f to Color(0xFFFFE3A0), 0.7f to Color(0x33FFB347), 1f to Color.Transparent
+                        )
+                    )
+            )
+
+            // Closed book underneath; the open book fades in over it.
+            Image(
+                painter = painterResource(Res.drawable.questbook_closed),
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize().alpha(1f - openAlpha),
+                contentScale = ContentScale.Fit
+            )
+            Image(
+                painter = painterResource(Res.drawable.questbook_open),
+                contentDescription = "Questbook",
+                modifier = Modifier.fillMaxSize().alpha(openAlpha),
+                contentScale = ContentScale.Fit
+            )
+
+            // Left page: the eternal registry header. Right page: this entry.
+            Column(
+                modifier = Modifier
+                    .padding(start = w * 0.12f, top = h * 0.24f)
+                    .width(w * 0.30f)
+                    .alpha(inkAlpha),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text("Official Registry\nof Heroes", color = Color(0xFF4A2F1A),
+                    fontWeight = FontWeight.Bold, fontSize = 15.sp, lineHeight = 18.sp)
+                Spacer(Modifier.height(10.dp))
+                Text("Filed in perpetuity by\norder of the Questbook.",
+                    color = Color(0xFF6B4A2A), fontSize = 11.sp, lineHeight = 14.sp)
+                Spacer(Modifier.height(14.dp))
+                Text("\u2767", color = Color(0xFF8A5A2B), fontSize = 22.sp)
+            }
+            Column(
+                modifier = Modifier
+                    .padding(start = w * 0.56f, top = h * 0.24f)
+                    .width(w * 0.30f)
+                    .alpha(inkAlpha),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text("Entry:", color = Color(0xFF6B4A2A), fontSize = 12.sp)
+                Spacer(Modifier.height(8.dp))
+                Text(partyName, color = Color(0xFF3A2410),
+                    fontWeight = FontWeight.Bold, fontSize = 18.sp, lineHeight = 22.sp)
+                Spacer(Modifier.height(10.dp))
+                Text("(This page cannot be unread.)",
+                    color = Color(0xFF7A5A3A), fontSize = 10.sp)
+            }
+        }
+
+        // Close affordance, anchored low.
+        Box(Modifier.fillMaxSize().padding(bottom = 28.dp), contentAlignment = Alignment.BottomCenter) {
             Button(
                 onClick = onDismiss,
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3A4A6B))
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xCC2A1B0E)),
+                modifier = Modifier.alpha(inkAlpha)
             ) {
-                Text("Close Questbook", color = Color.White)
+                Text("Close the Questbook", color = Color(0xFFE8C170))
             }
         }
     }

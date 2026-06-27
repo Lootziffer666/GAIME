@@ -48,4 +48,42 @@ object TileMapParser {
         require(spawnX >= 0) { "map legend must define exactly one spawn tile" }
         return TileMap(width, height, blocked, tiles, triggers, spawnX, spawnY)
     }
+
+    /**
+     * Builds a [TileMap] from a baked collision grid ('#' = blocked, anything
+     * else = walkable). Used for HD worlds whose visuals come from a pre-rendered
+     * background image (see [BakedMaps] / scripts/tmx_render.py) rather than a
+     * tile atlas, so [TileMap.tileAt] is irrelevant and all tile indices are 0.
+     * Spawn and trigger cells are supplied by coordinate.
+     */
+    fun fromCollision(
+        rows: List<String>,
+        spawnX: Int,
+        spawnY: Int,
+        triggers: Map<Pair<Int, Int>, String> = emptyMap()
+    ): TileMap {
+        require(rows.isNotEmpty()) { "map must have at least one row" }
+        val height = rows.size
+        val width = rows.maxOf { it.length }
+        require(width > 0) { "map must have at least one column" }
+        require(spawnX in 0 until width && spawnY in 0 until height) {
+            "spawn ($spawnX,$spawnY) out of bounds ${width}x$height"
+        }
+
+        val blocked = BooleanArray(width * height)
+        val tiles = IntArray(width * height) // unused: visuals come from a baked image
+        for (y in 0 until height) {
+            val row = rows[y]
+            for (x in 0 until width) {
+                val c = if (x < row.length) row[x] else '#'
+                blocked[y * width + x] = c == '#'
+            }
+        }
+        require(!blocked[spawnY * width + spawnX]) { "spawn ($spawnX,$spawnY) is on a blocked cell" }
+
+        val triggerMap = triggers.entries.associate { (pos, id) ->
+            (pos.second * width + pos.first) to id
+        }
+        return TileMap(width, height, blocked, tiles, triggerMap, spawnX, spawnY)
+    }
 }

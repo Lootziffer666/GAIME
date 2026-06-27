@@ -1,0 +1,26 @@
+{
+  "_comment": "16px -> 48px rebuild mapping. Each entry maps a game-facing drawable/atlas index to a chosen HD source frame under assets/HD/. Fill `source` as art decisions are made, then run scripts/atlas_rebuild.py / asset_upscale.py. See docs/HD48_MIGRATION.md.",
+  "targetTile": 48,
+  "legacyTile": 16,
+  "atlases": {
+    "tileset_dungeon": {
+      "columns": 12,
+      "rows": 11,
+      "out": "composeApp/src/commonMain/composeResources/drawable/tileset_dungeon.png",
+      "tiles": {
+        "48": { "role": "floor", "source": "assets/HD/tilesets/dungeon/PNG/" },
+        "14": { "role": "wall",  "source": "assets/HD/tilesets/dungeon/PNG/" },
+        "45": { "role": "door",  "source": "assets/HD/tilesets/dungeon/PNG/" }
+      }
+    }
+  },
+  "sprites": {
+    "hero_nib":           { "target": 48, "source": "assets/HD/characters/swordsman/PNG/" },
+    "hero_brugg":         { "target": 48, "source": "assets/HD/characters/swordsman/PNG/" },
+    "hero_vellum":        { "target": 48, "source": "assets/HD/characters/vampire/PNG/" },
+    "enemy_rat":          { "target": 48, "source": "assets/HD/enemies/field-enemies/PNG/" },
+    "boss_rat_accountant":{ "target": 96, "source": "assets/HD/enemies/rpg-monsters/PNG/", "note": "boss = 2x tile close-up" },
+    "marker_quest":       { "target": 48, "source": "assets/HD/ui/fantasy-icons/" },
+    "ui_panel":           { "target": 48, "source": "assets/HD/ui/rpg-ui/" }
+  }
+}

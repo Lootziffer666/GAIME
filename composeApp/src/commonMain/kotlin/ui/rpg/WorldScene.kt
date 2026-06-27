@@ -11,6 +11,7 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import engine.Scene
+import rpg.render.RenderMetrics
 import rpg.world.Camera
 import rpg.world.GridEntity
 import rpg.world.GridEntityType
@@ -27,8 +28,15 @@ class WorldScene(
     val world: GridWorld,
     private val tileset: ImageBitmap,
     private val playerSprite: ImageBitmap,
-    private val srcTile: Int = 16,
-    private val tilePx: Float = 48f
+    private val srcTile: Int = RenderMetrics.LEGACY_TILE,
+    private val tilePx: Float = RenderMetrics.SCREEN_TILE,
+    /**
+     * Optional pre-rendered HD scene (baked from a Tiled map). When set, the
+     * whole map is drawn by scaling this image to the world size instead of
+     * blitting the [tileset] atlas per cell. Its native size must be
+     * map.width*srcTile x map.height*srcTile.
+     */
+    private val background: ImageBitmap? = null
 ) : Scene {
 
     override val name: String = "World"
@@ -37,8 +45,8 @@ class WorldScene(
     var onEntityInteraction: ((GridEntity) -> Unit)? = null
     var spriteMap: Map<String, ImageBitmap> = emptyMap()
 
-    /** Set per-map for the right ambient glow: warm amber = tavern, cold blue = sewer, green = forest. */
-    var glowColor: Color = Color(0xFFFFD98A)
+    /** Cinematic atmosphere preset (lighting, motes, grade, fog) — set per map by the host. */
+    var atmosphere: SceneAtmosphere = SceneAtmosphere.TAVERN
 
     private val camera = Camera()
     private val columns = (tileset.width / srcTile).coerceAtLeast(1)
@@ -77,9 +85,16 @@ class WorldScene(
         val x1 = ((camX + vw) / tilePx).toInt().coerceAtMost(map.width - 1)
         val y1 = ((camY + vh) / tilePx).toInt().coerceAtMost(map.height - 1)
 
-        for (ty in y0..y1) {
-            for (tx in x0..x1) {
-                blit(drawScope, map.tileAt(tx, ty), tx * tilePx - camX, ty * tilePx - camY)
+        val bg = background
+        if (bg != null) {
+            // Baked HD scene: scale the whole image to world size (nearest-neighbour
+            // keeps the pixel art crisp), offset by the camera.
+            drawImageScaled(drawScope, bg, -camX, -camY, worldW, worldH)
+        } else {
+            for (ty in y0..y1) {
+                for (tx in x0..x1) {
+                    blit(drawScope, map.tileAt(tx, ty), tx * tilePx - camX, ty * tilePx - camY)
+                }
             }
         }
 
@@ -95,64 +110,18 @@ class WorldScene(
         val bob = if (world.player.moving) -3f else 0f
         drawSprite(drawScope, playerSprite, pCenterX - tilePx / 2f - camX, pCenterY - tilePx / 2f - camY + bob)
 
-        drawHd2dOverlays(drawScope, vw, vh)
+        drawScope.drawAtmosphere(atmosphere, time, vw, vh)
     }
 
-    private fun drawHd2dOverlays(ds: DrawScope, w: Float, h: Float) {
-        // Pulsing ambient glow — colour set by host per map.
-        val pulse = 0.7f + 0.3f * sin(time * 1.8f)
-        val glowCenter = Offset(w * 0.5f, h * 0.4f)
-        ds.drawCircle(
-            brush = Brush.radialGradient(
-                0f to glowColor.copy(alpha = 0.28f * pulse),
-                0.6f to glowColor.copy(alpha = 0.10f * pulse),
-                1f to Color.Transparent,
-                center = glowCenter,
-                radius = w * 0.55f
-            ),
-            radius = w * 0.55f,
-            center = glowCenter,
-            blendMode = BlendMode.Screen
+    private fun drawImageScaled(ds: DrawScope, img: ImageBitmap, dstX: Float, dstY: Float, dstW: Float, dstH: Float) {
+        ds.drawImage(
+            image = img,
+            srcOffset = IntOffset.Zero,
+            srcSize = IntSize(img.width, img.height),
+            dstOffset = IntOffset(dstX.toInt(), dstY.toInt()),
+            dstSize = IntSize(dstW.toInt(), dstH.toInt()),
+            filterQuality = FilterQuality.None
         )
-
-        // Tilt-shift fake DoF: dark gradient bands at top and bottom.
-        ds.drawRect(
-            brush = Brush.verticalGradient(
-                0f to Color(0xFF100A1E).copy(alpha = 0.60f),
-                0.15f to Color.Transparent
-            ),
-            size = Size(w, h)
-        )
-        ds.drawRect(
-            brush = Brush.verticalGradient(
-                0.85f to Color.Transparent,
-                1f to Color(0xFF100A1E).copy(alpha = 0.65f)
-            ),
-            size = Size(w, h)
-        )
-
-        // Vignette: darken edges.
-        ds.drawRect(
-            brush = Brush.radialGradient(
-                0.45f to Color.Transparent,
-                1f to Color.Black.copy(alpha = 0.70f),
-                center = Offset(w / 2f, h / 2f),
-                radius = maxOf(w, h) * 0.72f
-            ),
-            size = Size(w, h)
-        )
-
-        // Scanlines: horizontal lines every 3 px at low alpha.
-        var y = 0f
-        while (y < h) {
-            ds.drawLine(
-                color = Color.Black.copy(alpha = 0.09f),
-                start = Offset(0f, y),
-                end = Offset(w, y),
-                strokeWidth = 1f
-            )
-            y += 3f
-        }
     }
 
     private fun blit(ds: DrawScope, atlasIndex: Int, dstX: Float, dstY: Float) {
