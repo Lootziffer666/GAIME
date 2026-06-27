@@ -38,4 +38,7 @@ enum class SlicePhase {
     CHAPTER2_TEMPLE_EXT,   // Ruined temple exterior — wilderness transition
     CHAPTER2_BRIDGE,       // Stone bridge — overworld crossing
     CHAPTER2_GLASSBLOWERS, // Glassblowers district exterior — market expansion
+
+    // ═══ Shop ════════════════════════════════════════════════════════════════
+    SHOP,                  // Merchant shop overlay (above CHAPTER2_MARKET world)
 }

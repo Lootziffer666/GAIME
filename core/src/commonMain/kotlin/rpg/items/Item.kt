@@ -1,30 +1,17 @@
 package rpg.items
 
-/** The two kinds of shop item the party can buy. */
-enum class ItemType {
-    /** Consumable that restores HP when used. */
-    POTION,
-
-    /** Equippable that permanently raises a party member's attack power. */
-    WEAPON
-}
+enum class ItemType { POTION, WEAPON }
 
 /**
- * A single purchasable item. Pure data: the canonical catalogue lives in
- * [ItemCatalog] and the player's owned items live in [Inventory].
- *
- * @param id stable lookup key (e.g. "minor_potion"), used by save data and [ItemCatalog.get].
- * @param displayName human-readable name shown in the shop UI.
- * @param type whether this is a [ItemType.POTION] or [ItemType.WEAPON].
- * @param price cost in gold.
- * @param effectValue for potions, the HP restored when used; 0 for weapons.
- * @param attackBonus for weapons, the attack power added when equipped; 0 for potions.
+ * A purchasable item. Potions restore HP; weapons permanently raise the party's
+ * attack power. [effectValue] is heal amount for potions, attack bonus for weapons.
+ * Prices are intentionally punishing — the party starts with 50 gold.
  */
 data class Item(
     val id: String,
-    val displayName: String,
+    val name: String,
+    val description: String,
     val type: ItemType,
     val price: Int,
-    val effectValue: Int = 0,
-    val attackBonus: Int = 0
+    val effectValue: Int
 )

@@ -1,11 +1,11 @@
 package rpg.world
 
 /** What role an entity plays on the map. */
-enum class GridEntityType { NPC, ENEMY }
+enum class GridEntityType { NPC, ENEMY, DESTRUCTIBLE }
 
 /**
- * A non-player entity occupying one tile: an NPC to speak to, or an enemy that
- * blocks movement and starts combat when the player tries to step onto its tile.
+ * A non-player entity occupying one tile: an NPC to speak to, an enemy, or a
+ * destructible object (crate, barrel, tall grass, cracked wall).
  * Entities live in [GridWorld.entities] and are independent of the static tile map,
  * so they can be added, removed, or moved without touching the map data.
  */
@@ -15,5 +15,14 @@ data class GridEntity(
     val tileY: Int,
     val type: GridEntityType,
     /** Drawable resource key, e.g. "hero_brugg", used by WorldScene to pick the sprite. */
-    val sprite: String
+    val sprite: String,
+    /** -1 = NPC or boss handled by CombatEngine; positive = action-combat / destructible HP. */
+    val maxHp: Int = -1,
+    var hp: Int = maxHp,
+    /**
+     * Whether this entity blocks tile movement.
+     * Enemies and solid destructibles (crates, barrels, walls) are solid.
+     * Non-solid destructibles (tall grass) are destroyed when stepped on.
+     */
+    val solid: Boolean = true
 )
