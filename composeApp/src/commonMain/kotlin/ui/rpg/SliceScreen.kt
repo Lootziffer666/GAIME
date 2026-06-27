@@ -104,7 +104,7 @@ import kotlin.time.TimeSource
 private val INTRO_LINES = listOf(
     DialogueLine("Barkeep", "You've been officially registered as a Hero Party. Don't ask how.", "bark/barkeep/greetings_stranger.wav"),
     DialogueLine("Nib", "...by who?", "bark/nib/where_am_i.wav"),
-    DialogueLine("Barkeep", "The Questbook. It fell on the desk and opened to the right page. Fate, probably.", "bark/barkeep/what_do_you_have_for_me.wav")
+    DialogueLine("Barkeep", "The Questbook. It fell on the desk and opened to the right page. Fate, probably.", "bark/barkeep/hmm_i_wonder_what_this_could_be.wav")
 )
 private val FALLING_LINES = listOf(
     DialogueLine("", "The cellar floor gives way."),
@@ -184,8 +184,8 @@ private val GUILDMASTER_LINES = listOf(
 )
 
 private val CHAPEL_DEVOTEE_LINES = listOf(
-    DialogueLine("Citizen", "The chapel has been... quiet lately. Too quiet.", "bark/guard/nothing_to_see_here.wav"),
-    DialogueLine("Citizen", "Something moved the pews. Something large.", "bark/guard/who_goes_there.wav"),
+    DialogueLine("Citizen", "The chapel has been... quiet lately. Too quiet.", "bark/citizen/hmm_i_wonder_what_this_could_be.wav"),
+    DialogueLine("Citizen", "Something moved the pews. Something large.", "bark/citizen/what_dark_dealings_await_here.wav"),
     DialogueLine("Vellum", "Perfect. Let's go in.", "bark/vellum/so_thats_how_it_is_then.wav")
 )
 
