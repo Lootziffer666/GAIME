@@ -107,6 +107,12 @@ import rpg.world.GridWorld
 import ui.GameCanvas
 import kotlin.random.Random
 import kotlin.time.TimeSource
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.unit.IntOffset
+import kotlin.math.abs
+import kotlin.math.roundToInt
 
 // --- Scripted dialogue lines ---
 
@@ -1228,7 +1234,10 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
                     falseMarkers = director.falseMarkers,
                     onStep   = tavernWorld::requestStep,
                     barkButtons = listOf(BarkEvent.NIB_SMELL_TREASURE to "Nib: Smell Treasure"),
-                    onBark   = ::fireAndFlash
+                    onBark     = ::fireAndFlash,
+                    onAttack   = { tavernWorld.requestAttack(); version++ },
+                    onInteract = { tavernWorld.requestInteraction()?.let { tavernScene.onEntityInteraction?.invoke(it); version++ } },
+                    onPotion   = { party.firstOrNull()?.let { if (inventory.useCheapestPotion(it) > 0) version++ } }
                 )
 
             SlicePhase.NPC_DIALOGUE -> {
@@ -1284,7 +1293,10 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
                         } else {
                             fireAndFlash(bark)
                         }
-                    }
+                    },
+                    onAttack   = { sewerWorld.requestAttack(); version++ },
+                    onInteract = { sewerWorld.requestInteraction()?.let { sewerScene.onEntityInteraction?.invoke(it); version++ } },
+                    onPotion   = { party.firstOrNull()?.let { if (inventory.useCheapestPotion(it) > 0) version++ } }
                 )
 
             SlicePhase.BOSS_ROOM ->
@@ -1295,7 +1307,10 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
                     falseMarkers = director.falseMarkers,
                     onStep   = bossWorld::requestStep,
                     barkButtons = listOf(BarkEvent.VELLUM_CALLS_FOR_FLAME to "Vellum: Flame"),
-                    onBark   = ::fireAndFlash
+                    onBark     = ::fireAndFlash,
+                    onAttack   = { bossWorld.requestAttack(); version++ },
+                    onInteract = { bossWorld.requestInteraction()?.let { bossScene.onEntityInteraction?.invoke(it); version++ } },
+                    onPotion   = { party.firstOrNull()?.let { if (inventory.useCheapestPotion(it) > 0) version++ } }
                 )
 
             // --- Combat (boss encounters only — regular enemies use action combat) ---
@@ -1334,7 +1349,10 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
                     falseMarkers = director.falseMarkers,
                     onStep   = marketWorld::requestStep,
                     barkButtons = listOf(BarkEvent.NIB_SMELL_GOLD to "Nib: Smell Gold"),
-                    onBark   = ::fireAndFlash
+                    onBark     = ::fireAndFlash,
+                    onAttack   = { marketWorld.requestAttack(); version++ },
+                    onInteract = { marketWorld.requestInteraction()?.let { marketScene.onEntityInteraction?.invoke(it); version++ } },
+                    onPotion   = { party.firstOrNull()?.let { if (inventory.useCheapestPotion(it) > 0) version++ } }
                 )
 
             SlicePhase.CHAPTER2_MARKET_NPC -> {
@@ -1363,7 +1381,10 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
                     falseMarkers = director.falseMarkers,
                     onStep   = forestWorld::requestStep,
                     barkButtons = listOf(BarkEvent.BRUGG_ATTACK to "Brugg: Attack!"),
-                    onBark   = ::fireAndFlash
+                    onBark     = ::fireAndFlash,
+                    onAttack   = { forestWorld.requestAttack(); version++ },
+                    onInteract = { forestWorld.requestInteraction()?.let { forestScene.onEntityInteraction?.invoke(it); version++ } },
+                    onPotion   = { party.firstOrNull()?.let { if (inventory.useCheapestPotion(it) > 0) version++ } }
                 )
 
             SlicePhase.CHAPTER2_SHRINE ->
@@ -1384,7 +1405,10 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
                         } else {
                             fireAndFlash(bark)
                         }
-                    }
+                    },
+                    onAttack   = { forestWorld.requestAttack(); version++ },
+                    onInteract = { forestWorld.requestInteraction()?.let { forestScene.onEntityInteraction?.invoke(it); version++ } },
+                    onPotion   = { party.firstOrNull()?.let { if (inventory.useCheapestPotion(it) > 0) version++ } }
                 )
 
             SlicePhase.CHAPTER2_BOSS_INTRO ->
@@ -1437,9 +1461,12 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
                     scene    = heroesHomeExtScene,
                     pressure = director.pressure,
                     falseMarkers = director.falseMarkers,
-                    onStep   = heroesHomeExtWorld::requestStep,
+                    onStep     = heroesHomeExtWorld::requestStep,
                     barkButtons = emptyList(),
-                    onBark   = ::fireAndFlash
+                    onBark     = ::fireAndFlash,
+                    onAttack   = { heroesHomeExtWorld.requestAttack(); version++ },
+                    onInteract = { heroesHomeExtWorld.requestInteraction()?.let { heroesHomeExtScene.onEntityInteraction?.invoke(it); version++ } },
+                    onPotion   = { party.firstOrNull()?.let { if (inventory.useCheapestPotion(it) > 0) version++ } }
                 )
 
             SlicePhase.CHAPTER2_GUILDHALL ->
@@ -1448,9 +1475,12 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
                     scene    = guildHallExtScene,
                     pressure = director.pressure,
                     falseMarkers = director.falseMarkers,
-                    onStep   = guildHallExtWorld::requestStep,
+                    onStep     = guildHallExtWorld::requestStep,
                     barkButtons = listOf(BarkEvent.NIB_SMELL_GOLD to "Nib: Contracts"),
-                    onBark   = ::fireAndFlash
+                    onBark     = ::fireAndFlash,
+                    onAttack   = { guildHallExtWorld.requestAttack(); version++ },
+                    onInteract = { guildHallExtWorld.requestInteraction()?.let { guildHallExtScene.onEntityInteraction?.invoke(it); version++ } },
+                    onPotion   = { party.firstOrNull()?.let { if (inventory.useCheapestPotion(it) > 0) version++ } }
                 )
 
             SlicePhase.CHAPTER2_CHAPEL_EXT ->
@@ -1459,9 +1489,12 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
                     scene    = chapelExtScene,
                     pressure = director.pressure,
                     falseMarkers = director.falseMarkers,
-                    onStep   = chapelExtWorld::requestStep,
+                    onStep     = chapelExtWorld::requestStep,
                     barkButtons = listOf(BarkEvent.VELLUM_CALLS_FOR_FLAME to "Vellum: Sense"),
-                    onBark   = ::fireAndFlash
+                    onBark     = ::fireAndFlash,
+                    onAttack   = { chapelExtWorld.requestAttack(); version++ },
+                    onInteract = { chapelExtWorld.requestInteraction()?.let { chapelExtScene.onEntityInteraction?.invoke(it); version++ } },
+                    onPotion   = { party.firstOrNull()?.let { if (inventory.useCheapestPotion(it) > 0) version++ } }
                 )
 
             SlicePhase.CHAPTER2_TEMPLE_EXT ->
@@ -1470,9 +1503,12 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
                     scene    = templeExtScene,
                     pressure = director.pressure,
                     falseMarkers = director.falseMarkers,
-                    onStep   = templeExtWorld::requestStep,
+                    onStep     = templeExtWorld::requestStep,
                     barkButtons = listOf(BarkEvent.BRUGG_ATTACK to "Brugg: Attack!"),
-                    onBark   = ::fireAndFlash
+                    onBark     = ::fireAndFlash,
+                    onAttack   = { templeExtWorld.requestAttack(); version++ },
+                    onInteract = { templeExtWorld.requestInteraction()?.let { templeExtScene.onEntityInteraction?.invoke(it); version++ } },
+                    onPotion   = { party.firstOrNull()?.let { if (inventory.useCheapestPotion(it) > 0) version++ } }
                 )
 
             SlicePhase.CHAPTER2_GLASSBLOWERS ->
@@ -1481,9 +1517,12 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
                     scene    = glassblowersExtScene,
                     pressure = director.pressure,
                     falseMarkers = director.falseMarkers,
-                    onStep   = glassblowersExtWorld::requestStep,
+                    onStep     = glassblowersExtWorld::requestStep,
                     barkButtons = listOf(BarkEvent.NIB_SMELL_GOLD to "Nib: Browse"),
-                    onBark   = ::fireAndFlash
+                    onBark     = ::fireAndFlash,
+                    onAttack   = { glassblowersExtWorld.requestAttack(); version++ },
+                    onInteract = { glassblowersExtWorld.requestInteraction()?.let { glassblowersExtScene.onEntityInteraction?.invoke(it); version++ } },
+                    onPotion   = { party.firstOrNull()?.let { if (inventory.useCheapestPotion(it) > 0) version++ } }
                 )
 
             SlicePhase.CHAPTER2_BRIDGE ->
@@ -1492,9 +1531,12 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
                     scene    = bridgeScene,
                     pressure = director.pressure,
                     falseMarkers = director.falseMarkers,
-                    onStep   = bridgeWorld::requestStep,
+                    onStep     = bridgeWorld::requestStep,
                     barkButtons = emptyList(),
-                    onBark   = ::fireAndFlash
+                    onBark     = ::fireAndFlash,
+                    onAttack   = { bridgeWorld.requestAttack(); version++ },
+                    onInteract = { bridgeWorld.requestInteraction()?.let { bridgeScene.onEntityInteraction?.invoke(it); version++ } },
+                    onPotion   = { party.firstOrNull()?.let { if (inventory.useCheapestPotion(it) > 0) version++ } }
                 )
 
             SlicePhase.SHOP -> {
@@ -1534,34 +1576,71 @@ private fun ExploreView(
     falseMarkers: List<String> = emptyList(),
     onStep: (Direction) -> Unit,
     barkButtons: List<Pair<BarkEvent, String>>,
-    onBark: (BarkEvent) -> Unit
+    onBark: (BarkEvent) -> Unit,
+    onAttack: () -> Unit = {},
+    onInteract: () -> Unit = {},
+    onPotion: () -> Unit = {}
 ) {
-    Column(
-        modifier = Modifier.fillMaxSize().padding(12.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(title, color = Color(0xFFE8C170), fontWeight = FontWeight.Bold, fontSize = 16.sp)
-        Spacer(Modifier.height(4.dp))
-        SlicePressureChip(pressure)
-        if (falseMarkers.isNotEmpty()) {
-            Spacer(Modifier.height(4.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                falseMarkers.forEach { marker ->
-                    SliceFalseMarkerChip(marker)
+    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+        val isPortrait = maxHeight > maxWidth
+        if (isPortrait) {
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(title, color = Color(0xFFE8C170), fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    SlicePressureChip(pressure)
+                }
+                Box(Modifier.fillMaxWidth().weight(1f)) {
+                    GameCanvas(scene = scene, isActive = true, modifier = Modifier.fillMaxSize())
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    VirtualJoystick(onStep = onStep)
+                    MobileActionButtons(
+                        onAttack   = onAttack,
+                        onInteract = onInteract,
+                        onPotion   = onPotion
+                    )
                 }
             }
-        }
-        Spacer(Modifier.height(8.dp))
-        Box(Modifier.fillMaxWidth().weight(1f)) {
-            GameCanvas(scene = scene, isActive = true, modifier = Modifier.fillMaxSize())
-        }
-        Spacer(Modifier.height(8.dp))
-        SliceDPad(onStep)
-        if (barkButtons.isNotEmpty()) {
-            Spacer(Modifier.height(6.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                barkButtons.forEach { (bark, label) ->
-                    SliceSmallButton(label, Color(0xFF4A3F73)) { onBark(bark) }
+        } else {
+            Column(
+                modifier = Modifier.fillMaxSize().padding(12.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(title, color = Color(0xFFE8C170), fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                Spacer(Modifier.height(4.dp))
+                SlicePressureChip(pressure)
+                if (falseMarkers.isNotEmpty()) {
+                    Spacer(Modifier.height(4.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        falseMarkers.forEach { marker ->
+                            SliceFalseMarkerChip(marker)
+                        }
+                    }
+                }
+                Spacer(Modifier.height(8.dp))
+                Box(Modifier.fillMaxWidth().weight(1f)) {
+                    GameCanvas(scene = scene, isActive = true, modifier = Modifier.fillMaxSize())
+                }
+                Spacer(Modifier.height(8.dp))
+                SliceDPad(onStep)
+                if (barkButtons.isNotEmpty()) {
+                    Spacer(Modifier.height(6.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        barkButtons.forEach { (bark, label) ->
+                            SliceSmallButton(label, Color(0xFF4A3F73)) { onBark(bark) }
+                        }
+                    }
                 }
             }
         }
@@ -2124,6 +2203,87 @@ private fun ShopItemRow(
                 ) { if (canAfford) onBuy() }
             }
         }
+    }
+}
+
+private fun Offset.toCardinalDirection(deadZone: Float): Direction? {
+    if (getDistance() < deadZone) return null
+    return if (abs(x) >= abs(y)) {
+        if (x > 0) Direction.RIGHT else Direction.LEFT
+    } else {
+        if (y > 0) Direction.DOWN else Direction.UP
+    }
+}
+
+@Composable
+private fun VirtualJoystick(onStep: (Direction) -> Unit) {
+    var dragDir by remember { mutableStateOf<Direction?>(null) }
+    var thumbOffset by remember { mutableStateOf(Offset.Zero) }
+
+    LaunchedEffect(dragDir) {
+        val d = dragDir ?: return@LaunchedEffect
+        while (true) {
+            onStep(d)
+            delay(160)
+        }
+    }
+
+    Box(
+        modifier = Modifier
+            .size(120.dp)
+            .background(Color(0x33FFFFFF), RoundedCornerShape(60.dp))
+            .pointerInput(Unit) {
+                detectDragGestures(
+                    onDragStart  = { thumbOffset = Offset.Zero },
+                    onDragEnd    = { thumbOffset = Offset.Zero; dragDir = null },
+                    onDragCancel = { thumbOffset = Offset.Zero; dragDir = null }
+                ) { change, dragAmount ->
+                    change.consume()
+                    val next = thumbOffset + dragAmount
+                    val maxR = size.width / 2f
+                    thumbOffset = if (next.getDistance() > maxR) next * (maxR / next.getDistance()) else next
+                    dragDir = thumbOffset.toCardinalDirection(deadZone = 18f)
+                }
+            },
+        contentAlignment = Alignment.Center
+    ) {
+        Box(
+            modifier = Modifier
+                .offset { IntOffset(thumbOffset.x.roundToInt(), thumbOffset.y.roundToInt()) }
+                .size(44.dp)
+                .background(Color(0x99FFFFFF), RoundedCornerShape(22.dp))
+        )
+    }
+}
+
+@Composable
+private fun MobileActionButtons(
+    onAttack: () -> Unit,
+    onInteract: () -> Unit,
+    onPotion: () -> Unit
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            MobileRoundButton("[Z]", Color(0xFF4A2B2B), onAttack)
+            MobileRoundButton("[E]", Color(0xFF2B3A4A), onInteract)
+        }
+        MobileRoundButton("[I]", Color(0xFF2B4A2B), onPotion)
+    }
+}
+
+@Composable
+private fun MobileRoundButton(label: String, color: Color, onClick: () -> Unit) {
+    Button(
+        onClick = onClick,
+        colors = ButtonDefaults.buttonColors(containerColor = color),
+        contentPadding = PaddingValues(0.dp),
+        modifier = Modifier.size(52.dp),
+        shape = RoundedCornerShape(26.dp)
+    ) {
+        Text(label, fontSize = 11.sp, color = Color.White)
     }
 }
 
