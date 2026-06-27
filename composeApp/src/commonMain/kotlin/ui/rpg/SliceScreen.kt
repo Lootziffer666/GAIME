@@ -102,9 +102,9 @@ import kotlin.time.TimeSource
 // --- Scripted dialogue lines ---
 
 private val INTRO_LINES = listOf(
-    DialogueLine("Barkeep", "You've been officially registered as a Hero Party. Don't ask how."),
-    DialogueLine("Nib", "...by who?"),
-    DialogueLine("Barkeep", "The Questbook. It fell on the desk and opened to the right page. Fate, probably.")
+    DialogueLine("Barkeep", "You've been officially registered as a Hero Party. Don't ask how.", "bark/barkeep/greetings_stranger.wav"),
+    DialogueLine("Nib", "...by who?", "bark/nib/where_am_i.wav"),
+    DialogueLine("Barkeep", "The Questbook. It fell on the desk and opened to the right page. Fate, probably.", "bark/barkeep/what_do_you_have_for_me.wav")
 )
 private val FALLING_LINES = listOf(
     DialogueLine("", "The cellar floor gives way."),
@@ -118,7 +118,7 @@ private val POST_BOSS_LINES = listOf(
 )
 private val RETURN_LINES = listOf(
     DialogueLine("", "The party climbs back to The Limping Cockatrice."),
-    DialogueLine("Barkeep", "Back already? Smells like sewer.", "bark/brugg/been_playing_in_the_sewers_have_we.wav"),
+    DialogueLine("Barkeep", "Back already? Smells like sewer.", "bark/barkeep/been_playing_in_the_sewers_have_we.wav"),
     DialogueLine("", "Quest Pressure: Reset. New quests pending. The Questbook is always listening.")
 )
 
@@ -131,14 +131,14 @@ private val CHAPTER2_MARKET_INTRO_LINES = listOf(
 )
 
 private val CHAPTER2_MERCHANT_LINES = listOf(
-    DialogueLine("Merchant", "See if any of this strikes your fancy.", "bark/brugg/see_if_any_of_this_strikes_your_fancy.wav"),
-    DialogueLine("Merchant", "Make me an offer. I won't bite.", "bark/brugg/make_me_an_offer.wav"),
+    DialogueLine("Merchant", "See if any of this strikes your fancy.", "bark/merchant/see_if_any_of_this_strikes_your_fancy.wav"),
+    DialogueLine("Merchant", "Make me an offer. I won't bite.", "bark/merchant/make_me_an_offer.wav"),
     DialogueLine("Nib", "How much do you want for this?", "bark/nib/how_much_do_you_want_for_this.wav")
 )
 
 private val CHAPTER2_GUARD_LINES = listOf(
-    DialogueLine("Guard", "The forest trail east of here has been overrun by wolves."),
-    DialogueLine("Guard", "If you're looking for trouble, you'll find it there."),
+    DialogueLine("Guard", "The forest trail east of here has been overrun by wolves.", "bark/guard/there_are_all_manner_of_creatures_within_these_woods.wav"),
+    DialogueLine("Guard", "If you're looking for trouble, you'll find it there.", "bark/guard/nothing_to_see_here.wav"),
     DialogueLine("Brugg", "Just keep to the trail.", "bark/brugg/just_keep_to_the_trail.wav")
 )
 
@@ -150,19 +150,19 @@ private val CHAPTER2_POST_BOSS_LINES = listOf(
 
 private val CHAPTER2_RETURN_LINES = listOf(
     DialogueLine("", "The party returns to Stokeport Market."),
-    DialogueLine("Guard", "Back already? Been playing in the sewers, have we?", "bark/brugg/been_playing_in_the_sewers_have_we.wav"),
+    DialogueLine("Guard", "Back already? Been playing in the sewers, have we?", "bark/guard/been_playing_in_the_sewers_have_we.wav"),
     DialogueLine("", "Quest Pressure: Reset. Page 2 secured. The Questbook grows heavier.")
 )
 
 // --- NPC dialogue lines ---
 
 private val BARKEEP_PRE_SEWER_LINES = listOf(
-    DialogueLine("Barkeep", "Spend some coin or get out.", "bark/brugg/spend_some_coin_or_get_out.wav"),
+    DialogueLine("Barkeep", "Spend some coin or get out.", "bark/barkeep/spend_some_coin_or_get_out.wav"),
     DialogueLine("Brugg", "Barkeep! A flagon of ale!", "bark/brugg/barkeep_a_flagon_of_ale.wav")
 )
 
 private val BARKEEP_POST_SEWER_LINES = listOf(
-    DialogueLine("Barkeep", "Been playing in the sewers, have we?", "bark/brugg/been_playing_in_the_sewers_have_we.wav")
+    DialogueLine("Barkeep", "Been playing in the sewers, have we?", "bark/barkeep/been_playing_in_the_sewers_have_we.wav")
 )
 
 private val PATRON_LINES = listOf(
@@ -178,14 +178,14 @@ private val HEROES_HOME_EXT_LINES = listOf(
 )
 
 private val GUILDMASTER_LINES = listOf(
-    DialogueLine("Guildmaster", "Registered heroes may pick up contracts at the board inside."),
-    DialogueLine("Guildmaster", "Non-registered adventurers are asked to leave or be fined."),
-    DialogueLine("Nib", "We're registered. The Questbook said so.")
+    DialogueLine("Guildmaster", "Registered heroes may pick up contracts at the board inside.", "bark/guildmaster/greetings_friends.wav"),
+    DialogueLine("Guildmaster", "Non-registered adventurers are asked to leave or be fined.", "bark/guildmaster/grab_your_torch_theres_work_to_be_done.wav"),
+    DialogueLine("Nib", "We're registered. The Questbook said so.", "bark/nib/hard-won_knowledge.wav")
 )
 
 private val CHAPEL_DEVOTEE_LINES = listOf(
-    DialogueLine("Citizen", "The chapel has been... quiet lately. Too quiet."),
-    DialogueLine("Citizen", "Something moved the pews. Something large."),
+    DialogueLine("Citizen", "The chapel has been... quiet lately. Too quiet.", "bark/guard/nothing_to_see_here.wav"),
+    DialogueLine("Citizen", "Something moved the pews. Something large.", "bark/guard/who_goes_there.wav"),
     DialogueLine("Vellum", "Perfect. Let's go in.", "bark/vellum/so_thats_how_it_is_then.wav")
 )
 
