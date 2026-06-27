@@ -15,5 +15,8 @@ data class GridEntity(
     val tileY: Int,
     val type: GridEntityType,
     /** Drawable resource key, e.g. "hero_brugg", used by WorldScene to pick the sprite. */
-    val sprite: String
+    val sprite: String,
+    /** -1 = NPC or boss handled by CombatEngine; positive = action-combat HP pool. */
+    val maxHp: Int = -1,
+    var hp: Int = maxHp
 )

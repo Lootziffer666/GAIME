@@ -14,6 +14,8 @@ interface ControllerPoller {
     fun direction(): Direction?
     /** True exactly once per physical button press (south button / A / Cross). */
     fun consumeInteract(): Boolean
+    /** True exactly once per physical button press (west face button / X / Square). */
+    fun consumeAttack(): Boolean = false
     fun release() {}
 }
 

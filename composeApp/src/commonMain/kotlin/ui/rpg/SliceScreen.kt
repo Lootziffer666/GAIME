@@ -560,12 +560,12 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
     val sewerWorld = remember {
         GridWorld(GameMaps.sewer()).also { w ->
             w.entities.addAll(listOf(
-                GridEntity("rat_corridor_1", 6, 5, GridEntityType.ENEMY, "enemy_rat"),
-                GridEntity("rat_corridor_2", 8, 5, GridEntityType.ENEMY, "enemy_rat"),
-                GridEntity("rat_mini_1", 5, 13, GridEntityType.ENEMY, "enemy_rat"),
-                GridEntity("rat_mini_2", 7, 13, GridEntityType.ENEMY, "enemy_rat"),
-                GridEntity("rat_mini_3", 9, 13, GridEntityType.ENEMY, "enemy_rat"),
-                GridEntity("blob_mini", 7, 15, GridEntityType.ENEMY, "enemy_blob")
+                GridEntity("rat_corridor_1", 6, 5, GridEntityType.ENEMY, "enemy_rat",  maxHp = 1),
+                GridEntity("rat_corridor_2", 8, 5, GridEntityType.ENEMY, "enemy_rat",  maxHp = 1),
+                GridEntity("rat_mini_1", 5, 13, GridEntityType.ENEMY, "enemy_rat",     maxHp = 1),
+                GridEntity("rat_mini_2", 7, 13, GridEntityType.ENEMY, "enemy_rat",     maxHp = 1),
+                GridEntity("rat_mini_3", 9, 13, GridEntityType.ENEMY, "enemy_rat",     maxHp = 1),
+                GridEntity("blob_mini", 7, 15, GridEntityType.ENEMY, "enemy_blob",     maxHp = 2)
             ))
         }
     }
@@ -586,10 +586,10 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
     val forestWorld = remember {
         GridWorld(GameMaps.forestTrail()).also { w ->
             w.entities.addAll(listOf(
-                GridEntity("wolf_1", 16, 8, GridEntityType.ENEMY, "enemy_wolf"),
-                GridEntity("wolf_2", 18, 11, GridEntityType.ENEMY, "enemy_wolf"),
-                GridEntity("wolf_3", 20, 9, GridEntityType.ENEMY, "enemy_wolf"),
-                GridEntity("tax_badger", 24, 18, GridEntityType.ENEMY, "boss_rat_accountant")
+                GridEntity("wolf_1", 16, 8, GridEntityType.ENEMY, "enemy_wolf",          maxHp = 2),
+                GridEntity("wolf_2", 18, 11, GridEntityType.ENEMY, "enemy_wolf",         maxHp = 2),
+                GridEntity("wolf_3", 20, 9, GridEntityType.ENEMY, "enemy_wolf",          maxHp = 2),
+                GridEntity("tax_badger", 24, 18, GridEntityType.ENEMY, "boss_rat_accountant") // maxHp=-1: boss → CombatEngine
             ))
         }
     }
@@ -618,8 +618,8 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
     }
     val templeExtWorld = remember {
         GridWorld(GameMaps.templeExt()).also { w ->
-            w.entities.add(GridEntity("wolf_a", 8, 6, GridEntityType.ENEMY, "enemy_wolf"))
-            w.entities.add(GridEntity("wolf_b", 13, 4, GridEntityType.ENEMY, "enemy_wolf"))
+            w.entities.add(GridEntity("wolf_a", 8, 6, GridEntityType.ENEMY, "enemy_wolf", maxHp = 2))
+            w.entities.add(GridEntity("wolf_b", 13, 4, GridEntityType.ENEMY, "enemy_wolf", maxHp = 2))
         }
     }
     val glassblowersExtWorld = remember {
@@ -796,6 +796,12 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
                     explorationWorld.requestStep(dir)
                     version++
                 }
+                // Attack (west face button / Z key)
+                if (poller.consumeAttack()) {
+                    lastActivityTime = clock()
+                    explorationWorld.requestAttack()
+                    version++
+                }
                 // Interact (south face button)
                 if (poller.consumeInteract()) {
                     lastActivityTime = clock()
@@ -843,17 +849,6 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
 
         when (turn.result) {
             CombatResult.VICTORY -> when (phase) {
-                SlicePhase.SEWER_COMBAT -> {
-                    sewerWorld.removeEntity("rat_corridor_1"); sewerWorld.removeEntity("rat_corridor_2")
-                    director.clearCombat()
-                    fireAndFlash(BarkEvent.NIB_IT_WASNT_ME)
-                    phase = SlicePhase.SEWER
-                }
-                SlicePhase.MINI_DUNGEON_COMBAT -> {
-                    listOf("rat_mini_1","rat_mini_2","rat_mini_3","blob_mini").forEach(sewerWorld::removeEntity)
-                    director.clearCombat()
-                    phase = SlicePhase.SEWER
-                }
                 SlicePhase.BOSS_COMBAT -> {
                     bossWorld.removeEntity("rat_accountant")
                     director.clearCombat()
@@ -861,11 +856,6 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
                     dialogueLines = POST_BOSS_LINES
                     dialogueIndex = 0
                     phase = SlicePhase.POST_BOSS
-                }
-                SlicePhase.CHAPTER2_FOREST_COMBAT -> {
-                    listOf("wolf_1", "wolf_2", "wolf_3").forEach(forestWorld::removeEntity)
-                    director.clearCombat()
-                    phase = SlicePhase.CHAPTER2_FOREST
                 }
                 SlicePhase.CHAPTER2_BOSS_COMBAT -> {
                     forestWorld.removeEntity("tax_badger")
@@ -929,35 +919,9 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
             }
         }
     }
-    sewerScene.onEntityInteraction = { entity ->
-        if (phase == SlicePhase.SEWER) {
-            lastActivityTime = clock()
-            when {
-                entity.id.startsWith("rat_corridor") -> {
-                    // Exploration bark: encountering enemies
-                    AmbientBarks.pick(AmbientBarks.ENEMY_WARNING, barkRandom)?.let { fireAndFlash(it) }
-                    director.startCombat(CombatEngine(party, listOf(
-                        EnemyArchetype.SEWER_RAT.spawn("rat_corridor_1"),
-                        EnemyArchetype.SEWER_RAT.spawn("rat_corridor_2")
-                    )))
-                    combatMessage = "Two Sewer Rats block the path!"
-                    phase = SlicePhase.SEWER_COMBAT
-                }
-                entity.id.startsWith("rat_mini") || entity.id == "blob_mini" -> {
-                    // Exploration bark: encountering enemies
-                    AmbientBarks.pick(AmbientBarks.ENEMY_WARNING, barkRandom)?.let { fireAndFlash(it) }
-                    director.startCombat(CombatEngine(party, listOf(
-                        EnemyArchetype.SEWER_RAT.spawn("rat_mini_1"),
-                        EnemyArchetype.SEWER_RAT.spawn("rat_mini_2"),
-                        EnemyArchetype.SEWER_RAT.spawn("rat_mini_3"),
-                        EnemyArchetype.SLUDGE_BLOB.spawn("blob_mini")
-                    )))
-                    combatMessage = "Three Sewer Rats and a Sludge Blob appear!"
-                    phase = SlicePhase.MINI_DUNGEON_COMBAT
-                }
-            }
-        }
-    }
+    // Sewer rats and blob are action-combat enemies (maxHp > 0): they block tiles and
+    // die via requestAttack() — no CombatEngine interaction is ever queued for them.
+    sewerScene.onEntityInteraction = { _ -> }
 
     bossScene.onTrigger = { _ -> /* page_pickup handled programmatically via post-boss flow */ }
     bossScene.onEntityInteraction = { entity ->
@@ -1028,33 +992,19 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
             }
         }
     }
+    // Wolves are action-combat enemies; only the boss badger routes to CombatEngine.
     forestScene.onEntityInteraction = { entity ->
-        if (phase == SlicePhase.CHAPTER2_FOREST) {
+        if (phase == SlicePhase.CHAPTER2_FOREST && entity.id == "tax_badger") {
             lastActivityTime = clock()
-            when {
-                entity.id.startsWith("wolf") -> {
-                    val warningBarks = AmbientBarks.FOREST_WARNING
-                    AmbientBarks.pick(warningBarks, barkRandom)?.let { fireAndFlash(it) }
-                    director.startCombat(CombatEngine(party, listOf(
-                        EnemyArchetype.FOREST_WOLF.spawn("wolf_1"),
-                        EnemyArchetype.FOREST_WOLF.spawn("wolf_2"),
-                        EnemyArchetype.FOREST_WOLF.spawn("wolf_3")
-                    )))
-                    combatMessage = "Three Forest Wolves emerge from the undergrowth!"
-                    phase = SlicePhase.CHAPTER2_FOREST_COMBAT
-                }
-                entity.id == "tax_badger" -> {
-                    director.enterRoom(RoomContext("forest_trail", RoomContext.ROOM_FOREST_BOSS))
-                    fireAndFlash(BarkEvent.BRUGG_DROP_YOUR_WEAPONS)
-                    dialogueLines = listOf(
-                        DialogueLine("", "A massive badger in a waistcoat blocks the path."),
-                        DialogueLine("Tax Collector", "You owe 47 outstanding quest fees. Pay up or face audit."),
-                        DialogueLine("Brugg", "Drop your weapons!", "bark/brugg/drop_your_weapons.wav")
-                    )
-                    dialogueIndex = 0
-                    phase = SlicePhase.CHAPTER2_BOSS_INTRO
-                }
-            }
+            director.enterRoom(RoomContext("forest_trail", RoomContext.ROOM_FOREST_BOSS))
+            fireAndFlash(BarkEvent.BRUGG_DROP_YOUR_WEAPONS)
+            dialogueLines = listOf(
+                DialogueLine("", "A massive badger in a waistcoat blocks the path."),
+                DialogueLine("Tax Collector", "You owe 47 outstanding quest fees. Pay up or face audit."),
+                DialogueLine("Brugg", "Drop your weapons!", "bark/brugg/drop_your_weapons.wav")
+            )
+            dialogueIndex = 0
+            phase = SlicePhase.CHAPTER2_BOSS_INTRO
         }
     }
 
@@ -1120,18 +1070,8 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
             phase = SlicePhase.CHAPTER2_FOREST
         }
     }
-    templeExtScene.onEntityInteraction = { entity ->
-        if (phase == SlicePhase.CHAPTER2_TEMPLE_EXT && entity.id.startsWith("wolf")) {
-            lastActivityTime = clock()
-            AmbientBarks.pick(AmbientBarks.FOREST_WARNING, barkRandom)?.let { fireAndFlash(it) }
-            director.startCombat(CombatEngine(party, listOf(
-                EnemyArchetype.FOREST_WOLF.spawn("wolf_a"),
-                EnemyArchetype.FOREST_WOLF.spawn("wolf_b")
-            )))
-            combatMessage = "Two wolves guard the temple approach!"
-            phase = SlicePhase.CHAPTER2_FOREST_COMBAT
-        }
-    }
+    // Temple wolves are action-combat enemies — killed via requestAttack().
+    templeExtScene.onEntityInteraction = { _ -> }
 
     glassblowersExtScene.onTrigger = { _ -> }
     glassblowersExtScene.onEntityInteraction = { _ ->
@@ -1215,6 +1155,7 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
                         }
                         return@onKeyEvent npc != null
                     }
+                    Key.Z -> { world.requestAttack(); version++; return@onKeyEvent true }
                     else -> return@onKeyEvent false
                 }
                 true
@@ -1316,11 +1257,15 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
                     onBark   = ::fireAndFlash
                 )
 
-            // --- Combat ---
-            SlicePhase.SEWER_COMBAT,
-            SlicePhase.MINI_DUNGEON_COMBAT,
+            // --- Combat (boss encounters only — regular enemies use action combat) ---
             SlicePhase.BOSS_COMBAT ->
                 CombatView(director = director, message = combatMessage, onAction = ::handleCombatAction)
+
+            // These combat phases are no longer reachable (action enemies never queue interactions)
+            // but must be listed to satisfy the exhaustive when over SlicePhase.
+            SlicePhase.SEWER_COMBAT,
+            SlicePhase.MINI_DUNGEON_COMBAT,
+            SlicePhase.CHAPTER2_FOREST_COMBAT -> {}
 
             // --- Questbook full overlay ---
             SlicePhase.QUESTBOOK_FULL ->
@@ -1379,9 +1324,6 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
                     barkButtons = listOf(BarkEvent.BRUGG_ATTACK to "Brugg: Attack!"),
                     onBark   = ::fireAndFlash
                 )
-
-            SlicePhase.CHAPTER2_FOREST_COMBAT ->
-                CombatView(director = director, message = combatMessage, onAction = ::handleCombatAction)
 
             SlicePhase.CHAPTER2_SHRINE ->
                 ExploreView(

@@ -30,6 +30,8 @@ private class LinuxJoystickPoller(devicePath: String) : ControllerPoller {
     private var dpadY = 0f
     private var btnPrev = false
     private var btnCurr = false
+    private var btnAttackPrev = false
+    private var btnAttackCurr = false
 
     @Volatile private var running = true
 
@@ -59,10 +61,14 @@ private class LinuxJoystickPoller(devicePath: String) : ControllerPoller {
     override fun poll(): Boolean {
         if (thread == null || !thread.isAlive) return false
         btnPrev = btnCurr
+        btnAttackPrev = btnAttackCurr
         while (true) {
             val e = events.poll() ?: break
             when (e.type) {
-                1 -> if (e.number == 0) btnCurr = e.value != 0
+                1 -> when (e.number) {
+                    0 -> btnCurr = e.value != 0
+                    1 -> btnAttackCurr = e.value != 0
+                }
                 2 -> {
                     val v = e.value / 32767f
                     when (e.number) {
@@ -93,6 +99,7 @@ private class LinuxJoystickPoller(devicePath: String) : ControllerPoller {
     }
 
     override fun consumeInteract(): Boolean = btnCurr && !btnPrev
+    override fun consumeAttack(): Boolean = btnAttackCurr && !btnAttackPrev
 
     override fun release() {
         running = false
