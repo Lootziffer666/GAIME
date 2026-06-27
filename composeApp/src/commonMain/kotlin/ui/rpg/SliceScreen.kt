@@ -76,6 +76,7 @@ import rpg.bark.BarkEvent
 import rpg.bark.AmbientBarks
 import rpg.bark.audio.BarkAudioPlayer
 import rpg.bark.audio.createPlatformAudioPlayer
+import rpg.gamepad.createControllerPoller
 import rpg.combat.BossController
 import rpg.combat.BossControllerInterface
 import rpg.combat.CombatAction
@@ -752,6 +753,75 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
                     phase = SlicePhase.VICTORY
                 }
                 else -> {}
+            }
+        }
+    }
+
+    // --- controller / gamepad input ---
+
+    val controllerPoller = remember { createControllerPoller() }
+    DisposableEffect(Unit) { onDispose { controllerPoller?.release() } }
+
+    LaunchedEffect(Unit) {
+        val poller = controllerPoller ?: return@LaunchedEffect
+        while (true) {
+            delay(100)
+            if (!poller.poll()) continue
+
+            val explorationWorld = when (phase) {
+                SlicePhase.TAVERN                -> tavernWorld
+                SlicePhase.SEWER                 -> sewerWorld
+                SlicePhase.BOSS_ROOM             -> bossWorld
+                SlicePhase.CHAPTER2_MARKET       -> marketWorld
+                SlicePhase.CHAPTER2_FOREST,
+                SlicePhase.CHAPTER2_SHRINE       -> forestWorld
+                SlicePhase.HEROES_HOME_EXT       -> heroesHomeExtWorld
+                SlicePhase.CHAPTER2_GUILDHALL    -> guildHallExtWorld
+                SlicePhase.CHAPTER2_CHAPEL_EXT   -> chapelExtWorld
+                SlicePhase.CHAPTER2_TEMPLE_EXT   -> templeExtWorld
+                SlicePhase.CHAPTER2_GLASSBLOWERS -> glassblowersExtWorld
+                SlicePhase.CHAPTER2_BRIDGE       -> bridgeWorld
+                else -> null
+            }
+
+            if (explorationWorld != null) {
+                // Movement
+                val dir = poller.direction()
+                if (dir != null) {
+                    lastActivityTime = clock()
+                    explorationWorld.requestStep(dir)
+                    version++
+                }
+                // Interact (south face button)
+                if (poller.consumeInteract()) {
+                    lastActivityTime = clock()
+                    val npc = explorationWorld.requestInteraction()
+                    if (npc != null) {
+                        when (phase) {
+                            SlicePhase.TAVERN                -> tavernScene.onEntityInteraction?.invoke(npc)
+                            SlicePhase.CHAPTER2_MARKET       -> marketScene.onEntityInteraction?.invoke(npc)
+                            SlicePhase.CHAPTER2_FOREST       -> forestScene.onEntityInteraction?.invoke(npc)
+                            SlicePhase.HEROES_HOME_EXT       -> heroesHomeExtScene.onEntityInteraction?.invoke(npc)
+                            SlicePhase.CHAPTER2_GUILDHALL    -> guildHallExtScene.onEntityInteraction?.invoke(npc)
+                            SlicePhase.CHAPTER2_CHAPEL_EXT   -> chapelExtScene.onEntityInteraction?.invoke(npc)
+                            SlicePhase.CHAPTER2_TEMPLE_EXT   -> templeExtScene.onEntityInteraction?.invoke(npc)
+                            SlicePhase.CHAPTER2_GLASSBLOWERS -> glassblowersExtScene.onEntityInteraction?.invoke(npc)
+                            SlicePhase.CHAPTER2_BRIDGE       -> bridgeScene.onEntityInteraction?.invoke(npc)
+                            else -> {}
+                        }
+                        version++
+                    }
+                }
+            } else {
+                // In cutscene / dialogue: south button advances dialogue
+                val isDialogue = phase in listOf(
+                    SlicePhase.INTRO_CUTSCENE, SlicePhase.FALLING_CUTSCENE,
+                    SlicePhase.NPC_DIALOGUE, SlicePhase.CHAPTER2_MARKET_NPC,
+                    SlicePhase.POST_BOSS, SlicePhase.RETURN_CUTSCENE,
+                    SlicePhase.CHAPTER2_BOSS_INTRO, SlicePhase.CHAPTER2_POST_BOSS,
+                    SlicePhase.CHAPTER2_RETURN
+                )
+                if (isDialogue && poller.consumeInteract()) advanceDialogue()
             }
         }
     }
