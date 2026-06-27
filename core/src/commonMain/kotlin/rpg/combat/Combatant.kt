@@ -13,7 +13,11 @@ class Combatant(
     val name: String,
     val maxHp: Int,
     val side: Side,
-    val attackPower: Int,
+    /**
+     * Base attack power. Mutable so equipment (see [rpg.items.Inventory]) can
+     * apply a weapon bonus in place; combat reads it via the engine only.
+     */
+    var attackPower: Int,
     /** Flammable "paper" add summoned by the boss; cleared by a flame utility bark. */
     val isPaperAdd: Boolean = false,
     /** How this combatant selects targets and paces attacks. */
