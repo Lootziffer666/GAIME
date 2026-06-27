@@ -9,40 +9,35 @@ import kotlin.test.assertNull
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
-/**
- * Covers the shop economy: buying potions and weapons, affordability and
- * already-equipped guards, potion usage/healing, and the [ItemCatalog] lookups.
- */
 class InventoryTest {
 
     private fun hero(hp: Int = 30, atk: Int = 5) =
         Combatant("hero", "Hero", maxHp = hp, side = Side.PLAYER, attackPower = atk)
 
-    private fun inventory(gold: Int = 50, hp: Int = 30, atk: Int = 5) =
-        Inventory(party = listOf(hero(hp, atk)), gold = gold)
+    private val minorPotion get() = ItemCatalog.get("minor_potion")!!
+    private val potion      get() = ItemCatalog.get("potion")!!
+    private val shortSword  get() = ItemCatalog.get("short_sword")!!
 
     // ─── Gold / potions ──────────────────────────────────────────────────
 
     @Test
     fun inventoryStartsWithFiftyGold() {
-        assertEquals(50, inventory().gold)
+        assertEquals(50, Inventory().gold)
     }
 
     @Test
     fun buyingAMinorPotionSucceedsAndDeductsGold() {
-        val inv = inventory(gold = 50)
-        val result = inv.buy(ItemCatalog.MINOR_POTION)
-        assertEquals(PurchaseResult.BOUGHT, result)
-        assertEquals(20, inv.gold) // 50 - 30
-        assertEquals(1, inv.potionCounts[ItemCatalog.MINOR_POTION.id])
+        val inv = Inventory()
+        assertEquals(BuyResult.BOUGHT, inv.buy(minorPotion, emptyList()))
+        assertEquals(20, inv.gold)
+        assertEquals(1, inv.count("minor_potion"))
     }
 
     @Test
     fun buyingAMinorPotionWithTooLittleGoldFails() {
-        val inv = inventory(gold = 10)
-        val result = inv.buy(ItemCatalog.MINOR_POTION)
-        assertEquals(PurchaseResult.CANNOT_AFFORD, result)
-        assertEquals(10, inv.gold) // unchanged
+        val inv = Inventory(initialGold = 10)
+        assertEquals(BuyResult.CANNOT_AFFORD, inv.buy(minorPotion, emptyList()))
+        assertEquals(10, inv.gold)
         assertFalse(inv.hasPotions())
     }
 
@@ -50,60 +45,66 @@ class InventoryTest {
 
     @Test
     fun buyingAShortSwordEquipsItAndRaisesAttackPower() {
-        val inv = inventory(gold = 50, atk = 5)
-        val result = inv.buy(ItemCatalog.SHORT_SWORD)
-        assertEquals(PurchaseResult.EQUIPPED, result)
-        assertEquals(7, inv.party[0].attackPower) // 5 + 2
-        assertTrue(ItemCatalog.SHORT_SWORD.id in inv.equippedWeapons)
+        val fighter = hero(atk = 5)
+        val inv = Inventory(initialGold = 200)
+        assertEquals(BuyResult.EQUIPPED, inv.buy(shortSword, listOf(fighter)))
+        assertEquals(7, fighter.attackPower) // 5 + 2
+        assertTrue(inv.isEquipped("short_sword"))
     }
 
     @Test
     fun buyingTheSameWeaponTwiceReportsAlreadyEquipped() {
-        val inv = inventory(gold = 100, atk = 5)
-        assertEquals(PurchaseResult.EQUIPPED, inv.buy(ItemCatalog.SHORT_SWORD))
+        val fighter = hero(atk = 5)
+        val inv = Inventory(initialGold = 300)
+        assertEquals(BuyResult.EQUIPPED, inv.buy(shortSword, listOf(fighter)))
         val goldAfterFirst = inv.gold
-        val second = inv.buy(ItemCatalog.SHORT_SWORD)
-        assertEquals(PurchaseResult.ALREADY_EQUIPPED, second)
-        assertEquals(7, inv.party[0].attackPower) // no second bonus
-        assertEquals(goldAfterFirst, inv.gold)    // no extra charge
+        assertEquals(BuyResult.ALREADY_EQUIPPED, inv.buy(shortSword, listOf(fighter)))
+        assertEquals(7, fighter.attackPower) // no second bonus
+        assertEquals(goldAfterFirst, inv.gold)
+    }
+
+    @Test
+    fun weaponCannotBeAffordedWhenGoldInsufficient() {
+        val inv = Inventory() // 50g, short_sword costs 120
+        assertEquals(BuyResult.CANNOT_AFFORD, inv.buy(shortSword, listOf(hero())))
+        assertEquals(50, inv.gold)
     }
 
     // ─── Potion usage ───────────────────────────────────────────────────
 
     @Test
     fun useCheapestPotionWithNoPotionsReturnsZero() {
-        assertEquals(0, inventory().useCheapestPotion())
+        assertEquals(0, Inventory().useCheapestPotion(hero()))
     }
 
     @Test
     fun useCheapestPotionHealsAndReturnsEffectValue() {
-        val wounded = hero(hp = 30, atk = 5)
+        val wounded = hero(hp = 30)
         wounded.takeDamage(20) // now at 10 HP
-        val inv = Inventory(party = listOf(wounded), gold = 50)
-        inv.buy(ItemCatalog.MINOR_POTION)
-
-        val healedReturn = inv.useCheapestPotion()
-        assertEquals(5, healedReturn)        // MINOR_POTION effectValue
-        assertEquals(15, wounded.hp)         // 10 + 5
-        assertFalse(inv.hasPotions())        // potion consumed
+        val inv = Inventory()
+        inv.buy(minorPotion, emptyList())
+        assertEquals(5, inv.useCheapestPotion(wounded))
+        assertEquals(15, wounded.hp)
+        assertFalse(inv.hasPotions())
     }
 
     @Test
     fun cheapestPotionIsChosenWhenSeveralAreOwned() {
-        val inv = inventory(gold = 500)
-        inv.buy(ItemCatalog.GREATER_POTION)  // price 120
-        inv.buy(ItemCatalog.MINOR_POTION)    // price 30 (cheapest)
-        val effect = inv.useCheapestPotion()
-        assertEquals(5, effect)              // minor used first
-        assertNull(inv.potionCounts[ItemCatalog.MINOR_POTION.id])
-        assertEquals(1, inv.potionCounts[ItemCatalog.GREATER_POTION.id])
+        val wounded = hero(hp = 30)
+        wounded.takeDamage(25) // 5 HP remaining
+        val inv = Inventory(initialGold = 500)
+        inv.buy(potion, emptyList())      // effectValue 15
+        inv.buy(minorPotion, emptyList()) // effectValue 5 (first in catalog order)
+        assertEquals(5, inv.useCheapestPotion(wounded)) // minor used first
+        assertEquals(0, inv.count("minor_potion"))
+        assertEquals(1, inv.count("potion"))
     }
 
     @Test
     fun hasPotionsReflectsStashState() {
-        val inv = inventory()
+        val inv = Inventory()
         assertFalse(inv.hasPotions())
-        inv.buy(ItemCatalog.MINOR_POTION)
+        inv.buy(minorPotion, emptyList())
         assertTrue(inv.hasPotions())
     }
 
@@ -120,9 +121,9 @@ class InventoryTest {
     fun getReturnsTheMatchingItem() {
         val item = ItemCatalog.get("minor_potion")
         assertNotNull(item)
-        assertEquals(ItemCatalog.MINOR_POTION, item)
-        assertEquals("Minor Potion", item.displayName)
+        assertEquals("Minor Potion", item.name)
         assertEquals(30, item.price)
+        assertEquals(5, item.effectValue)
     }
 
     @Test

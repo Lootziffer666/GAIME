@@ -15,8 +15,8 @@ enum class BuyResult { BOUGHT, EQUIPPED, CANNOT_AFFORD, ALREADY_EQUIPPED }
  * Starting gold (50g) is enough for exactly one Minor Potion — intentionally
  * uncomfortable, never impossible.
  */
-class Inventory {
-    var gold: Int = 50
+class Inventory(initialGold: Int = 50) {
+    var gold: Int = initialGold
         private set
 
     private val counts = mutableMapOf<String, Int>()
