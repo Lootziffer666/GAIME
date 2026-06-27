@@ -72,6 +72,7 @@ import org.jetbrains.compose.resources.painterResource
 import rpg.BarkOutcome
 import rpg.SliceDirector
 import rpg.SlicePhase
+import rpg.settings.GameSettings
 import rpg.bark.BarkEvent
 import rpg.bark.AmbientBarks
 import rpg.bark.audio.BarkAudioPlayer
@@ -287,6 +288,9 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
     var chapter2Complete by remember { mutableStateOf(false) }
     var shrineActivated by remember { mutableStateOf(false) }
 
+    // Player-adjustable settings (sound/music/voice + locale).
+    var settings by remember { mutableStateOf(GameSettings()) }
+
     // Engine + persistent party (HP carries across encounters)
     val director = remember { SliceDirector(clock) }
     val party = remember { freshSliceParty() }
@@ -299,6 +303,11 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
             barkAudioPlayer.release()
             director.barkAudioPlayer = null
         }
+    }
+    // Keep the audio player's mute state in sync with the sound setting.
+    // Runs on initial composition and again whenever soundEnabled changes.
+    LaunchedEffect(settings.soundEnabled) {
+        barkAudioPlayer.enabled = settings.soundEnabled
     }
 
     // Idle bark timer state
@@ -904,7 +913,11 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
         when (phase) {
             // --- Title screen ---
             SlicePhase.TITLE_SCREEN ->
-                TitleView { phase = SlicePhase.INTRO_CUTSCENE }
+                TitleView(
+                    soundEnabled = settings.soundEnabled,
+                    onSoundEnabledChange = { settings = settings.copy(soundEnabled = it) },
+                    onStart = { phase = SlicePhase.INTRO_CUTSCENE }
+                )
 
             // --- Cutscenes ---
             SlicePhase.INTRO_CUTSCENE,
@@ -1556,7 +1569,11 @@ private fun SliceSmallButton(label: String, color: Color = Color(0xFF3A4A6B), on
 }
 
 @Composable
-private fun TitleView(onStart: () -> Unit) {
+private fun TitleView(
+    soundEnabled: Boolean,
+    onSoundEnabledChange: (Boolean) -> Unit,
+    onStart: () -> Unit
+) {
     val infiniteTransition = rememberInfiniteTransition()
     val promptAlpha by infiniteTransition.animateFloat(
         initialValue = 0.3f,
@@ -1583,19 +1600,35 @@ private fun TitleView(onStart: () -> Unit) {
             modifier = Modifier.fillMaxSize()
         )
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
-            Button(
-                onClick = onStart,
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xCC241E12)),
-                modifier = Modifier
-                    .padding(bottom = 32.dp)
-                    .alpha(promptAlpha)
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.padding(bottom = 32.dp)
             ) {
-                Text(
-                    "— PRESS ANY KEY TO BEGIN —",
-                    color = Color(0xFFE8C170),
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp
-                )
+                // Sound toggle (sits below where a language picker would live).
+                Button(
+                    onClick = { onSoundEnabledChange(!soundEnabled) },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xCC241E12))
+                ) {
+                    Text(
+                        if (soundEnabled) "Sound: On" else "Sound: Off",
+                        color = Color(0xFFE8C170),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 13.sp
+                    )
+                }
+                Button(
+                    onClick = onStart,
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xCC241E12)),
+                    modifier = Modifier.alpha(promptAlpha)
+                ) {
+                    Text(
+                        "— PRESS ANY KEY TO BEGIN —",
+                        color = Color(0xFFE8C170),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp
+                    )
+                }
             }
         }
     }

@@ -20,13 +20,31 @@ class BarkAudioPlayer(
         private set
 
     /**
+     * Whether bark/voice playback is allowed. When set to `false` any audio that
+     * is currently playing is stopped immediately and future [playBark]/
+     * [playRawPath] calls are ignored until re-enabled. Driven by the game's
+     * sound setting (see SliceScreen wiring).
+     */
+    var enabled: Boolean = true
+        set(value) {
+            field = value
+            if (!value) {
+                audioPlayer.stop()
+                currentBark = null
+            }
+        }
+
+    /**
      * Play the voice line for [event].
      *
      * Resolves the WAV path via [BarkAudioRegistry] and starts playback.
      * Any currently playing bark is interrupted. When playback finishes
      * naturally (without interruption), [currentBark] is cleared automatically.
+     *
+     * No-op when [enabled] is `false`.
      */
     fun playBark(event: BarkEvent) {
+        if (!enabled) return
         val path = BarkAudioRegistry.pathFor(event)
         audioPlayer.stop()
         currentBark = event
@@ -48,8 +66,11 @@ class BarkAudioPlayer(
      *
      * @param path resource path relative to the Compose Resources `files/` root,
      *   e.g. `"bark/brugg/spend_some_coin_or_get_out.wav"`.
+     *
+     * No-op when [enabled] is `false`.
      */
     fun playRawPath(path: String) {
+        if (!enabled) return
         audioPlayer.stop()
         currentBark = null
         audioPlayer.play(path)
