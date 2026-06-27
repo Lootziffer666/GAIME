@@ -7,10 +7,13 @@ import androidx.compose.runtime.*
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import app.App
+import rpg.save.SaveStorageContext
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Provide an application context for save/load persistence (no leak).
+        SaveStorageContext.appContext = applicationContext
         setContent {
             var lifecycleActive by remember { mutableStateOf(true) }
 

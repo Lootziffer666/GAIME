@@ -74,6 +74,10 @@ import rpg.BarkOutcome
 import rpg.SliceDirector
 import rpg.SlicePhase
 import rpg.settings.GameSettings
+import rpg.items.Inventory
+import rpg.save.GameSaveState
+import rpg.save.saveGame
+import rpg.save.loadGame
 import rpg.bark.BarkEvent
 import rpg.bark.AmbientBarks
 import rpg.bark.audio.BarkAudioPlayer
@@ -292,6 +296,15 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
     // Player-adjustable settings (sound/music/voice + locale).
     var settings by remember { mutableStateOf(GameSettings()) }
 
+    // Canonical inventory (gold / potions / equipped weapons). Captured in saves.
+    val inventory = remember { Inventory() }
+
+    // Attempt to load a previously persisted save once, on first composition.
+    // A non-null result means the title screen can offer "Continue".
+    val loadedSave = remember {
+        loadGame()?.let { runCatching { GameSaveState.fromJson(it) }.getOrNull() }
+    }
+
     // Engine + persistent party (HP carries across encounters)
     val director = remember { SliceDirector(clock) }
     val party = remember { freshSliceParty() }
@@ -309,6 +322,26 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
     // Runs on initial composition and again whenever soundEnabled changes.
     LaunchedEffect(settings.soundEnabled) {
         barkAudioPlayer.enabled = settings.soundEnabled
+    }
+
+    // Build a snapshot of the current run for persistence.
+    fun buildSaveState(): GameSaveState = GameSaveState(
+        phaseOrdinal = phase.ordinal,
+        gold = inventory.gold,
+        potionCounts = inventory.potionCounts,
+        equippedWeapons = inventory.equippedWeapons,
+        partyHp = party.map { it.hp },
+        hasReturnedFromSewer = hasReturnedFromSewer,
+        chapter2Complete = chapter2Complete,
+        shrineActivated = shrineActivated,
+        partyName = null
+    )
+
+    // Persist a save when the run reaches an end state.
+    LaunchedEffect(phase) {
+        if (phase == SlicePhase.VICTORY || phase == SlicePhase.GAME_OVER) {
+            runCatching { saveGame(buildSaveState().toJson()) }
+        }
     }
 
     // Idle bark timer state
@@ -917,6 +950,23 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
                 TitleView(
                     soundEnabled = settings.soundEnabled,
                     onSoundEnabledChange = { settings = settings.copy(soundEnabled = it) },
+                    hasSave = loadedSave != null,
+                    onContinue = {
+                        loadedSave?.let { s ->
+                            // Restore the safely-recoverable progress flags.
+                            hasReturnedFromSewer = s.hasReturnedFromSewer
+                            chapter2Complete = s.chapter2Complete
+                            shrineActivated = s.shrineActivated
+                            // TODO(save/load): full restoration is not implemented yet.
+                            //  Party HP (Combatant.hp has a private setter), gold/inventory
+                            //  (not yet mutated in-game) and the exact phase are NOT restored.
+                            //  Resume at a safe explored hub that reflects recorded progress.
+                            phase = if (s.chapter2Complete || s.shrineActivated)
+                                SlicePhase.CHAPTER2_MARKET
+                            else
+                                SlicePhase.TAVERN
+                        }
+                    },
                     onStart = { phase = SlicePhase.INTRO_CUTSCENE }
                 )
 
@@ -1573,6 +1623,8 @@ private fun SliceSmallButton(label: String, color: Color = Color(0xFF3A4A6B), on
 private fun TitleView(
     soundEnabled: Boolean,
     onSoundEnabledChange: (Boolean) -> Unit,
+    hasSave: Boolean,
+    onContinue: () -> Unit,
     onStart: () -> Unit
 ) {
     val infiniteTransition = rememberInfiniteTransition()
@@ -1607,6 +1659,21 @@ private fun TitleView(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.padding(bottom = 32.dp)
             ) {
+                // Continue (only when a valid save was detected). Restores progress
+                // flags and resumes at a safe hub; full restoration is still TODO.
+                if (hasSave) {
+                    Button(
+                        onClick = onContinue,
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xCC2E4A2E))
+                    ) {
+                        Text(
+                            "Continue",
+                            color = Color(0xFFCDEAB0),
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp
+                        )
+                    }
+                }
                 // Sound toggle (sits below where a language picker would live).
                 Button(
                     onClick = { onSoundEnabledChange(!soundEnabled) },
