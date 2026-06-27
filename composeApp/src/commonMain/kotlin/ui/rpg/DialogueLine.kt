@@ -2,6 +2,7 @@ package ui.rpg
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -69,6 +70,7 @@ fun DialogueOverlay(
                 .fillMaxWidth()
                 .padding(horizontal = 8.dp, vertical = 4.dp)
                 .border(2.dp, Color(0xFF5A4020), RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp))
+                .clickable { onAdvance() }
         ) {
             Row(Modifier.padding(12.dp), verticalAlignment = Alignment.Top) {
                 // NPC portrait on the left (only when speaker has one)

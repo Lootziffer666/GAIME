@@ -14,6 +14,7 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -1590,7 +1591,8 @@ private fun TitleView(
             .onKeyEvent { e ->
                 if (e.type == KeyEventType.KeyDown) { onStart(); true } else false
             }
-            .focusable(),
+            .focusable()
+            .clickable { onStart() },
         contentAlignment = Alignment.Center
     ) {
         Image(
@@ -1623,7 +1625,7 @@ private fun TitleView(
                     modifier = Modifier.alpha(promptAlpha)
                 ) {
                     Text(
-                        "— PRESS ANY KEY TO BEGIN —",
+                        "Tap to Start",
                         color = Color(0xFFE8C170),
                         fontWeight = FontWeight.Bold,
                         fontSize = 14.sp
