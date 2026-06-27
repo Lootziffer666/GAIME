@@ -28,6 +28,7 @@ import gaime.resources.hero_brugg
 import gaime.resources.hero_nib
 import gaime.resources.hero_vellum
 import gaime.resources.marker_quest
+import gaime.resources.questbook_open
 import gaime.resources.tile_floor
 import gaime.resources.tile_wall
 import kotlinx.coroutines.delay
@@ -407,10 +408,19 @@ private fun QuestbookFlash(text: String) {
             color = Color(0xF2241E12),
             modifier = Modifier.fillMaxWidth()
         ) {
-            Column(Modifier.padding(16.dp)) {
-                Text("QUESTBOOK", color = Color(0xFFE8C170), fontWeight = FontWeight.Bold, fontSize = 12.sp)
-                Spacer(Modifier.height(4.dp))
-                Text(text, color = Color(0xFFF5E9C8), fontSize = 15.sp)
+            Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                Image(
+                    painter = painterResource(Res.drawable.questbook_open),
+                    contentDescription = null,
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier.size(40.dp)
+                )
+                Spacer(Modifier.width(10.dp))
+                Column(Modifier.weight(1f)) {
+                    Text("QUESTBOOK", color = Color(0xFFE8C170), fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                    Spacer(Modifier.height(2.dp))
+                    Text(text, color = Color(0xFFF5E9C8), fontSize = 14.sp)
+                }
             }
         }
     }

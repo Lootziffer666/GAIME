@@ -29,5 +29,13 @@ enum class SlicePhase {
     CHAPTER2_QUESTBOOK_PAGE2,  // Full-screen Questbook page 2
     CHAPTER2_RETURN,           // Return to market
 
-    GAME_OVER            // Defeat screen
+    GAME_OVER,           // Defeat screen
+
+    // ═══ World connectors ════════════════════════════════════════════════
+    HEROES_HOME_EXT,       // Village exterior — starting area before entering tavern
+    CHAPTER2_GUILDHALL,    // Questbook HQ exterior — adventurers' guild
+    CHAPTER2_CHAPEL_EXT,   // Chapel exterior — approach before boss arena
+    CHAPTER2_TEMPLE_EXT,   // Ruined temple exterior — wilderness transition
+    CHAPTER2_BRIDGE,       // Stone bridge — overworld crossing
+    CHAPTER2_GLASSBLOWERS, // Glassblowers district exterior — market expansion
 }
