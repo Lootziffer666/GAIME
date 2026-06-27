@@ -565,13 +565,22 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
                 GridEntity("rat_mini_1", 5, 13, GridEntityType.ENEMY, "enemy_rat",     maxHp = 1),
                 GridEntity("rat_mini_2", 7, 13, GridEntityType.ENEMY, "enemy_rat",     maxHp = 1),
                 GridEntity("rat_mini_3", 9, 13, GridEntityType.ENEMY, "enemy_rat",     maxHp = 1),
-                GridEntity("blob_mini", 7, 15, GridEntityType.ENEMY, "enemy_blob",     maxHp = 2)
+                GridEntity("blob_mini", 7, 15, GridEntityType.ENEMY, "enemy_blob",     maxHp = 2),
+                // Destructibles
+                GridEntity("barrel_1",    3,  4, GridEntityType.DESTRUCTIBLE, "barrel",       maxHp = 1),
+                GridEntity("barrel_2",   10,  3, GridEntityType.DESTRUCTIBLE, "barrel",       maxHp = 1),
+                GridEntity("crate_1",     4,  8, GridEntityType.DESTRUCTIBLE, "crate",        maxHp = 1),
+                GridEntity("wall_1",     11,  7, GridEntityType.DESTRUCTIBLE, "wall_cracked", maxHp = 2),
+                GridEntity("wall_2",     11, 14, GridEntityType.DESTRUCTIBLE, "wall_cracked", maxHp = 2)
             ))
         }
     }
     val bossWorld = remember {
         GridWorld(GameMaps.bossRoom()).also { w ->
             w.entities.add(GridEntity("rat_accountant", 6, 7, GridEntityType.ENEMY, "boss_rat_accountant"))
+            // Atmosphere props
+            w.entities.add(GridEntity("boss_barrel_1", 3, 4, GridEntityType.DESTRUCTIBLE, "barrel", maxHp = 1))
+            w.entities.add(GridEntity("boss_barrel_2", 9, 4, GridEntityType.DESTRUCTIBLE, "barrel", maxHp = 1))
         }
     }
 
@@ -581,6 +590,11 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
             w.entities.add(GridEntity("merchant",  12, 10, GridEntityType.NPC, "npc_merchant"))
             w.entities.add(GridEntity("guard",      6, 15, GridEntityType.NPC, "npc_guard"))
             w.entities.add(GridEntity("citizen1",  10,  7, GridEntityType.NPC, "npc_citizen1"))
+            // Market clutter
+            w.entities.add(GridEntity("market_crate_1",  4,  5, GridEntityType.DESTRUCTIBLE, "crate",  maxHp = 1))
+            w.entities.add(GridEntity("market_crate_2", 14,  5, GridEntityType.DESTRUCTIBLE, "crate",  maxHp = 1))
+            w.entities.add(GridEntity("market_barrel_1", 8,  4, GridEntityType.DESTRUCTIBLE, "barrel", maxHp = 1))
+            w.entities.add(GridEntity("market_barrel_2",16, 12, GridEntityType.DESTRUCTIBLE, "barrel", maxHp = 1))
         }
     }
     val forestWorld = remember {
@@ -589,7 +603,15 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
                 GridEntity("wolf_1", 16, 8, GridEntityType.ENEMY, "enemy_wolf",          maxHp = 2),
                 GridEntity("wolf_2", 18, 11, GridEntityType.ENEMY, "enemy_wolf",         maxHp = 2),
                 GridEntity("wolf_3", 20, 9, GridEntityType.ENEMY, "enemy_wolf",          maxHp = 2),
-                GridEntity("tax_badger", 24, 18, GridEntityType.ENEMY, "boss_rat_accountant") // maxHp=-1: boss → CombatEngine
+                GridEntity("tax_badger", 24, 18, GridEntityType.ENEMY, "boss_rat_accountant"), // maxHp=-1: boss → CombatEngine
+                // Tall grass patches (non-solid: stepped on to destroy)
+                GridEntity("grass_1", 14, 7, GridEntityType.DESTRUCTIBLE, "grass_tall", maxHp = 1, solid = false),
+                GridEntity("grass_2", 15, 9, GridEntityType.DESTRUCTIBLE, "grass_tall", maxHp = 1, solid = false),
+                GridEntity("grass_3", 17, 10, GridEntityType.DESTRUCTIBLE, "grass_tall", maxHp = 1, solid = false),
+                GridEntity("grass_4", 19, 7, GridEntityType.DESTRUCTIBLE, "grass_tall", maxHp = 1, solid = false),
+                GridEntity("grass_5", 21, 10, GridEntityType.DESTRUCTIBLE, "grass_tall", maxHp = 1, solid = false),
+                // Fallen logs / crumbling ruins
+                GridEntity("forest_crate_1", 13, 10, GridEntityType.DESTRUCTIBLE, "crate", maxHp = 1)
             ))
         }
     }
@@ -620,6 +642,11 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
         GridWorld(GameMaps.templeExt()).also { w ->
             w.entities.add(GridEntity("wolf_a", 8, 6, GridEntityType.ENEMY, "enemy_wolf", maxHp = 2))
             w.entities.add(GridEntity("wolf_b", 13, 4, GridEntityType.ENEMY, "enemy_wolf", maxHp = 2))
+            // Ruined stonework
+            w.entities.add(GridEntity("temple_wall_1",  5, 5, GridEntityType.DESTRUCTIBLE, "wall_cracked", maxHp = 2))
+            w.entities.add(GridEntity("temple_wall_2", 10, 7, GridEntityType.DESTRUCTIBLE, "wall_cracked", maxHp = 2))
+            w.entities.add(GridEntity("temple_grass_1",  7, 8, GridEntityType.DESTRUCTIBLE, "grass_tall", maxHp = 1, solid = false))
+            w.entities.add(GridEntity("temple_grass_2", 11, 5, GridEntityType.DESTRUCTIBLE, "grass_tall", maxHp = 1, solid = false))
         }
     }
     val glassblowersExtWorld = remember {

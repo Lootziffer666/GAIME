@@ -36,13 +36,25 @@ class GridWorld(
         val nx = player.tileX + dir.dx
         val ny = player.tileY + dir.dy
         val entityAtTarget = entities.firstOrNull { it.tileX == nx && it.tileY == ny }
-        if (entityAtTarget != null && entityAtTarget.type == GridEntityType.ENEMY) {
-            if (entityAtTarget.maxHp < 0) {
-                // Boss / turn-based enemy → hand off to CombatEngine as before
-                pendingEntityInteractions.addLast(entityAtTarget)
+        if (entityAtTarget != null) {
+            when (entityAtTarget.type) {
+                GridEntityType.ENEMY -> {
+                    if (entityAtTarget.maxHp < 0) {
+                        // Boss / turn-based enemy → hand off to CombatEngine as before
+                        pendingEntityInteractions.addLast(entityAtTarget)
+                    }
+                    // Action enemies just block; player presses attack to clear them
+                    return false
+                }
+                GridEntityType.DESTRUCTIBLE -> {
+                    if (entityAtTarget.solid) return false
+                    // Non-solid (tall grass): destroyed by walking into the tile
+                    entityAtTarget.hp -= 1
+                    if (entityAtTarget.hp <= 0) entities.remove(entityAtTarget)
+                    // fall through — movement proceeds onto the tile
+                }
+                GridEntityType.NPC -> { /* NPCs don't block movement */ }
             }
-            // Action enemies (maxHp > 0) just block the tile; player attacks to clear them
-            return false
         }
         val cellIdx = ny * map.width + nx
         if (map.isBlocked(nx, ny) && cellIdx !in unblockedOverrides) return false
@@ -102,8 +114,8 @@ class GridWorld(
         val nx = player.tileX + player.facing.dx
         val ny = player.tileY + player.facing.dy
         val targets = entities.filter {
-            it.tileX == nx && it.tileY == ny &&
-            it.type == GridEntityType.ENEMY && it.maxHp > 0
+            it.tileX == nx && it.tileY == ny && it.maxHp > 0 &&
+            (it.type == GridEntityType.ENEMY || it.type == GridEntityType.DESTRUCTIBLE)
         }
         targets.forEach { it.hp -= 1 }
         val killed = targets.filter { it.hp <= 0 }.map { it.id }
