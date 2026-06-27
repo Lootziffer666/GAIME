@@ -53,6 +53,7 @@ import gaime.resources.npc_world_merchant
 import gaime.resources.npc_world_patron
 import gaime.resources.tileset_dungeon
 import gaime.resources.title_screen
+import gaime.resources.title_screen_portrait
 import gaime.resources.questbook_open
 import gaime.resources.questbook_closed
 import gaime.resources.world_boss
@@ -1911,12 +1912,17 @@ private fun TitleView(onStart: () -> Unit) {
             .focusable(),
         contentAlignment = Alignment.Center
     ) {
-        Image(
-            painter = painterResource(Res.drawable.title_screen),
-            contentDescription = "Quest Accepted: Unfortunately",
-            contentScale = ContentScale.Fit,
-            modifier = Modifier.fillMaxSize()
-        )
+        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+            val isPortrait = maxHeight > maxWidth
+            Image(
+                painter = painterResource(
+                    if (isPortrait) Res.drawable.title_screen_portrait else Res.drawable.title_screen
+                ),
+                contentDescription = "Quest Accepted: Unfortunately",
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
