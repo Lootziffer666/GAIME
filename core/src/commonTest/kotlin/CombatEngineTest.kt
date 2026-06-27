@@ -166,6 +166,73 @@ class CombatEngineTest {
         )
     }
 
+    // ─── Turn resolution & living-list bookkeeping ──────────────────────
+
+    @Test
+    fun attackResolvesDamageToTheTargetedEnemy() {
+        val party = listOf(member("hero", hp = 30, atk = 7))
+        val rat = EnemyArchetype.SEWER_RAT.spawn("rat") // 12 hp
+        val engine = CombatEngine(party, listOf(rat))
+        engine.tick(CombatAction.Attack("rat"))
+        assertEquals(5, rat.hp) // 12 - 7
+        assertTrue(rat.isAlive)
+    }
+
+    @Test
+    fun attackKillsAnEnemyWithOneHp() {
+        val party = listOf(member("hero", hp = 30, atk = 1))
+        val foe = Combatant("foe", "Foe", maxHp = 1, side = Side.ENEMY, attackPower = 0)
+        val engine = CombatEngine(party, listOf(foe))
+        engine.tick(CombatAction.Attack("foe"))
+        assertEquals(0, foe.hp)
+        assertTrue(!foe.isAlive)
+    }
+
+    @Test
+    fun defeatedEnemiesLeaveTheLivingList() {
+        val party = listOf(member("hero", hp = 30, atk = 100))
+        val a = Combatant("a", "A", maxHp = 5, side = Side.ENEMY, attackPower = 0)
+        val b = Combatant("b", "B", maxHp = 50, side = Side.ENEMY, attackPower = 0)
+        val engine = CombatEngine(party, listOf(a, b))
+        engine.tick(CombatAction.Attack("a"))
+        assertTrue(engine.livingEnemies().none { it.id == "a" }, "dead enemy should be gone")
+        assertTrue(engine.livingEnemies().any { it.id == "b" }, "live enemy should remain")
+    }
+
+    @Test
+    fun victoryWhenEveryEnemyReachesZeroHp() {
+        val party = listOf(member("hero", hp = 30, atk = 100))
+        val foe = Combatant("foe", "Foe", maxHp = 10, side = Side.ENEMY, attackPower = 0)
+        val engine = CombatEngine(party, listOf(foe))
+        engine.tick(CombatAction.Attack("foe"))
+        assertEquals(CombatResult.VICTORY, engine.result)
+        assertTrue(engine.livingEnemies().isEmpty())
+    }
+
+    @Test
+    fun bossControllerAdvancesPhaseWhenHpThresholdReached() {
+        val controller = BossController()
+        val boss = Combatant("boss", "Boss", maxHp = 100, side = Side.ENEMY, attackPower = 4)
+
+        // Full HP -> stays in PHASE_1.
+        controller.takeTurn(boss, mutableListOf())
+        assertEquals(BossPhase.PHASE_1, controller.currentPhase)
+
+        // Drop to 40% -> PHASE_2 with a phase-change event.
+        boss.takeDamage(60)
+        val toPhase2 = mutableListOf<CombatEvent>()
+        controller.takeTurn(boss, toPhase2)
+        assertEquals(BossPhase.PHASE_2, controller.currentPhase)
+        assertTrue(toPhase2.any { it is CombatEvent.BossPhaseChanged && it.phase == BossPhase.PHASE_2 })
+
+        // Drop to 10% -> PHASE_3 with a phase-change event.
+        boss.takeDamage(30)
+        val toPhase3 = mutableListOf<CombatEvent>()
+        controller.takeTurn(boss, toPhase3)
+        assertEquals(BossPhase.PHASE_3, controller.currentPhase)
+        assertTrue(toPhase3.any { it is CombatEvent.BossPhaseChanged && it.phase == BossPhase.PHASE_3 })
+    }
+
     /**
      * Find a seed where the nearly-dead bark fires.
      * The Random sequence for a tick with Attack action on an enemy below 25%:
