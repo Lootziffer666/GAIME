@@ -13,7 +13,7 @@ class Combatant(
     val name: String,
     val maxHp: Int,
     val side: Side,
-    val attackPower: Int,
+    var attackPower: Int,
     /** Flammable "paper" add summoned by the boss; cleared by a flame utility bark. */
     val isPaperAdd: Boolean = false,
     /** How this combatant selects targets and paces attacks. */

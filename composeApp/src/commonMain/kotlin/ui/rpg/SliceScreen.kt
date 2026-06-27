@@ -91,6 +91,9 @@ import rpg.combat.Combatant
 import rpg.combat.EnemyArchetype
 import rpg.combat.Side
 import rpg.combat.TaxCollectorController
+import rpg.items.Inventory
+import rpg.items.ItemCatalog
+import rpg.items.ItemType
 import rpg.questbook.QuestPressure
 import rpg.questbook.QuestbookEffect
 import rpg.questbook.RoomContext
@@ -532,6 +535,7 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
     // Engine + persistent party (HP carries across encounters)
     val director = remember { SliceDirector(clock) }
     val party = remember { freshSliceParty() }
+    val inventory = remember { Inventory() }
 
     // Wire up bark audio playback
     val barkAudioPlayer = remember { BarkAudioPlayer(createPlatformAudioPlayer()) }
@@ -981,9 +985,7 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
             when (entity.id) {
                 "merchant" -> {
                     fireAndFlash(BarkEvent.NIB_SMELL_GOLD)
-                    dialogueLines = CHAPTER2_MERCHANT_LINES
-                    dialogueIndex = 0
-                    phase = SlicePhase.CHAPTER2_MARKET_NPC
+                    phase = SlicePhase.SHOP
                 }
                 "guard" -> {
                     fireAndFlash(BarkEvent.BRUGG_SPEAK_TO_GUARD)
@@ -1144,6 +1146,11 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
             .onKeyEvent { e ->
                 if (e.type != KeyEventType.KeyDown) return@onKeyEvent false
                 lastActivityTime = clock()
+                // Escape closes the shop overlay
+                if (e.key == Key.Escape && phase == SlicePhase.SHOP) {
+                    phase = SlicePhase.CHAPTER2_MARKET
+                    return@onKeyEvent true
+                }
                 val world = when (phase) {
                     SlicePhase.TAVERN               -> tavernWorld
                     SlicePhase.SEWER                -> sewerWorld
@@ -1183,6 +1190,12 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
                         return@onKeyEvent npc != null
                     }
                     Key.Z -> { world.requestAttack(); version++; return@onKeyEvent true }
+                    Key.I -> {
+                        party.firstOrNull()?.let { nib ->
+                            if (inventory.useCheapestPotion(nib) > 0) version++
+                        }
+                        return@onKeyEvent true
+                    }
                     else -> return@onKeyEvent false
                 }
                 true
@@ -1482,6 +1495,25 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
                     barkButtons = emptyList(),
                     onBark   = ::fireAndFlash
                 )
+
+            SlicePhase.SHOP -> {
+                ExploreView(
+                    title    = "Stokeport Market",
+                    scene    = marketScene,
+                    pressure = director.pressure,
+                    falseMarkers = director.falseMarkers,
+                    onStep   = marketWorld::requestStep,
+                    barkButtons = emptyList(),
+                    onBark   = ::fireAndFlash
+                )
+                ShopView(
+                    inventory = inventory,
+                    party     = party,
+                    version   = version,
+                    onBuy     = { item -> inventory.buy(item, party); version++ },
+                    onClose   = { phase = SlicePhase.CHAPTER2_MARKET }
+                )
+            }
         }
 
         // Questbook flash (always on top) with animated slide-in/out
@@ -1960,6 +1992,130 @@ private fun TitleView(onStart: () -> Unit) {
                         fontSize = 14.sp
                     )
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ShopView(
+    inventory: Inventory,
+    party: List<Combatant>,
+    version: Int,
+    onBuy: (rpg.items.Item) -> Unit,
+    onClose: () -> Unit
+) {
+    // version param forces recomposition so gold/counts refresh after each buy
+    @Suppress("UNUSED_EXPRESSION") version
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xCC000000)),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth(0.88f)
+                .background(Color(0xFF1A1426), RoundedCornerShape(8.dp))
+                .border(2.dp, Color(0xFFE8C170), RoundedCornerShape(8.dp))
+                .padding(16.dp)
+                .verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text("Stokeport Market", color = Color(0xFFE8C170), fontWeight = FontWeight.Bold, fontSize = 18.sp)
+            Text("\"Premium faintness. That is the backbone of commerce.\"",
+                color = Color(0xFF888888), fontSize = 11.sp)
+            Spacer(Modifier.height(6.dp))
+            Text("Gold: ${inventory.gold} g", color = Color(0xFFFFD700), fontWeight = FontWeight.Bold, fontSize = 14.sp)
+            Spacer(Modifier.height(14.dp))
+
+            // Potions
+            Text("POTIONS", color = Color(0xFF9B7FD4), fontWeight = FontWeight.Bold, fontSize = 12.sp)
+            Spacer(Modifier.height(6.dp))
+            ItemCatalog.ALL.filter { it.type == ItemType.POTION }.forEach { item ->
+                ShopItemRow(
+                    item       = item,
+                    stackCount = inventory.count(item.id),
+                    isEquipped = false,
+                    canAfford  = inventory.gold >= item.price,
+                    onBuy      = { onBuy(item) }
+                )
+                Spacer(Modifier.height(4.dp))
+            }
+
+            Spacer(Modifier.height(10.dp))
+
+            // Weapons
+            Text("WEAPONS", color = Color(0xFF9B7FD4), fontWeight = FontWeight.Bold, fontSize = 12.sp)
+            Spacer(Modifier.height(6.dp))
+            ItemCatalog.ALL.filter { it.type == ItemType.WEAPON }.forEach { item ->
+                ShopItemRow(
+                    item       = item,
+                    stackCount = 0,
+                    isEquipped = inventory.isEquipped(item.id),
+                    canAfford  = inventory.gold >= item.price && !inventory.isEquipped(item.id),
+                    onBuy      = { onBuy(item) }
+                )
+                Spacer(Modifier.height(4.dp))
+            }
+
+            Spacer(Modifier.height(10.dp))
+
+            // Inventory hint
+            val carrying = ItemCatalog.ALL
+                .filter { it.type == ItemType.POTION && inventory.count(it.id) > 0 }
+                .joinToString("  ") { "${it.name} ×${inventory.count(it.id)}" }
+            if (carrying.isNotEmpty()) {
+                Text("Carrying: $carrying", color = Color(0xFF80D080), fontSize = 12.sp)
+                Text("[ I ] uses cheapest potion during exploration", color = Color(0xFF666666), fontSize = 11.sp)
+                Spacer(Modifier.height(8.dp))
+            }
+
+            SliceSmallButton("Close  [ Esc ]", Color(0xFF4A3F73)) { onClose() }
+        }
+    }
+}
+
+@Composable
+private fun ShopItemRow(
+    item: rpg.items.Item,
+    stackCount: Int,
+    isEquipped: Boolean,
+    canAfford: Boolean,
+    onBuy: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color(0xFF251E35), RoundedCornerShape(4.dp))
+            .padding(horizontal = 10.dp, vertical = 6.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(Modifier.weight(1f)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(item.name, color = Color(0xFFE8C170), fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                if (stackCount > 0) {
+                    Spacer(Modifier.width(6.dp))
+                    Text("×$stackCount", color = Color(0xFF80D080), fontSize = 12.sp)
+                }
+                if (isEquipped) {
+                    Spacer(Modifier.width(6.dp))
+                    Text("[EQUIPPED]", color = Color(0xFF80D080), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                }
+            }
+            Text(item.description, color = Color(0xFFAAAAAA), fontSize = 11.sp)
+        }
+        Spacer(Modifier.width(8.dp))
+        Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.Center) {
+            Text("${item.price} g", color = Color(0xFFFFD700), fontSize = 13.sp, fontWeight = FontWeight.Bold)
+            if (!isEquipped) {
+                Spacer(Modifier.height(2.dp))
+                SliceSmallButton(
+                    label = "Buy",
+                    color = if (canAfford) Color(0xFF2E6B2E) else Color(0xFF3D3D3D)
+                ) { if (canAfford) onBuy() }
             }
         }
     }
