@@ -1,0 +1,44 @@
+{
+  "tool": "cue-agent",
+  "intent": "qa",
+  "timestamp": "2026-06-23T16:21:27.037Z",
+  "url": "http://127.0.0.1:8099/",
+  "lang": "de",
+  "provider": "openai",
+  "model": "cue-local",
+  "visionSkipped": false,
+  "screenshot": "screenshot-2026-06-23T16-21-13-589Z.png",
+  "assessment": {
+    "level": "medium",
+    "score": 80,
+    "errors": 0,
+    "warnings": 4,
+    "serverErrors": 0,
+    "clientErrors": 0
+  },
+  "console": [
+    {
+      "type": "warning",
+      "text": "[.WebGL-0x12c400130e00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+    },
+    {
+      "type": "warning",
+      "text": "[.WebGL-0x12c400130e00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+    },
+    {
+      "type": "warning",
+      "text": "[.WebGL-0x12c400130e00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+    },
+    {
+      "type": "warning",
+      "text": "[.WebGL-0x12c400130e00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)"
+    }
+  ],
+  "network": [],
+  "metrics": {
+    "fcp": 28,
+    "domContentLoaded": 675,
+    "loadComplete": 675
+  },
+  "analysis": "Gesamteindruck: aufgeräumtes, konsistentes Layout mit klarer Typo-Hierarchie und ausreichenden Kontrasten. Keine offensichtlichen Layout-Brüche im sichtbaren Bereich. Empfehlung: sichtbare Tastatur-Fokus-Stile ergänzen und Touch-Ziele (>=44px) auf kleinen Viewports prüfen. Konsolen-Logs ohne kritische Fehler."
+}

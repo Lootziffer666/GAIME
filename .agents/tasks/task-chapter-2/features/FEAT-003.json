@@ -1,0 +1,25 @@
+{
+  "id": "FEAT-003",
+  "type": "feat",
+  "description": "Chapter 2 tests: Add unit tests for the TaxCollectorController, the new QuestbookProcessor reactions, the forest combat scenarios, and an integration test for the Chapter 2 pipeline flow.",
+  "status": "completed",
+  "steps": [
+    "1. Create composeApp/src/commonTest/kotlin/TaxCollectorControllerTest.kt modeled on CombatEngineTest.kt. Test: (a) onCombatStart summons 2 FOREST_WOLF adds, (b) phase transitions at correct HP thresholds (50% -> PHASE_2, 25% -> PHASE_3), (c) PHASE_3 damage is attackPower*3, (d) BossPhaseChanged events are emitted on transition, (e) PHASE_2 transition emits pressure escalation event.",
+    "2. Create composeApp/src/commonTest/kotlin/Chapter2QuestbookTest.kt. Test each new Chapter 2 bark reaction: (a) NIB_SMELL_GOLD in market context produces 'Commercial Survey Initiated' text with SpawnQuestMarker effect, (b) BRUGG_WHO_RUNS_THIS_CITY produces 'Municipal Inquiry Filed' with FlavorText, (c) VELLUM_CREATURES_IN_WOODS produces 'Wildlife Census Ordered' with SpawnQuestMarker, (d) VELLUM_CALLS_FOR_LIGHTNING in shrine context produces 'Electrical Works Permit: Granted' with RevealHidden, (e) VELLUM_BALANCE_LIFE_DEATH produces 'Existential Risk Assessment' with FlavorText, (f) VELLUM_ELEMENTS_MINE_TO_COMMAND produces 'Elemental Claim Registered' with FlavorText.",
+    "3. Create composeApp/src/commonTest/kotlin/Chapter2CombatTest.kt. Test: (a) party defeats 3 FOREST_WOLF enemies (verify VICTORY result after enough attack ticks), (b) TAX_COLLECTOR_BADGER boss fight: party can reach VICTORY through all 3 phases, (c) wolf adds are spawned at start of badger fight, (d) PHASE_3 damage is high enough to kill a low-HP party member in one hit (verifying the stamp attack mechanic).",
+    "4. Create composeApp/src/commonTest/kotlin/Chapter2PipelineTest.kt modeled on SlicePipelineTest.kt. Test the full SliceDirector flow for Chapter 2: (a) enterRoom with market context, fire NIB_SMELL_GOLD, verify questbook reaction text, (b) enterRoom with forest context, fire VELLUM_CREATURES_IN_WOODS, verify reaction, (c) enterRoom with shrine context, fire VELLUM_CALLS_FOR_LIGHTNING, verify RevealHidden effect, (d) start boss combat with TaxCollectorController, verify combat events route barks through questbook."
+  ],
+  "acceptance_criteria": [
+    "./gradlew desktopTest passes with all new Chapter 2 tests",
+    "TaxCollectorControllerTest covers all 3 phases and add spawning",
+    "Chapter2QuestbookTest covers all 7 new Chapter 2 specific reactions",
+    "Chapter2CombatTest covers wolf encounters and the full badger boss fight",
+    "Chapter2PipelineTest demonstrates the traceable bark -> questbook -> effect path for Chapter 2"
+  ],
+  "verification": [
+    "Run ./gradlew desktopTest and confirm all tests pass including new Chapter 2 tests",
+    "Run ./gradlew build to confirm full compilation"
+  ],
+  "blocked_reason": null,
+  "findings": "All 32 new tests pass (TaxCollectorControllerTest: 7, Chapter2QuestbookTest: 13, Chapter2CombatTest: 6, Chapter2PipelineTest: 6). Total project test count is now 145, all passing. Key insight: BossPhase.forHpFraction uses strict inequality (>0.5 for PHASE_1, >0.25 for PHASE_2), so party attack power must be tuned carefully to ensure the boss passes through each phase boundary separately rather than skipping PHASE_2 entirely."
+}

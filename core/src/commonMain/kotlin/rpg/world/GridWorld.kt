@@ -1,0 +1,137 @@
+package rpg.world
+
+/**
+ * The walkable world: a [TileMap] plus a player that steps tile-by-tile, plus
+ * any [GridEntity] objects placed by the host screen. Movement and trigger logic
+ * are pure and deterministic (driven by an explicit delta time), so they can be
+ * unit-tested without any rendering.
+ */
+class GridWorld(
+    val map: TileMap,
+    val player: GridActor = GridActor(map.spawnX, map.spawnY),
+    private val stepDuration: Float = 0.16f
+) {
+    private val firedTriggers = mutableSetOf<String>()
+    private val pendingTriggers = ArrayDeque<String>()
+
+    /** All NPC and enemy entities currently on this map. */
+    val entities: MutableList<GridEntity> = mutableListOf()
+
+    /**
+     * Tile cell indices (y*width+x) that were statically blocked but have been
+     * cleared at runtime (e.g. rubble removed by a utility bark).
+     */
+    private val unblockedOverrides = mutableSetOf<Int>()
+
+    private val pendingEntityInteractions = ArrayDeque<GridEntity>()
+
+    /**
+     * Requests a one-tile step in [dir]. Always faces that direction; only moves
+     * if not already mid-step and the target tile is unblocked. ENEMY entities
+     * also block movement: approaching one queues an interaction instead of moving.
+     */
+    fun requestStep(dir: Direction): Boolean {
+        player.facing = dir
+        if (player.moving) return false
+        val nx = player.tileX + dir.dx
+        val ny = player.tileY + dir.dy
+        val entityAtTarget = entities.firstOrNull { it.tileX == nx && it.tileY == ny }
+        if (entityAtTarget != null) {
+            when (entityAtTarget.type) {
+                GridEntityType.ENEMY -> {
+                    if (entityAtTarget.maxHp < 0) {
+                        // Boss / turn-based enemy → hand off to CombatEngine as before
+                        pendingEntityInteractions.addLast(entityAtTarget)
+                    }
+                    // Action enemies just block; player presses attack to clear them
+                    return false
+                }
+                GridEntityType.DESTRUCTIBLE -> {
+                    if (entityAtTarget.solid) return false
+                    // Non-solid (tall grass): destroyed by walking into the tile
+                    entityAtTarget.hp -= 1
+                    if (entityAtTarget.hp <= 0) entities.remove(entityAtTarget)
+                    // fall through — movement proceeds onto the tile
+                }
+                GridEntityType.NPC -> { /* NPCs don't block movement */ }
+            }
+        }
+        val cellIdx = ny * map.width + nx
+        if (map.isBlocked(nx, ny) && cellIdx !in unblockedOverrides) return false
+        player.startMove(nx, ny)
+        return true
+    }
+
+    /** Advances the current step. Fires each trigger tile once on arrival. */
+    fun update(deltaTime: Float) {
+        if (!player.moving) return
+        val arrived = player.advance(deltaTime / stepDuration)
+        if (arrived) {
+            map.triggerAt(player.tileX, player.tileY)?.let { id ->
+                if (firedTriggers.add(id)) pendingTriggers.addLast(id)
+            }
+        }
+    }
+
+    /** Returns and clears triggers that fired since the last call. */
+    fun consumeTriggers(): List<String> {
+        if (pendingTriggers.isEmpty()) return emptyList()
+        val out = pendingTriggers.toList()
+        pendingTriggers.clear()
+        return out
+    }
+
+    /**
+     * Removes the obstacle identified by [triggerId] from the collision layer,
+     * making that tile passable. Uses the trigger map to locate the cell index.
+     */
+    fun clearObstacle(triggerId: String) {
+        map.triggers.entries.firstOrNull { it.value == triggerId }?.let { (idx, _) ->
+            unblockedOverrides.add(idx)
+        }
+    }
+
+    /** Returns and clears pending entity interactions (enemy approach events). */
+    fun consumeEntityInteractions(): List<GridEntity> {
+        if (pendingEntityInteractions.isEmpty()) return emptyList()
+        val out = pendingEntityInteractions.toList()
+        pendingEntityInteractions.clear()
+        return out
+    }
+
+    /** Removes an entity by id (call after combat victory to allow passage). */
+    fun removeEntity(id: String) {
+        entities.removeAll { it.id == id }
+    }
+
+    /**
+     * Swings a melee attack at the tile directly in front of the player.
+     * Deals 1 HP of damage to every action-combat ENEMY on that tile (maxHp > 0).
+     * Entities that reach 0 HP are removed from the world immediately.
+     * Returns the IDs of any killed entities (so the caller can play effects).
+     */
+    fun requestAttack(): List<String> {
+        val nx = player.tileX + player.facing.dx
+        val ny = player.tileY + player.facing.dy
+        val targets = entities.filter {
+            it.tileX == nx && it.tileY == ny && it.maxHp > 0 &&
+            (it.type == GridEntityType.ENEMY || it.type == GridEntityType.DESTRUCTIBLE)
+        }
+        targets.forEach { it.hp -= 1 }
+        val killed = targets.filter { it.hp <= 0 }.map { it.id }
+        if (killed.isNotEmpty()) entities.removeAll { it.id in killed.toSet() }
+        return killed
+    }
+
+    /**
+     * Returns the NPC entity adjacent to the player in their facing direction,
+     * or null if none. Used for interact-key NPC dialogue.
+     */
+    fun requestInteraction(): GridEntity? {
+        val nx = player.tileX + player.facing.dx
+        val ny = player.tileY + player.facing.dy
+        return entities.firstOrNull {
+            it.tileX == nx && it.tileY == ny && it.type == GridEntityType.NPC
+        }
+    }
+}

@@ -1,0 +1,30 @@
+{
+  "id": "FEAT-001",
+  "type": "chore",
+  "description": "Extract bark WAV files from the 7z archives into the composeResources/files/ directory structure, organized by voice (character). Only extract the WAVs that are mapped to BarkEvents (existing 20 + new ones). Files go into composeResources/files/bark/{nib,brugg,vellum}/ with sanitized filenames (lowercase, underscores instead of spaces). Create a Python extraction/copy script that: 1) extracts the 7z archives, 2) copies and renames the relevant WAVs into the target structure, 3) generates a manifest file listing all available WAVs per voice.",
+  "status": "completed",
+  "steps": [
+    "Create a Python script at scripts/extract_bark_audio.py that: (a) extracts gruff.7z.part1+2, raspy.7z.part1+2+3, whiny.7z.part1+2+3 using py7zr (already installed), (b) maps voice names to character names (gruff->brugg, raspy->nib, whiny->vellum), (c) copies ALL WAVs into composeApp/src/commonMain/composeResources/files/bark/{nib,brugg,vellum}/ with sanitized filenames (lowercase, replace spaces with underscores, remove apostrophes/special chars, keep .wav extension), (d) generates a JSON manifest at composeApp/src/commonMain/kotlin/rpg/bark/bark_audio_manifest.json listing all files per character",
+    "Run the extraction script to actually place the WAVs in the composeResources/files/bark/ directory structure",
+    "Add .extracted/ to .gitignore (it is a temporary directory)",
+    "Verify the directory structure: composeApp/src/commonMain/composeResources/files/bark/nib/ should have 191 WAVs, bark/brugg/ should have 187 WAVs, bark/vellum/ should have 194 WAVs"
+  ],
+  "acceptance_criteria": [
+    "composeApp/src/commonMain/composeResources/files/bark/nib/ contains 191 sanitized WAV files",
+    "composeApp/src/commonMain/composeResources/files/bark/brugg/ contains 187 sanitized WAV files",
+    "composeApp/src/commonMain/composeResources/files/bark/vellum/ contains 194 sanitized WAV files",
+    "All filenames are lowercase, use underscores instead of spaces, no special characters except underscores",
+    "scripts/extract_bark_audio.py exists and is idempotent (can be re-run safely)",
+    ".extracted/ is in .gitignore"
+  ],
+  "verification": [
+    "Count files: find composeApp/src/commonMain/composeResources/files/bark/nib -name '*.wav' | wc -l should output 191",
+    "Count files: find composeApp/src/commonMain/composeResources/files/bark/brugg -name '*.wav' | wc -l should output 187",
+    "Count files: find composeApp/src/commonMain/composeResources/files/bark/vellum -name '*.wav' | wc -l should output 194",
+    "Verify key files exist: ls composeApp/src/commonMain/composeResources/files/bark/nib/i_smell_treasure.wav",
+    "Verify key files exist: ls composeApp/src/commonMain/composeResources/files/bark/brugg/attack.wav",
+    "Verify key files exist: ls composeApp/src/commonMain/composeResources/files/bark/vellum/this_calls_for_flame.wav"
+  ],
+  "blocked_reason": null,
+  "findings": "All 572 WAVs extracted successfully. Only one file had parentheses (raspy/nothing to see here(2).wav -> nothing_to_see_here2.wav). No apostrophes found in any source filenames. The .DS_Store files in .extracted/ were properly excluded (only .wav files copied). Manifest written to composeResources/files/bark/bark_audio_manifest.json. Build/test skipped because this is a resource-only change (WAV files + Python script + gitignore) with no Kotlin code changes."
+}

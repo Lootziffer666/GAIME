@@ -1,0 +1,29 @@
+{
+  "id": "FEAT-002",
+  "type": "feat",
+  "description": "Build the complete BarkEvent-to-WAV mapping system and extend BarkEvent enum with new Ambient/Combat/Exploration barks based on the available voice lines. Create BarkAudioRegistry that maps every BarkEvent to its WAV filename per character. Add new BarkEvents for combat reactions, exploration flavor, and ambient barks using the rich pool of 176+ common lines.",
+  "status": "completed",
+  "steps": [
+    "Create composeApp/src/commonMain/kotlin/rpg/bark/BarkAudioRegistry.kt - a singleton object that maps BarkEvent -> WAV resource path. Each entry maps to a relative path like 'bark/nib/i_smell_treasure.wav'. The registry uses the sanitized filename convention from FEAT-001. Include all 20 existing BarkEvents with their correct WAV mappings as documented in the orchestrator briefing.",
+    "Extend BarkEvent.kt with new enum values for combat/exploration/ambient barks. Categorize new barks based on the available WAV lines: COMBAT category (taunt lines like 'ive_fought_kobolds_tougher_than_you', death/damage reactions like 'i_didnt_think_it_would_end_like_this', 'avenge_me', healing like 'good_as_new', 'i_feel_better_than_ever'), EXPLORATION category (environment reactions like 'the_deeper_we_go_the_darker_it_gets', 'its_as_though_the_trees_have_eyes', discovery like 'hmm_i_wonder_what_this_could_be', 'what_do_we_have_here'), AMBIENT category (idle chatter like 'stew_again', 'theres_a_hole_in_my_boot', 'i_love_gold'). Add approximately 20-30 new enum values covering the most characterful common lines.",
+    "Update BarkRegistry.kt to include BarkDefinition entries for all new BarkEvents. New barks should use SAFE_BARK type for ambient/flavor, appropriate types for combat reactions. Use reasonable cooldowns (10-30s for ambient, 20-45s for combat).",
+    "Update BarkAudioRegistry.kt to include WAV mappings for all new BarkEvents. For new barks that use common lines (available in all 3 voices), map ALL three characters to their respective WAV file.",
+    "Add composeApp/src/commonTest/kotlin/BarkAudioRegistryTest.kt that verifies: every BarkEvent has an audio mapping, every mapped WAV filename follows the sanitized naming convention, the existing 7 slice bark WAV paths match the known correct mappings from the briefing.",
+    "Update BarkRegistryTest.kt to account for the new total number of bark events (adjust the slice bark count test remains at 7, add a test for total count)."
+  ],
+  "acceptance_criteria": [
+    "BarkAudioRegistry maps every BarkEvent to at least one WAV path",
+    "All 20 original BarkEvents retain their correct WAV mappings",
+    "New BarkEvents (20-30 additional) cover combat, exploration, and ambient categories",
+    "BarkRegistry init check still passes (no missing definitions)",
+    "BarkAudioRegistryTest passes with all assertions",
+    "BarkRegistryTest continues to pass (7 slice barks unchanged)",
+    "./gradlew allTests passes"
+  ],
+  "verification": [
+    "Run ./gradlew allTests and verify all tests pass including new BarkAudioRegistryTest",
+    "Run ./gradlew build to verify full compilation"
+  ],
+  "blocked_reason": null,
+  "findings": "Added 39 new BarkEvents (not 27 as estimated) to cover 3 per character across 5 categories. Total is now 59 BarkEvents. Android SDK not available in sandbox so only desktopTest was used for verification (./gradlew desktopTest passes all 63 tests). QuestbookProcessor.kt required updating for exhaustive when-match on BarkEvent - all new barks route to flavor-only 'Atmospheric observation noted' response. The nib voice directory has 'knowlegde_is_the_answer.wav' (typo) but brugg and vellum have the correctly spelled version - BarkAudioRegistry maps VELLUM_KNOWLEDGE_IS_THE_ANSWER to the correct 'knowledge_is_the_answer.wav' file."
+}

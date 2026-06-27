@@ -1,0 +1,32 @@
+{
+  "project_type": "Kotlin Multiplatform (KMP) Compose application with Desktop and Android targets",
+  "language": "Kotlin",
+  "build_system": "Gradle with Kotlin DSL (./gradlew)",
+  "test_framework": "kotlin.test in commonTest with ./gradlew desktopTest",
+  "build_command": "./gradlew build",
+  "test_command": "./gradlew desktopTest",
+  "verification_instructions": "Run ./gradlew desktopTest and confirm all tests pass. The project does not have a Dockerfile.",
+  "snapshot_or_generated_files": null,
+  "setup_instructions": "Project uses Gradle wrapper. Run ./gradlew desktopTest from /projects/sandbox/GAIME/",
+  "environment_constraints": "OPEN_INTERNET - full access. No expect/actual pattern currently exists in the project. Desktop uses javax.sound.sampled, Android uses MediaPlayer.",
+  "contribution_requirements": "Continue on feat/bark-audio-system branch. Tests in commonTest.",
+  "key_patterns": "BarkEvent enum (59 values) -> BarkEventBus (cooldowns) -> QuestbookProcessor -> SliceDirector orchestrates all. CombatEngine emits CombatEvent.BarkTriggered for barks. SliceDirector.handleCombatEvents processes them via fireBark(). BarkAudioPlayer wraps AudioPlayer interface. SliceScreen is a Composable in commonMain that creates SliceDirector.",
+  "relevant_files": [
+    "composeApp/src/commonMain/kotlin/ui/rpg/SliceScreen.kt",
+    "composeApp/src/commonMain/kotlin/rpg/SliceDirector.kt",
+    "composeApp/src/commonMain/kotlin/rpg/combat/CombatEngine.kt",
+    "composeApp/src/commonMain/kotlin/rpg/combat/CombatEvent.kt",
+    "composeApp/src/commonMain/kotlin/rpg/combat/Combatant.kt",
+    "composeApp/src/commonMain/kotlin/rpg/bark/BarkEvent.kt",
+    "composeApp/src/commonMain/kotlin/rpg/bark/BarkEventBus.kt",
+    "composeApp/src/commonMain/kotlin/rpg/bark/audio/AudioPlayer.kt",
+    "composeApp/src/commonMain/kotlin/rpg/bark/audio/BarkAudioPlayer.kt",
+    "composeApp/src/desktopMain/kotlin/rpg/bark/audio/DesktopAudioPlayer.kt",
+    "composeApp/src/androidMain/kotlin/rpg/bark/audio/AndroidAudioPlayer.kt",
+    "composeApp/src/commonMain/kotlin/rpg/combat/BossController.kt",
+    "composeApp/src/commonMain/kotlin/rpg/combat/EnemyArchetype.kt",
+    "composeApp/src/commonTest/kotlin/BarkAudioPlayerTest.kt",
+    "composeApp/src/commonTest/kotlin/CombatEngineTest.kt"
+  ],
+  "directory_structure": "composeApp/src/commonMain/kotlin/ - shared code; composeApp/src/desktopMain/kotlin/ - JVM desktop; composeApp/src/androidMain/kotlin/ - Android; composeApp/src/commonTest/kotlin/ - shared tests"
+}

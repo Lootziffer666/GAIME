@@ -1,0 +1,25 @@
+{
+  "project_type": "Kotlin Multiplatform (KMP) game with Compose UI - desktop + Android",
+  "language": "Kotlin",
+  "build_system": "Gradle with Kotlin DSL, JetBrains Compose plugin 1.7.3, Kotlin 2.1.21",
+  "test_framework": "kotlin.test in commonTest source set, run via ./gradlew desktopTest",
+  "build_command": "./gradlew build",
+  "test_command": "./gradlew desktopTest",
+  "verification_instructions": "1. Run ./gradlew desktopTest to verify all tests pass. 2. Run ./gradlew :composeApp:run to manually verify UI changes.",
+  "snapshot_or_generated_files": null,
+  "setup_instructions": "JDK 17+ required. Run ./gradlew build for first setup.",
+  "environment_constraints": "OPEN_INTERNET network mode. No LLM/AI dependencies in gameplay - everything must be deterministic and work offline after build.",
+  "contribution_requirements": "No AI/LLM calls in gameplay loop. Deterministic combat. Game runs with ./gradlew :composeApp:run",
+  "key_patterns": "Compose animations available via compose.foundation (includes animateColorAsState, AnimatedVisibility, etc). Combat is tick-based via CombatEngine.tick(). Enemies attack in enemyTurn(). All enemies currently use strikeParty() which targets livingParty().firstOrNull(). EnemyArchetype enum defines stats. Tests use kotlin.test with deterministic Random seeds.",
+  "relevant_files": [
+    "composeApp/src/commonMain/kotlin/ui/rpg/SliceScreen.kt",
+    "composeApp/src/commonMain/kotlin/rpg/combat/CombatEngine.kt",
+    "composeApp/src/commonMain/kotlin/rpg/combat/EnemyArchetype.kt",
+    "composeApp/src/commonMain/kotlin/rpg/combat/Combatant.kt",
+    "composeApp/src/commonMain/kotlin/rpg/questbook/QuestPressure.kt",
+    "composeApp/src/commonMain/kotlin/rpg/SliceDirector.kt",
+    "composeApp/src/commonTest/kotlin/CombatEngineTest.kt",
+    "composeApp/src/commonTest/kotlin/CombatBarkIntegrationTest.kt"
+  ],
+  "directory_structure": "GAIME/composeApp/src/commonMain/kotlin/rpg/ - game logic (combat, questbook, bark), GAIME/composeApp/src/commonMain/kotlin/ui/rpg/ - Compose UI, GAIME/composeApp/src/commonTest/kotlin/ - tests"
+}
