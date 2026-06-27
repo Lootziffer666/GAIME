@@ -100,10 +100,12 @@ object Localizer {
 
     /** Per-locale catalogs. English has none (identity). Lazy so all maps
      *  (incl. the large German map below and the per-language files) are
-     *  initialised before they are referenced. */
+     *  initialised before they are referenced. DE gets the full dialogue
+     *  translation set merged in; other languages fall back to English for
+     *  the long-tail dialogue (see .kiro/steering/localization.md). */
     private val catalogs: Map<Locale, Map<String, String>> by lazy {
         mapOf(
-            Locale.DE to de,
+            Locale.DE to (de + dialogueDe),
             Locale.ES to es,
             Locale.FR to fr,
             Locale.IT to it,

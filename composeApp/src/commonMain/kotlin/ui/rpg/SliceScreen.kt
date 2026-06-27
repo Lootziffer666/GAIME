@@ -14,6 +14,7 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -77,6 +78,9 @@ import rpg.bark.AmbientBarks
 import rpg.bark.audio.BarkAudioPlayer
 import rpg.bark.audio.createPlatformAudioPlayer
 import rpg.gamepad.createControllerPoller
+import rpg.i18n.GameLocale
+import rpg.i18n.Locale
+import rpg.i18n.localized
 import rpg.combat.BossController
 import rpg.combat.BossControllerInterface
 import rpg.combat.CombatAction
@@ -1872,6 +1876,8 @@ private fun SliceSmallButton(label: String, color: Color = Color(0xFF3A4A6B), on
 
 @Composable
 private fun TitleView(onStart: () -> Unit) {
+    var selectedLocale by remember { mutableStateOf(GameLocale.current) }
+
     val infiniteTransition = rememberInfiniteTransition()
     val promptAlpha by infiniteTransition.animateFloat(
         initialValue = 0.3f,
@@ -1881,6 +1887,19 @@ private fun TitleView(onStart: () -> Unit) {
             repeatMode = RepeatMode.Reverse
         )
     )
+
+    val locales = listOf(
+        Locale.EN to "English",
+        Locale.DE to "Deutsch",
+        Locale.ES to "Español",
+        Locale.FR to "Français",
+        Locale.IT to "Italiano",
+        Locale.PT to "Português",
+        Locale.RU to "Русский",
+        Locale.ZH to "中文",
+        Locale.JA to "日本語"
+    )
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -1898,19 +1917,80 @@ private fun TitleView(onStart: () -> Unit) {
             modifier = Modifier.fillMaxSize()
         )
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
-            Button(
-                onClick = onStart,
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xCC241E12)),
-                modifier = Modifier
-                    .padding(bottom = 32.dp)
-                    .alpha(promptAlpha)
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.padding(bottom = 24.dp)
             ) {
-                Text(
-                    "— PRESS ANY KEY TO BEGIN —",
-                    color = Color(0xFFE8C170),
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp
-                )
+                // Language selection panel
+                Surface(
+                    color = Color(0xE0150F09),
+                    shape = RoundedCornerShape(10.dp),
+                    modifier = Modifier.padding(horizontal = 32.dp)
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)
+                    ) {
+                        Text(
+                            "Language / Sprache / Idioma",
+                            color = Color(0xFF8A7050),
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                        // Two rows of language buttons
+                        listOf(
+                            locales.take(5),
+                            locales.drop(5)
+                        ).forEach { row ->
+                            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                row.forEach { (locale, label) ->
+                                    val isSelected = locale == selectedLocale
+                                    Button(
+                                        onClick = {
+                                            selectedLocale = locale
+                                            GameLocale.current = locale
+                                        },
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = if (isSelected) Color(0xFF4A3A1A) else Color(0xFF1E1810)
+                                        ),
+                                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                                        modifier = Modifier
+                                            .height(30.dp)
+                                            .then(
+                                                if (isSelected)
+                                                    Modifier.border(1.dp, Color(0xFFE8C170), RoundedCornerShape(4.dp))
+                                                else
+                                                    Modifier.border(1.dp, Color(0xFF3A2E1A), RoundedCornerShape(4.dp))
+                                            )
+                                    ) {
+                                        Text(
+                                            label,
+                                            color = if (isSelected) Color(0xFFE8C170) else Color(0xFF8A7050),
+                                            fontSize = 11.sp,
+                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                                        )
+                                    }
+                                }
+                            }
+                            Spacer(Modifier.height(6.dp))
+                        }
+                    }
+                }
+                Spacer(Modifier.height(12.dp))
+                // Start button (localized)
+                Button(
+                    onClick = onStart,
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xCC241E12)),
+                    modifier = Modifier.alpha(promptAlpha)
+                ) {
+                    Text(
+                        "— PRESS ANY KEY TO BEGIN —".localized(selectedLocale),
+                        color = Color(0xFFE8C170),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp
+                    )
+                }
             }
         }
     }

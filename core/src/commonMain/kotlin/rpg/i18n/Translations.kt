@@ -12,6 +12,8 @@ package rpg.i18n
  */
 
 internal val es: Map<String, String> = mapOf(
+    "— PRESS ANY KEY TO BEGIN —" to "— PULSA CUALQUIER TECLA —",
+    "▶ Continue" to "▶ Continuar",
     "QUEST PRESSURE" to "PRESIÓN DE MISIÓN",
     "QUEST ACCEPTED" to "MISIÓN ACEPTADA",
     "GAME OVER" to "FIN DE LA PARTIDA",
@@ -51,6 +53,8 @@ internal val es: Map<String, String> = mapOf(
 )
 
 internal val fr: Map<String, String> = mapOf(
+    "— PRESS ANY KEY TO BEGIN —" to "— APPUYEZ SUR N'IMPORTE QUELLE TOUCHE —",
+    "▶ Continue" to "▶ Continuer",
     "QUEST PRESSURE" to "PRESSION DE QUÊTE",
     "QUEST ACCEPTED" to "QUÊTE ACCEPTÉE",
     "GAME OVER" to "PARTIE TERMINÉE",
@@ -90,6 +94,8 @@ internal val fr: Map<String, String> = mapOf(
 )
 
 internal val it: Map<String, String> = mapOf(
+    "— PRESS ANY KEY TO BEGIN —" to "— PREMI UN TASTO PER INIZIARE —",
+    "▶ Continue" to "▶ Continua",
     "QUEST PRESSURE" to "PRESSIONE DELLA MISSIONE",
     "QUEST ACCEPTED" to "MISSIONE ACCETTATA",
     "GAME OVER" to "GIOCO FINITO",
@@ -129,6 +135,8 @@ internal val it: Map<String, String> = mapOf(
 )
 
 internal val pt: Map<String, String> = mapOf(
+    "— PRESS ANY KEY TO BEGIN —" to "— PRESSIONE QUALQUER TECLA —",
+    "▶ Continue" to "▶ Continuar",
     "QUEST PRESSURE" to "PRESSÃO DE MISSÃO",
     "QUEST ACCEPTED" to "MISSÃO ACEITA",
     "GAME OVER" to "FIM DE JOGO",
@@ -168,6 +176,8 @@ internal val pt: Map<String, String> = mapOf(
 )
 
 internal val ru: Map<String, String> = mapOf(
+    "— PRESS ANY KEY TO BEGIN —" to "— НАЖМИТЕ ЛЮБУЮ КЛАВИШУ —",
+    "▶ Continue" to "▶ Продолжить",
     "QUEST PRESSURE" to "ДАВЛЕНИЕ КВЕСТА",
     "QUEST ACCEPTED" to "КВЕСТ ПРИНЯТ",
     "GAME OVER" to "ИГРА ОКОНЧЕНА",
@@ -207,6 +217,8 @@ internal val ru: Map<String, String> = mapOf(
 )
 
 internal val zh: Map<String, String> = mapOf(
+    "— PRESS ANY KEY TO BEGIN —" to "— 按任意键开始 —",
+    "▶ Continue" to "▶ 继续",
     "QUEST PRESSURE" to "任务压力",
     "QUEST ACCEPTED" to "任务已接受",
     "GAME OVER" to "游戏结束",
@@ -246,6 +258,8 @@ internal val zh: Map<String, String> = mapOf(
 )
 
 internal val ja: Map<String, String> = mapOf(
+    "— PRESS ANY KEY TO BEGIN —" to "— いずれかのキーを押してください —",
+    "▶ Continue" to "▶ 続ける",
     "QUEST PRESSURE" to "クエスト圧力",
     "QUEST ACCEPTED" to "クエスト受理",
     "GAME OVER" to "ゲームオーバー",

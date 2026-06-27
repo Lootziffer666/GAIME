@@ -29,6 +29,7 @@ import gaime.resources.npc_portrait_patron
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
 import rpg.bark.audio.BarkAudioPlayer
+import rpg.i18n.localized
 
 data class DialogueLine(val speaker: String, val text: String, val audioPath: String? = null)
 
@@ -77,7 +78,7 @@ fun DialogueOverlay(
                 .border(2.dp, Color(0xFF5A4020), RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp))
         ) {
             Row(Modifier.padding(12.dp), verticalAlignment = Alignment.Top) {
-                // NPC portrait on the left (only when speaker has one)
+                // Portrait lookup uses the canonical English speaker key, not the localized display name
                 val portrait = if (line.speaker.isNotEmpty()) speakerPortrait(line.speaker) else null
                 if (portrait != null) {
                     Image(
@@ -95,21 +96,21 @@ fun DialogueOverlay(
                 Column(modifier = Modifier.weight(1f)) {
                     if (line.speaker.isNotEmpty()) {
                         Text(
-                            line.speaker,
+                            line.speaker.localized(),
                             color = Color(0xFFE8C170),
                             fontWeight = FontWeight.Bold,
                             fontSize = 14.sp
                         )
                         Spacer(Modifier.height(4.dp))
                     }
-                    Text(line.text, color = Color(0xFFF5E9C8), fontSize = 15.sp)
+                    Text(line.text.localized(), color = Color(0xFFF5E9C8), fontSize = 15.sp)
                     Spacer(Modifier.height(10.dp))
                     Button(
                         onClick = onAdvance,
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3A4A6B)),
                         modifier = Modifier.align(Alignment.End)
                     ) {
-                        Text("▶ Continue", color = Color.White, fontSize = 12.sp)
+                        Text("▶ Continue".localized(), color = Color.White, fontSize = 12.sp)
                     }
                 }
             }
