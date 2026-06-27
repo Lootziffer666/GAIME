@@ -36,7 +36,13 @@ class WorldScene(
      * blitting the [tileset] atlas per cell. Its native size must be
      * map.width*srcTile x map.height*srcTile.
      */
-    private val background: ImageBitmap? = null
+    private val background: ImageBitmap? = null,
+    /**
+     * On-screen scale for character/entity sprites relative to one tile. Sprites
+     * are drawn larger than a tile and anchored bottom-centre so the party and
+     * NPCs read clearly instead of looking tiny. 1f = exactly one tile.
+     */
+    private val characterScale: Float = 1.5f
 ) : Scene {
 
     override val name: String = "World"
@@ -137,13 +143,19 @@ class WorldScene(
         )
     }
 
-    private fun drawSprite(ds: DrawScope, img: ImageBitmap, dstX: Float, dstY: Float) {
+    private fun drawSprite(ds: DrawScope, img: ImageBitmap, dstX: Float, dstY: Float, scale: Float = characterScale) {
+        // (dstX, dstY) is the top-left of the 1-tile cell box. Draw the sprite at
+        // `scale` times tile size, centred horizontally and anchored to the cell's
+        // bottom edge so larger characters keep their feet on the tile.
+        val size = tilePx * scale
+        val dx = dstX + (tilePx - size) / 2f
+        val dy = dstY + (tilePx - size)
         ds.drawImage(
             image = img,
             srcOffset = IntOffset.Zero,
             srcSize = IntSize(img.width, img.height),
-            dstOffset = IntOffset(dstX.toInt(), dstY.toInt()),
-            dstSize = IntSize(tilePx.toInt(), tilePx.toInt()),
+            dstOffset = IntOffset(dx.toInt(), dy.toInt()),
+            dstSize = IntSize(size.toInt(), size.toInt()),
             filterQuality = FilterQuality.None
         )
     }

@@ -296,6 +296,9 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
     // Player-adjustable settings (sound/music/voice + locale).
     var settings by remember { mutableStateOf(GameSettings()) }
 
+    // Whether the merchant's shop overlay is open.
+    var shopOpen by remember { mutableStateOf(false) }
+
     // Canonical inventory (gold / potions / equipped weapons). Captured in saves.
     val inventory = remember { Inventory() }
 
@@ -722,9 +725,7 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
             when (entity.id) {
                 "merchant" -> {
                     fireAndFlash(BarkEvent.NIB_SMELL_GOLD)
-                    dialogueLines = CHAPTER2_MERCHANT_LINES
-                    dialogueIndex = 0
-                    phase = SlicePhase.CHAPTER2_MARKET_NPC
+                    shopOpen = true
                 }
                 "guard" -> {
                     fireAndFlash(BarkEvent.BRUGG_SPEAK_TO_GUARD)
@@ -1258,6 +1259,15 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
                     barkButtons = emptyList(),
                     onBark   = ::fireAndFlash
                 )
+        }
+
+        // Merchant shop overlay (below the questbook flash).
+        if (shopOpen) {
+            ShopView(
+                inventory = inventory,
+                party = party,
+                onClose = { shopOpen = false }
+            )
         }
 
         // Questbook flash (always on top) with animated slide-in/out
