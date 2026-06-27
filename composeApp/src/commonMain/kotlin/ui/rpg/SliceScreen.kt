@@ -44,10 +44,17 @@ import gaime.resources.enemy_wolf
 import gaime.resources.hero_brugg
 import gaime.resources.hero_nib
 import gaime.resources.hero_vellum
+import gaime.resources.npc_world_barkeep
+import gaime.resources.npc_world_citizen1
+import gaime.resources.npc_world_citizen2
+import gaime.resources.npc_world_guard
+import gaime.resources.npc_world_merchant
+import gaime.resources.npc_world_patron
 import gaime.resources.tileset_dungeon
 import gaime.resources.title_screen
 import gaime.resources.questbook_open
 import gaime.resources.questbook_closed
+import gaime.resources.world_boss
 import gaime.resources.world_forest
 import gaime.resources.world_market
 import gaime.resources.world_sewer
@@ -205,14 +212,29 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
     val bossRatImg = imageResource(Res.drawable.boss_rat_accountant)
     val tavernBg = imageResource(Res.drawable.world_tavern)
     val sewerBg = imageResource(Res.drawable.world_sewer)
+    val bossBg = imageResource(Res.drawable.world_boss)
     val marketBg = imageResource(Res.drawable.world_market)
     val forestBg = imageResource(Res.drawable.world_forest)
-    val spriteMap = remember(enemyRatImg, enemyBlobImg, enemyWolfImg, bossRatImg) {
+    val npcBarkeepImg   = imageResource(Res.drawable.npc_world_barkeep)
+    val npcPatronImg    = imageResource(Res.drawable.npc_world_patron)
+    val npcMerchantImg  = imageResource(Res.drawable.npc_world_merchant)
+    val npcGuardImg     = imageResource(Res.drawable.npc_world_guard)
+    val npcCitizen1Img  = imageResource(Res.drawable.npc_world_citizen1)
+    val npcCitizen2Img  = imageResource(Res.drawable.npc_world_citizen2)
+    val spriteMap = remember(enemyRatImg, enemyBlobImg, enemyWolfImg, bossRatImg,
+                             npcBarkeepImg, npcPatronImg, npcMerchantImg, npcGuardImg,
+                             npcCitizen1Img, npcCitizen2Img) {
         mapOf(
             "enemy_rat"          to enemyRatImg,
             "enemy_blob"         to enemyBlobImg,
             "enemy_wolf"         to enemyWolfImg,
-            "boss_rat_accountant" to bossRatImg
+            "boss_rat_accountant" to bossRatImg,
+            "npc_barkeep"        to npcBarkeepImg,
+            "npc_patron"         to npcPatronImg,
+            "npc_merchant"       to npcMerchantImg,
+            "npc_guard"          to npcGuardImg,
+            "npc_citizen1"       to npcCitizen1Img,
+            "npc_citizen2"       to npcCitizen2Img
         )
     }
 
@@ -249,8 +271,8 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
     // Worlds
     val tavernWorld = remember {
         GridWorld(BakedMaps.tavern()).also { w ->
-            w.entities.add(GridEntity("barkeep", BakedMaps.TAVERN_BARKEEP_X, BakedMaps.TAVERN_BARKEEP_Y, GridEntityType.NPC, "hero_brugg"))
-            w.entities.add(GridEntity("patron", BakedMaps.TAVERN_PATRON_X, BakedMaps.TAVERN_PATRON_Y, GridEntityType.NPC, "hero_vellum"))
+            w.entities.add(GridEntity("barkeep", BakedMaps.TAVERN_BARKEEP_X, BakedMaps.TAVERN_BARKEEP_Y, GridEntityType.NPC, "npc_barkeep"))
+            w.entities.add(GridEntity("patron", BakedMaps.TAVERN_PATRON_X, BakedMaps.TAVERN_PATRON_Y, GridEntityType.NPC, "npc_patron"))
         }
     }
     val sewerWorld = remember {
@@ -274,8 +296,8 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
     // Chapter 2 worlds
     val marketWorld = remember {
         GridWorld(GameMaps.stokeportMarket()).also { w ->
-            w.entities.add(GridEntity("merchant", 12, 10, GridEntityType.NPC, "hero_brugg"))
-            w.entities.add(GridEntity("guard", 6, 15, GridEntityType.NPC, "hero_brugg"))
+            w.entities.add(GridEntity("merchant", 12, 10, GridEntityType.NPC, "npc_merchant"))
+            w.entities.add(GridEntity("guard", 6, 15, GridEntityType.NPC, "npc_guard"))
         }
     }
     val forestWorld = remember {
@@ -292,7 +314,7 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
     // Scenes (created once per resource load; callbacks re-assigned each recomposition)
     val tavernScene = remember(tileset, playerSprite, tavernBg) { WorldScene(tavernWorld, tileset, playerSprite, background = tavernBg) }
     val sewerScene  = remember(tileset, playerSprite, sewerBg)  { WorldScene(sewerWorld,  tileset, playerSprite, background = sewerBg) }
-    val bossScene   = remember(tileset, playerSprite, sewerBg)  { WorldScene(bossWorld,   tileset, playerSprite, background = sewerBg) }
+    val bossScene   = remember(tileset, playerSprite, bossBg)   { WorldScene(bossWorld,   tileset, playerSprite, background = bossBg) }
     val marketScene = remember(tileset, playerSprite, marketBg) { WorldScene(marketWorld,  tileset, playerSprite, background = marketBg) }
     val forestScene = remember(tileset, playerSprite, forestBg) { WorldScene(forestWorld,  tileset, playerSprite, background = forestBg) }
 
