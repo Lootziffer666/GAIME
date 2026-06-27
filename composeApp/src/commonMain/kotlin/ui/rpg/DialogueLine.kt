@@ -41,6 +41,9 @@ private fun speakerPortrait(speaker: String): DrawableResource? = when (speaker.
     "nib"            -> Res.drawable.hero_nib
     "brugg"          -> Res.drawable.hero_brugg
     "vellum"         -> Res.drawable.hero_vellum
+    "guildmaster"    -> Res.drawable.npc_portrait_guard   // official authority figure
+    "citizen",
+    "devotee"        -> Res.drawable.npc_portrait_patron  // generic townsperson
     else             -> null
 }
 

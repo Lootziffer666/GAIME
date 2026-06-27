@@ -199,4 +199,156 @@ object GameMaps {
 
     /** Forest Trail: linear main path with shrine branch (north) and boss area (east). */
     fun forestTrail(): TileMap = TileMapParser.fromAscii(forestRows, forestLegend)
+
+    // --- World connectors (open exterior maps) ---
+
+    const val TRIGGER_GUILDHALL_ENTER   = "guildhall_enter"
+    const val TRIGGER_CHAPEL_ENTER      = "chapel_enter"
+    const val TRIGGER_VILLAGE_ENTER     = "village_enter"
+    const val TRIGGER_TEMPLE_ENTER      = "temple_enter"
+    const val TRIGGER_BRIDGE_EAST       = "bridge_east"
+    const val TRIGGER_BRIDGE_WEST       = "bridge_west"
+    const val TRIGGER_GLASSBLOWERS_ENTER = "glassblowers_enter"
+
+    private val extLegend = mapOf(
+        '#' to TileSpec(atlasIndex = 14, blocked = true),
+        '.' to TileSpec(atlasIndex = 48),
+        '@' to TileSpec(atlasIndex = 48, spawn = true),
+        'G' to TileSpec(atlasIndex = 45, trigger = TRIGGER_GUILDHALL_ENTER),
+        'C' to TileSpec(atlasIndex = 45, trigger = TRIGGER_CHAPEL_ENTER),
+        'V' to TileSpec(atlasIndex = 45, trigger = TRIGGER_VILLAGE_ENTER),
+        'T' to TileSpec(atlasIndex = 45, trigger = TRIGGER_TEMPLE_ENTER),
+        'B' to TileSpec(atlasIndex = 45, trigger = TRIGGER_BRIDGE_EAST),
+        'W' to TileSpec(atlasIndex = 45, trigger = TRIGGER_BRIDGE_WEST),
+        'L' to TileSpec(atlasIndex = 45, trigger = TRIGGER_GLASSBLOWERS_ENTER)
+    )
+
+    // Heroes' home village exterior — 20×14 open yard. Spawn centre-left.
+    // Door to tavern at (10,12); road to guild hall at east edge.
+    private val heroesHomeExtRows = listOf(
+        "####################",
+        "#..................#",
+        "#..................#",
+        "#....@.............#",
+        "#..................#",
+        "#..................#",
+        "#..................#",
+        "#..................#",
+        "#..................#",
+        "#..................#",
+        "#..................#",
+        "#..................#",
+        "#.........V........#",
+        "####################"
+    )
+
+    /** Heroes' home village exterior — approach the tavern door or head east. */
+    fun heroesHomeExt(): TileMap = TileMapParser.fromAscii(heroesHomeExtRows, extLegend)
+
+    // Guild-hall exterior — 16×12 courtyard. Spawn west; door north-centre.
+    private val guildHallExtRows = listOf(
+        "################",
+        "########G#######",
+        "#..............#",
+        "#..............#",
+        "#....@.........#",
+        "#..............#",
+        "#..............#",
+        "#..............#",
+        "#..............#",
+        "#..............#",
+        "#..............#",
+        "################"
+    )
+
+    /** Adventurers' guild exterior — door at top leads inside. */
+    fun guildHallExt(): TileMap = TileMapParser.fromAscii(guildHallExtRows, extLegend)
+
+    // Chapel exterior — 22×16 courtyard. Spawn south; chapel door north-centre.
+    private val chapelExtRows = listOf(
+        "######################",
+        "##########C###########",
+        "#....................#",
+        "#....................#",
+        "#....................#",
+        "#....................#",
+        "#....................#",
+        "#....................#",
+        "#....................#",
+        "#....................#",
+        "#..........@.........#",
+        "#....................#",
+        "#....................#",
+        "#....................#",
+        "#....................#",
+        "######################"
+    )
+
+    /** Chapel exterior — approach the chapel doors heading north. */
+    fun chapelExt(): TileMap = TileMapParser.fromAscii(chapelExtRows, extLegend)
+
+    // Ruined temple exterior — 18×14 overgrown clearing. Spawn east.
+    private val templeExtRows = listOf(
+        "##################",
+        "#####T############",
+        "#................#",
+        "#................#",
+        "#................#",
+        "#................#",
+        "#................#",
+        "#................#",
+        "#................#",
+        "#...........@....#",
+        "#................#",
+        "#................#",
+        "#................#",
+        "##################"
+    )
+
+    /** Ruined temple exterior — wolves roam here; temple entrance to the north. */
+    fun templeExt(): TileMap = TileMapParser.fromAscii(templeExtRows, extLegend)
+
+    // Glassblowers' district exterior — 18×12 street.
+    private val glassblowersExtRows = listOf(
+        "##################",
+        "#................#",
+        "#....@...........#",
+        "#................#",
+        "#................#",
+        "#.......L........#",
+        "#................#",
+        "#................#",
+        "#................#",
+        "#................#",
+        "#................#",
+        "##################"
+    )
+
+    /** Glassblowers' district exterior — shop entrance mid-row. */
+    fun glassblowersExt(): TileMap = TileMapParser.fromAscii(glassblowersExtRows, extLegend)
+
+    // Bridge — 35×18 stone bridge crossing. Spawn west; east exit on right.
+    private val bridgeRows = listOf(
+        "###################################",
+        "#.................................#",
+        "#.................................#",
+        "#.................................#",
+        "#.@...............................B",
+        "#.................................#",
+        "#.................................#",
+        "#.................................#",
+        "#.................................#",
+        "#.................................#",
+        "#.................................#",
+        "#.................................#",
+        "#.................................#",
+        "#.................................#",
+        "W.................................#",
+        "#.................................#",
+        "#.................................#",
+        "###################################"
+    )
+
+    /** Stone bridge overworld crossing — east/west exits connect regions. */
+    fun bridge(): TileMap = TileMapParser.fromAscii(bridgeRows, extLegend)
 }

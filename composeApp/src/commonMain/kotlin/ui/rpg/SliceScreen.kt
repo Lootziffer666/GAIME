@@ -55,10 +55,16 @@ import gaime.resources.title_screen
 import gaime.resources.questbook_open
 import gaime.resources.questbook_closed
 import gaime.resources.world_boss
+import gaime.resources.world_bridge
+import gaime.resources.world_chapel_ext
 import gaime.resources.world_forest
+import gaime.resources.world_glassblowers_ext
+import gaime.resources.world_guildhall_ext
+import gaime.resources.world_heroes_home_ext
 import gaime.resources.world_market
 import gaime.resources.world_sewer
 import gaime.resources.world_tavern
+import gaime.resources.world_temple_ext
 import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.imageResource
@@ -163,6 +169,32 @@ private val PATRON_LINES = listOf(
     DialogueLine("Patron", "He sure is slow for a four-armed bartender.", "bark/vellum/he_sure_is_slow_for_a_four_armed_bartender.wav")
 )
 
+// --- World connector dialogue lines ---
+
+private val HEROES_HOME_EXT_LINES = listOf(
+    DialogueLine("", "The party steps outside into the morning air."),
+    DialogueLine("Nib", "The guild hall is just down the road. And the tavern's right behind us."),
+    DialogueLine("Brugg", "Let's not dawdle.", "bark/brugg/just_keep_to_the_trail.wav")
+)
+
+private val GUILDMASTER_LINES = listOf(
+    DialogueLine("Guildmaster", "Registered heroes may pick up contracts at the board inside."),
+    DialogueLine("Guildmaster", "Non-registered adventurers are asked to leave or be fined."),
+    DialogueLine("Nib", "We're registered. The Questbook said so.")
+)
+
+private val CHAPEL_DEVOTEE_LINES = listOf(
+    DialogueLine("Citizen", "The chapel has been... quiet lately. Too quiet."),
+    DialogueLine("Citizen", "Something moved the pews. Something large."),
+    DialogueLine("Vellum", "Perfect. Let's go in.", "bark/vellum/so_thats_how_it_is_then.wav")
+)
+
+private val TEMPLE_EXT_INTRO_LINES = listOf(
+    DialogueLine("", "The ruined temple exterior. Overgrown. Unsettled."),
+    DialogueLine("Brugg", "Wolves.", "bark/brugg/just_keep_to_the_trail.wav"),
+    DialogueLine("Nib", "Lots of wolves.")
+)
+
 // --- Room contexts ---
 
 private val TAVERN_CTX = RoomContext("tavern", RoomContext.ROOM_TAVERN, hasInteractableTarget = true)
@@ -210,11 +242,17 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
     val enemyBlobImg = imageResource(Res.drawable.enemy_blob)
     val enemyWolfImg = imageResource(Res.drawable.enemy_wolf)
     val bossRatImg = imageResource(Res.drawable.boss_rat_accountant)
-    val tavernBg = imageResource(Res.drawable.world_tavern)
-    val sewerBg = imageResource(Res.drawable.world_sewer)
-    val bossBg = imageResource(Res.drawable.world_boss)
-    val marketBg = imageResource(Res.drawable.world_market)
-    val forestBg = imageResource(Res.drawable.world_forest)
+    val tavernBg        = imageResource(Res.drawable.world_tavern)
+    val sewerBg         = imageResource(Res.drawable.world_sewer)
+    val bossBg          = imageResource(Res.drawable.world_boss)
+    val marketBg        = imageResource(Res.drawable.world_market)
+    val forestBg        = imageResource(Res.drawable.world_forest)
+    val heroesHomeExtBg = imageResource(Res.drawable.world_heroes_home_ext)
+    val guildHallExtBg  = imageResource(Res.drawable.world_guildhall_ext)
+    val chapelExtBg     = imageResource(Res.drawable.world_chapel_ext)
+    val templeExtBg     = imageResource(Res.drawable.world_temple_ext)
+    val glassblowersExtBg = imageResource(Res.drawable.world_glassblowers_ext)
+    val bridgeBg        = imageResource(Res.drawable.world_bridge)
     val npcBarkeepImg   = imageResource(Res.drawable.npc_world_barkeep)
     val npcPatronImg    = imageResource(Res.drawable.npc_world_patron)
     val npcMerchantImg  = imageResource(Res.drawable.npc_world_merchant)
@@ -271,8 +309,10 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
     // Worlds
     val tavernWorld = remember {
         GridWorld(BakedMaps.tavern()).also { w ->
-            w.entities.add(GridEntity("barkeep", BakedMaps.TAVERN_BARKEEP_X, BakedMaps.TAVERN_BARKEEP_Y, GridEntityType.NPC, "npc_barkeep"))
-            w.entities.add(GridEntity("patron", BakedMaps.TAVERN_PATRON_X, BakedMaps.TAVERN_PATRON_Y, GridEntityType.NPC, "npc_patron"))
+            w.entities.add(GridEntity("barkeep",  BakedMaps.TAVERN_BARKEEP_X, BakedMaps.TAVERN_BARKEEP_Y, GridEntityType.NPC, "npc_barkeep"))
+            w.entities.add(GridEntity("patron",   BakedMaps.TAVERN_PATRON_X,  BakedMaps.TAVERN_PATRON_Y,  GridEntityType.NPC, "npc_patron"))
+            w.entities.add(GridEntity("citizen1",  5, 9, GridEntityType.NPC, "npc_citizen1"))
+            w.entities.add(GridEntity("citizen2", 18, 11, GridEntityType.NPC, "npc_citizen2"))
         }
     }
     val sewerWorld = remember {
@@ -296,8 +336,9 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
     // Chapter 2 worlds
     val marketWorld = remember {
         GridWorld(GameMaps.stokeportMarket()).also { w ->
-            w.entities.add(GridEntity("merchant", 12, 10, GridEntityType.NPC, "npc_merchant"))
-            w.entities.add(GridEntity("guard", 6, 15, GridEntityType.NPC, "npc_guard"))
+            w.entities.add(GridEntity("merchant",  12, 10, GridEntityType.NPC, "npc_merchant"))
+            w.entities.add(GridEntity("guard",      6, 15, GridEntityType.NPC, "npc_guard"))
+            w.entities.add(GridEntity("citizen1",  10,  7, GridEntityType.NPC, "npc_citizen1"))
         }
     }
     val forestWorld = remember {
@@ -311,27 +352,86 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
         }
     }
 
+    // World connector worlds (open exterior locations)
+    val heroesHomeExtWorld = remember {
+        GridWorld(GameMaps.heroesHomeExt()).also { w ->
+            w.entities.add(GridEntity("villager1", 6, 6, GridEntityType.NPC, "npc_citizen1"))
+            w.entities.add(GridEntity("villager2", 14, 8, GridEntityType.NPC, "npc_citizen2"))
+            w.entities.add(GridEntity("merchant",  5, 10, GridEntityType.NPC, "npc_merchant"))
+        }
+    }
+    val guildHallExtWorld = remember {
+        GridWorld(GameMaps.guildHallExt()).also { w ->
+            w.entities.add(GridEntity("guildmaster",  7, 4, GridEntityType.NPC, "npc_guard"))
+            w.entities.add(GridEntity("guard_post",   3, 7, GridEntityType.NPC, "npc_guard"))
+            w.entities.add(GridEntity("citizen1",    12, 6, GridEntityType.NPC, "npc_citizen1"))
+        }
+    }
+    val chapelExtWorld = remember {
+        GridWorld(GameMaps.chapelExt()).also { w ->
+            w.entities.add(GridEntity("chapel_guard",  10, 8, GridEntityType.NPC, "npc_guard"))
+            w.entities.add(GridEntity("devotee1",       5, 10, GridEntityType.NPC, "npc_citizen1"))
+            w.entities.add(GridEntity("devotee2",      16, 11, GridEntityType.NPC, "npc_citizen2"))
+        }
+    }
+    val templeExtWorld = remember {
+        GridWorld(GameMaps.templeExt()).also { w ->
+            w.entities.add(GridEntity("wolf_a", 8, 6, GridEntityType.ENEMY, "enemy_wolf"))
+            w.entities.add(GridEntity("wolf_b", 13, 4, GridEntityType.ENEMY, "enemy_wolf"))
+        }
+    }
+    val glassblowersExtWorld = remember {
+        GridWorld(GameMaps.glassblowersExt()).also { w ->
+            w.entities.add(GridEntity("glassblower",  8, 4, GridEntityType.NPC, "npc_merchant"))
+            w.entities.add(GridEntity("apprentice",  13, 6, GridEntityType.NPC, "npc_citizen1"))
+        }
+    }
+    val bridgeWorld = remember {
+        GridWorld(GameMaps.bridge()).also { w ->
+            w.entities.add(GridEntity("traveller1", 18, 5, GridEntityType.NPC, "npc_citizen1"))
+            w.entities.add(GridEntity("traveller2", 26, 9, GridEntityType.NPC, "npc_citizen2"))
+        }
+    }
+
     // Scenes (created once per resource load; callbacks re-assigned each recomposition)
-    val tavernScene = remember(tileset, playerSprite, tavernBg) { WorldScene(tavernWorld, tileset, playerSprite, background = tavernBg) }
-    val sewerScene  = remember(tileset, playerSprite, sewerBg)  { WorldScene(sewerWorld,  tileset, playerSprite, background = sewerBg) }
-    val bossScene   = remember(tileset, playerSprite, bossBg)   { WorldScene(bossWorld,   tileset, playerSprite, background = bossBg) }
-    val marketScene = remember(tileset, playerSprite, marketBg) { WorldScene(marketWorld,  tileset, playerSprite, background = marketBg) }
-    val forestScene = remember(tileset, playerSprite, forestBg) { WorldScene(forestWorld,  tileset, playerSprite, background = forestBg) }
+    val tavernScene        = remember(tileset, playerSprite, tavernBg)        { WorldScene(tavernWorld,        tileset, playerSprite, background = tavernBg) }
+    val sewerScene         = remember(tileset, playerSprite, sewerBg)         { WorldScene(sewerWorld,         tileset, playerSprite, background = sewerBg) }
+    val bossScene          = remember(tileset, playerSprite, bossBg)          { WorldScene(bossWorld,          tileset, playerSprite, background = bossBg) }
+    val marketScene        = remember(tileset, playerSprite, marketBg)        { WorldScene(marketWorld,        tileset, playerSprite, background = marketBg) }
+    val forestScene        = remember(tileset, playerSprite, forestBg)        { WorldScene(forestWorld,        tileset, playerSprite, background = forestBg) }
+    val heroesHomeExtScene = remember(tileset, playerSprite, heroesHomeExtBg) { WorldScene(heroesHomeExtWorld, tileset, playerSprite, background = heroesHomeExtBg) }
+    val guildHallExtScene  = remember(tileset, playerSprite, guildHallExtBg)  { WorldScene(guildHallExtWorld,  tileset, playerSprite, background = guildHallExtBg) }
+    val chapelExtScene     = remember(tileset, playerSprite, chapelExtBg)     { WorldScene(chapelExtWorld,     tileset, playerSprite, background = chapelExtBg) }
+    val templeExtScene     = remember(tileset, playerSprite, templeExtBg)     { WorldScene(templeExtWorld,     tileset, playerSprite, background = templeExtBg) }
+    val glassblowersExtScene = remember(tileset, playerSprite, glassblowersExtBg) { WorldScene(glassblowersExtWorld, tileset, playerSprite, background = glassblowersExtBg) }
+    val bridgeScene        = remember(tileset, playerSprite, bridgeBg)        { WorldScene(bridgeWorld,        tileset, playerSprite, background = bridgeBg) }
 
     // Keep sprite maps current
-    tavernScene.spriteMap = spriteMap
-    sewerScene.spriteMap  = spriteMap
-    bossScene.spriteMap   = spriteMap
-    marketScene.spriteMap = spriteMap
-    forestScene.spriteMap = spriteMap
+    tavernScene.spriteMap        = spriteMap
+    sewerScene.spriteMap         = spriteMap
+    bossScene.spriteMap          = spriteMap
+    marketScene.spriteMap        = spriteMap
+    forestScene.spriteMap        = spriteMap
+    heroesHomeExtScene.spriteMap = spriteMap
+    guildHallExtScene.spriteMap  = spriteMap
+    chapelExtScene.spriteMap     = spriteMap
+    templeExtScene.spriteMap     = spriteMap
+    glassblowersExtScene.spriteMap = spriteMap
+    bridgeScene.spriteMap        = spriteMap
 
     // Cinematic atmosphere preset per map (lighting, motes, grade, fog) — the
     // "Odd Tales / The Last Night" real-time layer on top of the pixel art.
-    tavernScene.atmosphere = SceneAtmosphere.TAVERN
-    sewerScene.atmosphere  = SceneAtmosphere.SEWER
-    bossScene.atmosphere   = SceneAtmosphere.BOSS
-    marketScene.atmosphere = SceneAtmosphere.MARKET
-    forestScene.atmosphere = SceneAtmosphere.FOREST
+    tavernScene.atmosphere        = SceneAtmosphere.TAVERN
+    sewerScene.atmosphere         = SceneAtmosphere.SEWER
+    bossScene.atmosphere          = SceneAtmosphere.CHAPEL   // chapel interior = gothic candle atmosphere
+    marketScene.atmosphere        = SceneAtmosphere.MARKET
+    forestScene.atmosphere        = SceneAtmosphere.FOREST
+    heroesHomeExtScene.atmosphere = SceneAtmosphere.MARKET   // bright open village
+    guildHallExtScene.atmosphere  = SceneAtmosphere.GUILD_HALL
+    chapelExtScene.atmosphere     = SceneAtmosphere.CHAPEL
+    templeExtScene.atmosphere     = SceneAtmosphere.FOREST
+    glassblowersExtScene.atmosphere = SceneAtmosphere.MARKET
+    bridgeScene.atmosphere        = SceneAtmosphere.BRIDGE
 
     // --- helpers ---
 
@@ -353,7 +453,10 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
             delay(1000)
             val isExplorationPhase = phase in listOf(
                 SlicePhase.TAVERN, SlicePhase.SEWER, SlicePhase.BOSS_ROOM,
-                SlicePhase.CHAPTER2_MARKET, SlicePhase.CHAPTER2_FOREST, SlicePhase.CHAPTER2_SHRINE
+                SlicePhase.CHAPTER2_MARKET, SlicePhase.CHAPTER2_FOREST, SlicePhase.CHAPTER2_SHRINE,
+                SlicePhase.HEROES_HOME_EXT, SlicePhase.CHAPTER2_GUILDHALL,
+                SlicePhase.CHAPTER2_CHAPEL_EXT, SlicePhase.CHAPTER2_TEMPLE_EXT,
+                SlicePhase.CHAPTER2_BRIDGE, SlicePhase.CHAPTER2_GLASSBLOWERS
             )
             if (!isExplorationPhase) continue
             val elapsed = clock() - lastActivityTime
@@ -644,6 +747,102 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
         }
     }
 
+    // --- World connector scene callbacks ---
+
+    heroesHomeExtScene.onTrigger = { id ->
+        if (phase == SlicePhase.HEROES_HOME_EXT && id == GameMaps.TRIGGER_VILLAGE_ENTER) {
+            lastActivityTime = clock()
+            director.enterRoom(TAVERN_CTX)
+            phase = SlicePhase.INTRO_CUTSCENE
+            dialogueLines = INTRO_LINES
+            dialogueIndex = 0
+        }
+    }
+    heroesHomeExtScene.onEntityInteraction = { entity ->
+        if (phase == SlicePhase.HEROES_HOME_EXT) {
+            lastActivityTime = clock()
+            dialogueLines = HEROES_HOME_EXT_LINES
+            dialogueIndex = 0
+            phase = SlicePhase.NPC_DIALOGUE
+        }
+    }
+
+    guildHallExtScene.onTrigger = { _ -> }
+    guildHallExtScene.onEntityInteraction = { entity ->
+        if (phase == SlicePhase.CHAPTER2_GUILDHALL) {
+            lastActivityTime = clock()
+            when (entity.id) {
+                "guildmaster" -> {
+                    dialogueLines = GUILDMASTER_LINES
+                    dialogueIndex = 0
+                    phase = SlicePhase.CHAPTER2_MARKET_NPC
+                }
+                else -> {
+                    dialogueLines = HEROES_HOME_EXT_LINES
+                    dialogueIndex = 0
+                    phase = SlicePhase.CHAPTER2_MARKET_NPC
+                }
+            }
+        }
+    }
+
+    chapelExtScene.onTrigger = { id ->
+        if (phase == SlicePhase.CHAPTER2_CHAPEL_EXT && id == GameMaps.TRIGGER_CHAPEL_ENTER) {
+            lastActivityTime = clock()
+            director.enterRoom(BOSS_CTX)
+            phase = SlicePhase.BOSS_ROOM
+        }
+    }
+    chapelExtScene.onEntityInteraction = { _ ->
+        if (phase == SlicePhase.CHAPTER2_CHAPEL_EXT) {
+            lastActivityTime = clock()
+            dialogueLines = CHAPEL_DEVOTEE_LINES
+            dialogueIndex = 0
+            phase = SlicePhase.CHAPTER2_MARKET_NPC
+        }
+    }
+
+    templeExtScene.onTrigger = { id ->
+        if (phase == SlicePhase.CHAPTER2_TEMPLE_EXT && id == GameMaps.TRIGGER_TEMPLE_ENTER) {
+            lastActivityTime = clock()
+            director.enterRoom(FOREST_CTX)
+            phase = SlicePhase.CHAPTER2_FOREST
+        }
+    }
+    templeExtScene.onEntityInteraction = { entity ->
+        if (phase == SlicePhase.CHAPTER2_TEMPLE_EXT && entity.id.startsWith("wolf")) {
+            lastActivityTime = clock()
+            AmbientBarks.pick(AmbientBarks.FOREST_WARNING, barkRandom)?.let { fireAndFlash(it) }
+            director.startCombat(CombatEngine(party, listOf(
+                EnemyArchetype.FOREST_WOLF.spawn("wolf_a"),
+                EnemyArchetype.FOREST_WOLF.spawn("wolf_b")
+            )))
+            combatMessage = "Two wolves guard the temple approach!"
+            phase = SlicePhase.CHAPTER2_FOREST_COMBAT
+        }
+    }
+
+    glassblowersExtScene.onTrigger = { _ -> }
+    glassblowersExtScene.onEntityInteraction = { _ ->
+        if (phase == SlicePhase.CHAPTER2_GLASSBLOWERS) {
+            lastActivityTime = clock()
+            dialogueLines = CHAPTER2_MERCHANT_LINES
+            dialogueIndex = 0
+            phase = SlicePhase.CHAPTER2_MARKET_NPC
+        }
+    }
+
+    bridgeScene.onTrigger = { id ->
+        if (phase == SlicePhase.CHAPTER2_BRIDGE) {
+            lastActivityTime = clock()
+            when (id) {
+                GameMaps.TRIGGER_BRIDGE_EAST -> phase = SlicePhase.CHAPTER2_MARKET
+                GameMaps.TRIGGER_BRIDGE_WEST -> phase = SlicePhase.HEROES_HOME_EXT
+            }
+        }
+    }
+    bridgeScene.onEntityInteraction = { _ -> }
+
     // --- keyboard shortcut for exploration phases ---
 
     val focus = remember { FocusRequester() }
@@ -661,12 +860,18 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
                 if (e.type != KeyEventType.KeyDown) return@onKeyEvent false
                 lastActivityTime = clock()
                 val world = when (phase) {
-                    SlicePhase.TAVERN    -> tavernWorld
-                    SlicePhase.SEWER     -> sewerWorld
-                    SlicePhase.BOSS_ROOM -> bossWorld
-                    SlicePhase.CHAPTER2_MARKET  -> marketWorld
-                    SlicePhase.CHAPTER2_FOREST  -> forestWorld
-                    SlicePhase.CHAPTER2_SHRINE  -> forestWorld
+                    SlicePhase.TAVERN               -> tavernWorld
+                    SlicePhase.SEWER                -> sewerWorld
+                    SlicePhase.BOSS_ROOM            -> bossWorld
+                    SlicePhase.CHAPTER2_MARKET      -> marketWorld
+                    SlicePhase.CHAPTER2_FOREST,
+                    SlicePhase.CHAPTER2_SHRINE      -> forestWorld
+                    SlicePhase.HEROES_HOME_EXT      -> heroesHomeExtWorld
+                    SlicePhase.CHAPTER2_GUILDHALL   -> guildHallExtWorld
+                    SlicePhase.CHAPTER2_CHAPEL_EXT  -> chapelExtWorld
+                    SlicePhase.CHAPTER2_TEMPLE_EXT  -> templeExtWorld
+                    SlicePhase.CHAPTER2_GLASSBLOWERS -> glassblowersExtWorld
+                    SlicePhase.CHAPTER2_BRIDGE      -> bridgeWorld
                     else -> null
                 } ?: return@onKeyEvent false
                 when (e.key) {
@@ -678,9 +883,14 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
                         val npc = world.requestInteraction()
                         if (npc != null) {
                             when (phase) {
-                                SlicePhase.TAVERN -> tavernScene.onEntityInteraction?.invoke(npc)
-                                SlicePhase.CHAPTER2_MARKET -> marketScene.onEntityInteraction?.invoke(npc)
-                                SlicePhase.CHAPTER2_FOREST -> forestScene.onEntityInteraction?.invoke(npc)
+                                SlicePhase.TAVERN               -> tavernScene.onEntityInteraction?.invoke(npc)
+                                SlicePhase.CHAPTER2_MARKET      -> marketScene.onEntityInteraction?.invoke(npc)
+                                SlicePhase.CHAPTER2_FOREST      -> forestScene.onEntityInteraction?.invoke(npc)
+                                SlicePhase.HEROES_HOME_EXT      -> heroesHomeExtScene.onEntityInteraction?.invoke(npc)
+                                SlicePhase.CHAPTER2_GUILDHALL   -> guildHallExtScene.onEntityInteraction?.invoke(npc)
+                                SlicePhase.CHAPTER2_CHAPEL_EXT  -> chapelExtScene.onEntityInteraction?.invoke(npc)
+                                SlicePhase.CHAPTER2_TEMPLE_EXT  -> templeExtScene.onEntityInteraction?.invoke(npc)
+                                SlicePhase.CHAPTER2_GLASSBLOWERS -> glassblowersExtScene.onEntityInteraction?.invoke(npc)
                                 else -> {}
                             }
                         }
@@ -916,6 +1126,73 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
                     subtitle = "The Questbook notes your failure for administrative purposes.",
                     color    = Color(0xFFE53935),
                     onRestart = onReset
+                )
+
+            // --- World connectors ---
+            SlicePhase.HEROES_HOME_EXT ->
+                ExploreView(
+                    title    = "Village of Hearthwick",
+                    scene    = heroesHomeExtScene,
+                    pressure = director.pressure,
+                    falseMarkers = director.falseMarkers,
+                    onStep   = heroesHomeExtWorld::requestStep,
+                    barkButtons = emptyList(),
+                    onBark   = ::fireAndFlash
+                )
+
+            SlicePhase.CHAPTER2_GUILDHALL ->
+                ExploreView(
+                    title    = "Adventurers' Guild",
+                    scene    = guildHallExtScene,
+                    pressure = director.pressure,
+                    falseMarkers = director.falseMarkers,
+                    onStep   = guildHallExtWorld::requestStep,
+                    barkButtons = listOf(BarkEvent.NIB_SMELL_GOLD to "Nib: Contracts"),
+                    onBark   = ::fireAndFlash
+                )
+
+            SlicePhase.CHAPTER2_CHAPEL_EXT ->
+                ExploreView(
+                    title    = "Chapel of the Unresolved",
+                    scene    = chapelExtScene,
+                    pressure = director.pressure,
+                    falseMarkers = director.falseMarkers,
+                    onStep   = chapelExtWorld::requestStep,
+                    barkButtons = listOf(BarkEvent.VELLUM_CALLS_FOR_FLAME to "Vellum: Sense"),
+                    onBark   = ::fireAndFlash
+                )
+
+            SlicePhase.CHAPTER2_TEMPLE_EXT ->
+                ExploreView(
+                    title    = "Ruined Temple Approach",
+                    scene    = templeExtScene,
+                    pressure = director.pressure,
+                    falseMarkers = director.falseMarkers,
+                    onStep   = templeExtWorld::requestStep,
+                    barkButtons = listOf(BarkEvent.BRUGG_ATTACK to "Brugg: Attack!"),
+                    onBark   = ::fireAndFlash
+                )
+
+            SlicePhase.CHAPTER2_GLASSBLOWERS ->
+                ExploreView(
+                    title    = "Glassblowers' District",
+                    scene    = glassblowersExtScene,
+                    pressure = director.pressure,
+                    falseMarkers = director.falseMarkers,
+                    onStep   = glassblowersExtWorld::requestStep,
+                    barkButtons = listOf(BarkEvent.NIB_SMELL_GOLD to "Nib: Browse"),
+                    onBark   = ::fireAndFlash
+                )
+
+            SlicePhase.CHAPTER2_BRIDGE ->
+                ExploreView(
+                    title    = "The Ironway Bridge",
+                    scene    = bridgeScene,
+                    pressure = director.pressure,
+                    falseMarkers = director.falseMarkers,
+                    onStep   = bridgeWorld::requestStep,
+                    barkButtons = emptyList(),
+                    onBark   = ::fireAndFlash
                 )
         }
 

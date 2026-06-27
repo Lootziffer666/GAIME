@@ -116,6 +116,43 @@ data class SceneAtmosphere(
             fog = Color(0xFF14321E), fogStrength = 0.22f,
             grain = 0.05f, vignette = 0.7f
         )
+
+        /** Gothic stone, candle flicker, cold violet moonlight, drifting purple dust. */
+        val CHAPEL = SceneAtmosphere(
+            grade = Color(0xFF2C1F3E), gradeStrength = 0.28f,
+            keyLight = Color(0xFF8870E0), keyIntensity = 0.30f,
+            accents = listOf(
+                AccentLight(0.20f, 0.70f, Color(0xFFFF9020), 0.18f, 0.55f, flicker = 0.95f),
+                AccentLight(0.80f, 0.72f, Color(0xFFFF8A18), 0.16f, 0.50f, flicker = 0.85f),
+                AccentLight(0.50f, 0.30f, Color(0xFF9B70FF), 0.28f, 0.35f, flicker = 0.2f)
+            ),
+            shaft = LightShaft(0.50f, 0f, Color(0xFFB090FF), 0.08f, 0.28f),
+            moteColor = Color(0xFFD0C0FF), moteCount = 28, moteStyle = MoteStyle.DUST,
+            fog = Color(0xFF140C28), fogStrength = 0.30f,
+            grain = 0.07f, vignette = 0.85f
+        )
+
+        /** Warm torchlight, professional guild atmosphere, subtle amber dust. */
+        val GUILD_HALL = SceneAtmosphere(
+            grade = Color(0xFFB87830), gradeStrength = 0.14f,
+            keyLight = Color(0xFFFFCC78), keyIntensity = 0.28f,
+            accents = listOf(
+                AccentLight(0.15f, 0.35f, Color(0xFFFF8A3C), 0.20f, 0.50f, flicker = 0.8f),
+                AccentLight(0.85f, 0.35f, Color(0xFFFF8A3C), 0.20f, 0.45f, flicker = 0.7f)
+            ),
+            shaft = LightShaft(0.50f, 0f, Color(0xFFFFE0A0), 0.10f, 0.18f),
+            moteColor = Color(0xFFFFE0A0), moteCount = 35, moteStyle = MoteStyle.DUST,
+            grain = 0.04f, vignette = 0.62f
+        )
+
+        /** Bright open sky, river shimmer, breezy outdoor crossing. */
+        val BRIDGE = SceneAtmosphere(
+            grade = Color(0xFF7AB8E0), gradeStrength = 0.10f,
+            keyLight = Color(0xFFE8F4FF), keyIntensity = 0.22f,
+            shaft = LightShaft(0.30f, 12f, Color(0xFFFFFFE8), 0.16f, 0.18f),
+            moteColor = Color(0xFFE0F0FF), moteCount = 20, moteStyle = MoteStyle.DUST,
+            grain = 0.03f, vignette = 0.45f
+        )
     }
 }
 
