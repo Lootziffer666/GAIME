@@ -34,16 +34,22 @@ data class DialogueLine(val speaker: String, val text: String, val audioPath: St
 
 private fun speakerPortrait(speaker: String): DrawableResource? = when (speaker.lowercase()) {
     "barkeep"        -> Res.drawable.npc_portrait_barkeep
-    "patron"         -> Res.drawable.npc_portrait_patron
     "guard"          -> Res.drawable.npc_portrait_guard
     "merchant",
     "tax collector"  -> Res.drawable.npc_portrait_merchant
     "nib"            -> Res.drawable.hero_nib
     "brugg"          -> Res.drawable.hero_brugg
     "vellum"         -> Res.drawable.hero_vellum
-    "guildmaster"    -> Res.drawable.npc_portrait_guard   // official authority figure
+    "guildmaster",
+    "elder"          -> Res.drawable.npc_portrait_guard
+    "patron",
     "citizen",
-    "devotee"        -> Res.drawable.npc_portrait_patron  // generic townsperson
+    "devotee",
+    "strange patron",
+    "priest",
+    "mage",
+    "medusa",
+    "questbook"      -> Res.drawable.npc_portrait_patron
     else             -> null
 }
 

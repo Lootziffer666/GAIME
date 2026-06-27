@@ -102,9 +102,15 @@ import kotlin.time.TimeSource
 // --- Scripted dialogue lines ---
 
 private val INTRO_LINES = listOf(
-    DialogueLine("Barkeep", "You've been officially registered as a Hero Party. Don't ask how.", "bark/barkeep/greetings_stranger.wav"),
-    DialogueLine("Nib", "...by who?", "bark/nib/where_am_i.wav"),
-    DialogueLine("Barkeep", "The Questbook. It fell on the desk and opened to the right page. Fate, probably.", "bark/barkeep/hmm_i_wonder_what_this_could_be.wav")
+    DialogueLine("Barkeep", "Greetings, stranger.", "bark/barkeep/greetings_stranger.wav"),
+    DialogueLine("Barkeep", "You've been officially registered as a Hero Party. Don't ask how."),
+    DialogueLine("Nib", "...by who?"),
+    DialogueLine("Barkeep", "The Questbook. It fell on the desk, opened to the right page, and made a noise like a judge swallowing a bell."),
+    DialogueLine("Vellum", "Hmm, I wonder what this could be.", "bark/vellum/hmm_i_wonder_what_this_could_be.wav"),
+    DialogueLine("Brugg", "A mistake."),
+    DialogueLine("Barkeep", "Around here we call that paperwork."),
+    DialogueLine("Nib", "So that's how it is then?", "bark/nib/so_thats_how_it_is_then.wav"),
+    DialogueLine("Barkeep", "Exactly. Congratulations. You're important now, which is generally how things get worse.")
 )
 private val FALLING_LINES = listOf(
     DialogueLine("", "The cellar floor gives way."),
@@ -127,19 +133,48 @@ private val RETURN_LINES = listOf(
 private val CHAPTER2_MARKET_INTRO_LINES = listOf(
     DialogueLine("", "The party exits into the market square of Stokeport."),
     DialogueLine("Nib", "Fresh air! And fresh pockets to pick."),
-    DialogueLine("Vellum", "The Questbook is restless. It demands a new page.")
+    DialogueLine("Brugg", "No."),
+    DialogueLine("Nib", "To observe academically."),
+    DialogueLine("Vellum", "The Questbook is restless. It demands a new page."),
+    DialogueLine("", "The public quest board rattles. Several notices correct themselves badly."),
+    DialogueLine("Questbook", "QUEST UPDATED: LOCATE RESPONSIBLE AUTHORITY."),
+    DialogueLine("Nib", "That sounds expensive."),
+    DialogueLine("Brugg", "That sounds like the guard."),
+    DialogueLine("Vellum", "That sounds like the beginning of a lawsuit.")
 )
 
 private val CHAPTER2_MERCHANT_LINES = listOf(
+    DialogueLine("Merchant", "Greetings, friend.", "bark/merchant/greetings_friend.wav"),
     DialogueLine("Merchant", "See if any of this strikes your fancy.", "bark/merchant/see_if_any_of_this_strikes_your_fancy.wav"),
-    DialogueLine("Merchant", "Make me an offer. I won't bite.", "bark/merchant/make_me_an_offer.wav"),
-    DialogueLine("Nib", "How much do you want for this?", "bark/nib/how_much_do_you_want_for_this.wav")
+    DialogueLine("Nib", "That depends. Is any of it valuable, cursed, or recently unattended?"),
+    DialogueLine("Merchant", "Make me an offer.", "bark/merchant/make_me_an_offer.wav"),
+    DialogueLine("Nib", "How much do you want for this?"),
+    DialogueLine("Merchant", "Name your price.", "bark/merchant/name_your_price.wav"),
+    DialogueLine("Nib", "One coin."),
+    DialogueLine("Merchant", "Insulting."),
+    DialogueLine("Nib", "Two coins, but I say it with concern."),
+    DialogueLine("Merchant", "Might I interest you in this bauble?", "bark/merchant/might_i_interest_you_in_this_bauble.wav"),
+    DialogueLine("Vellum", "It glows faintly."),
+    DialogueLine("Merchant", "Exactly. Premium faintness."),
+    DialogueLine("Brugg", "What does it do?"),
+    DialogueLine("Merchant", "It suggests importance. That is the backbone of commerce."),
+    DialogueLine("Nib", "I hate how much I respect that.")
 )
 
 private val CHAPTER2_GUARD_LINES = listOf(
-    DialogueLine("Guard", "The forest trail east of here has been overrun by wolves.", "bark/guard/there_are_all_manner_of_creatures_within_these_woods.wav"),
-    DialogueLine("Guard", "If you're looking for trouble, you'll find it there.", "bark/guard/nothing_to_see_here.wav"),
-    DialogueLine("Brugg", "Just keep to the trail.", "bark/brugg/just_keep_to_the_trail.wav")
+    DialogueLine("Guard", "Who goes there?", "bark/guard/who_goes_there.wav"),
+    DialogueLine("Brugg", "Former guard. Current inconvenience."),
+    DialogueLine("Guard", "Drop your weapons and surrender.", "bark/guard/drop_your_weapons_and_surrender.wav"),
+    DialogueLine("Nib", "Can we surrender emotionally? My arms are tired."),
+    DialogueLine("Guard", "Nothing to see here.", "bark/guard/nothing_to_see_here.wav"),
+    DialogueLine("Vellum", "That phrase has never once meant that."),
+    DialogueLine("Guard", "The forest trail east of here has been overrun by wolves."),
+    DialogueLine("Guard", "If you're looking for trouble, you'll find it there."),
+    DialogueLine("Brugg", "Just keep to the trail.", "bark/brugg/just_keep_to_the_trail.wav"),
+    DialogueLine("Guard", "Good advice. Last man left the trail and came back with a mushroom calling him father."),
+    DialogueLine("Nib", "Was the mushroom rich?"),
+    DialogueLine("Guard", "Emotionally."),
+    DialogueLine("Nib", "Useless.")
 )
 
 private val CHAPTER2_POST_BOSS_LINES = listOf(
@@ -158,41 +193,243 @@ private val CHAPTER2_RETURN_LINES = listOf(
 
 private val BARKEEP_PRE_SEWER_LINES = listOf(
     DialogueLine("Barkeep", "Spend some coin or get out.", "bark/barkeep/spend_some_coin_or_get_out.wav"),
-    DialogueLine("Brugg", "Barkeep! A flagon of ale!", "bark/brugg/barkeep_a_flagon_of_ale.wav")
+    DialogueLine("Nib", "I was considering a third option: standing here suspiciously."),
+    DialogueLine("Barkeep", "That option costs two copper."),
+    DialogueLine("Brugg", "Barkeep! A flagon of ale!"),
+    DialogueLine("Barkeep", "That's nothing a flagon of ale won't fix.", "bark/barkeep/thats_nothing_a_flagon_of_ale_wont_fix.wav"),
+    DialogueLine("Vellum", "There are very few civic disasters that sentence has not worsened."),
+    DialogueLine("Barkeep", "You've gotta try this roast cockatrice.", "bark/barkeep/youve_gotta_try_this_roast_cockatrice.wav"),
+    DialogueLine("Nib", "Is it legally food?"),
+    DialogueLine("Barkeep", "Legally adjacent.")
 )
 
 private val BARKEEP_POST_SEWER_LINES = listOf(
-    DialogueLine("Barkeep", "Been playing in the sewers, have we?", "bark/barkeep/been_playing_in_the_sewers_have_we.wav")
+    DialogueLine("Barkeep", "Been playing in the sewers, have we?", "bark/barkeep/been_playing_in_the_sewers_have_we.wav"),
+    DialogueLine("Nib", "Playing implies consent."),
+    DialogueLine("Brugg", "The floor gave way."),
+    DialogueLine("Barkeep", "Happens when the city outsources maintenance to destiny."),
+    DialogueLine("Vellum", "We found a page from the Questbook."),
+    DialogueLine("Barkeep", "Ah. Wet, cursed, or stamped?"),
+    DialogueLine("Nib", "Yes."),
+    DialogueLine("Barkeep", "Then it's official.")
 )
 
 private val PATRON_LINES = listOf(
-    DialogueLine("Patron", "He sure is slow for a four-armed bartender.", "bark/vellum/he_sure_is_slow_for_a_four_armed_bartender.wav")
+    DialogueLine("Patron", "He sure is slow for a four-armed bartender."),
+    DialogueLine("Nib", "Four arms, one work ethic. Tragic ratio."),
+    DialogueLine("Patron", "I heard the Questbook once registered a sneeze as a holy expedition."),
+    DialogueLine("Vellum", "A common error. Many prophecies begin as respiratory events."),
+    DialogueLine("Patron", "I hear the king likes to wear evening gowns."),
+    DialogueLine("Brugg", "Irrelevant."),
+    DialogueLine("Nib", "Not if the gowns have pockets.")
 )
 
 // --- World connector dialogue lines ---
 
 private val HEROES_HOME_EXT_LINES = listOf(
     DialogueLine("", "The party steps outside into the morning air."),
-    DialogueLine("Nib", "The guild hall is just down the road. And the tavern's right behind us."),
-    DialogueLine("Brugg", "Let's not dawdle.", "bark/brugg/just_keep_to_the_trail.wav")
+    DialogueLine("Nib", "Fresh air. Suspicious. Usually costs extra."),
+    DialogueLine("Brugg", "The guild hall is down the road."),
+    DialogueLine("Vellum", "And the Questbook is still restless."),
+    DialogueLine("Citizen", "Greetings, stranger.", "bark/citizen/greetings_stranger.wav"),
+    DialogueLine("Citizen", "Are you the official heroes?"),
+    DialogueLine("Nib", "Officially? Yes. Competently? Define your terms."),
+    DialogueLine("Citizen", "The last official hero tried to rescue a bucket because someone said it had fallen."),
+    DialogueLine("Brugg", "Did it need rescuing?"),
+    DialogueLine("Citizen", "It was a bucket."),
+    DialogueLine("Vellum", "A classic ambiguity. Container, victim, or metaphor."),
+    DialogueLine("Nib", "If the bucket had treasure, I support its recovery.")
 )
 
 private val GUILDMASTER_LINES = listOf(
-    DialogueLine("Guildmaster", "Registered heroes may pick up contracts at the board inside.", "bark/guildmaster/greetings_friends.wav"),
-    DialogueLine("Guildmaster", "Non-registered adventurers are asked to leave or be fined.", "bark/guildmaster/grab_your_torch_theres_work_to_be_done.wav"),
-    DialogueLine("Nib", "We're registered. The Questbook said so.", "bark/nib/hard-won_knowledge.wav")
+    DialogueLine("Guildmaster", "Greetings, friends.", "bark/guildmaster/greetings_friends.wav"),
+    DialogueLine("Guildmaster", "Registered heroes may pick up contracts at the board inside."),
+    DialogueLine("Guildmaster", "Non-registered adventurers are asked to leave or be fined."),
+    DialogueLine("Nib", "We're registered. The Questbook said so."),
+    DialogueLine("Guildmaster", "The Questbook also once registered a sandwich as missing royalty."),
+    DialogueLine("Brugg", "Was it?"),
+    DialogueLine("Guildmaster", "No. But it had a crown-shaped bite mark, and the law is weaker than presentation."),
+    DialogueLine("Vellum", "Knowledge is the answer.", "bark/guildmaster/knowledge_is_the_answer.wav"),
+    DialogueLine("Guildmaster", "Experience is how we grow.", "bark/guildmaster/experience_is_how_we_grow.wav"),
+    DialogueLine("Nib", "Pain is how we invoice."),
+    DialogueLine("Guildmaster", "Grab your torch. There's work to be done.", "bark/guildmaster/grab_your_torch_theres_work_to_be_done.wav")
 )
 
 private val CHAPEL_DEVOTEE_LINES = listOf(
-    DialogueLine("Citizen", "The chapel has been... quiet lately. Too quiet.", "bark/citizen/hmm_i_wonder_what_this_could_be.wav"),
-    DialogueLine("Citizen", "Something moved the pews. Something large.", "bark/citizen/what_dark_dealings_await_here.wav"),
-    DialogueLine("Vellum", "Perfect. Let's go in.", "bark/vellum/so_thats_how_it_is_then.wav")
+    DialogueLine("Citizen", "Our prayers will be answered.", "bark/citizen/our_prayers_will_be_answered.wav"),
+    DialogueLine("Nib", "That's either comforting or a threat."),
+    DialogueLine("Citizen", "The chapel has been... quiet lately. Too quiet."),
+    DialogueLine("Citizen", "This is unusual.", "bark/citizen/this_is_unusual.wav"),
+    DialogueLine("Vellum", "Quiet chapels are rarely quiet for affordable reasons."),
+    DialogueLine("Citizen", "Something moved the pews. Something large."),
+    DialogueLine("Brugg", "Animal?"),
+    DialogueLine("Citizen", "No. It organized them alphabetically by guilt."),
+    DialogueLine("Nib", "I don't like furniture with judgment."),
+    DialogueLine("Citizen", "I need to speak to the town guard.", "bark/citizen/i_need_to_speak_to_the_town_guard.wav"),
+    DialogueLine("Brugg", "The town guard is currently arresting itself."),
+    DialogueLine("Citizen", "Again?"),
+    DialogueLine("Vellum", "Perfect. Let's go in.")
 )
 
 private val TEMPLE_EXT_INTRO_LINES = listOf(
     DialogueLine("", "The ruined temple exterior. Overgrown. Unsettled."),
-    DialogueLine("Brugg", "Wolves.", "bark/brugg/just_keep_to_the_trail.wav"),
-    DialogueLine("Nib", "Lots of wolves.")
+    DialogueLine("Brugg", "Wolves."),
+    DialogueLine("Nib", "Lots of wolves."),
+    DialogueLine("Vellum", "And markings on the stones."),
+    DialogueLine("Nib", "Do the markings say treasure?"),
+    DialogueLine("Vellum", "They say warning."),
+    DialogueLine("Nib", "Ancient people were terrible at marketing."),
+    DialogueLine("Guard", "There are all manner of creatures within these woods.", "bark/guard/there_are_all_manner_of_creatures_within_these_woods.wav"),
+    DialogueLine("Brugg", "Look sharp."),
+    DialogueLine("Nib", "I prefer looking profitable."),
+    DialogueLine("Vellum", "The deeper we go, the darker it gets."),
+    DialogueLine("Nib", "That is how depth works."),
+    DialogueLine("Vellum", "Not always spiritually."),
+    DialogueLine("Nib", "Especially spiritually.")
+)
+
+// --- New scene dialogue lines ---
+
+private val CHAPEL_INTERIOR_LINES = listOf(
+    DialogueLine("Priest", "Blessings upon you, travelers.", "bark/priest/blessings_upon_you.wav"),
+    DialogueLine("Nib", "Are they refundable?"),
+    DialogueLine("Priest", "The chapel does not sell blessings."),
+    DialogueLine("Nib", "That sounds exactly like something said before a donation box."),
+    DialogueLine("Priest", "We must live by the teachings of holy wisdom.", "bark/priest/we_must_live_by_the_teachings_of_holy_wisdom.wav"),
+    DialogueLine("Vellum", "Holy wisdom is rarely the issue. The issue is usually the people who laminate it."),
+    DialogueLine("Priest", "The Questbook passed through here once."),
+    DialogueLine("Brugg", "When?"),
+    DialogueLine("Priest", "Before the pews began confessing."),
+    DialogueLine("Nib", "Furniture shouldn't have interiority."),
+    DialogueLine("Priest", "It heard the words 'save all souls' and began sorting parishioners by theological compliance."),
+    DialogueLine("Vellum", "A machine cannot understand mercy."),
+    DialogueLine("Priest", "No. But it understands categories."),
+    DialogueLine("Questbook", "QUEST NOTED: REVIEW SOUL CLASSIFICATION."),
+    DialogueLine("Brugg", "No."),
+    DialogueLine("Nib", "Good. The book is getting religious. That always ends in architecture.")
+)
+
+private val CHAPTER2_GUILDHALL_INTERIOR_LINES = listOf(
+    DialogueLine("Mage", "Of all the arcane lore...", "bark/mage/of_all_the_arcane_lore.wav"),
+    DialogueLine("Nib", "That is a dangerous way to start a sentence."),
+    DialogueLine("Mage", "The Questbook is not cursed."),
+    DialogueLine("Brugg", "It drops stamps from the ceiling."),
+    DialogueLine("Mage", "That is civic enchantment. Different smell."),
+    DialogueLine("Vellum", "Knowledge is the answer.", "bark/vellum/knowledge_is_the_answer.wav"),
+    DialogueLine("Mage", "Sometimes. Sometimes knowledge is the door, the trap, and the idiot holding the torch."),
+    DialogueLine("Nib", "Which one am I?"),
+    DialogueLine("Mage", "You are the reason we label torches."),
+    DialogueLine("Mage", "Now what was that incantation?", "bark/mage/now_what_was_that_incantation.wav"),
+    DialogueLine("Mage", "Ah. The Questbook reacts to declared meaning, not truth."),
+    DialogueLine("Brugg", "Plain words."),
+    DialogueLine("Mage", "If someone says a thing like it matters, the book tries to make it matter."),
+    DialogueLine("Nib", "So confidence is dangerous."),
+    DialogueLine("Mage", "Historically, yes."),
+    DialogueLine("Questbook", "QUEST UPDATED: SEEK NEXT PAGE."),
+    DialogueLine("Mage", "There. It did it again. Self-important little library.")
+)
+
+private val CHAPTER3_BOSS_MEDUSA_INTRO_LINES = listOf(
+    DialogueLine("", "The forest opens into a stone clearing. Statues stand in neat rows, each frozen mid-regret."),
+    DialogueLine("Nib", "Those are decorative, right?"),
+    DialogueLine("Brugg", "No."),
+    DialogueLine("Vellum", "The balance of life and death sits on a knife's edge."),
+    DialogueLine("Nib", "I preferred decorative."),
+    DialogueLine("Medusa", "Another party. Another prophecy with boots."),
+    DialogueLine("Brugg", "Stand aside."),
+    DialogueLine("Medusa", "I stood aside once. A hero called it destiny and built a statue park out of my afternoon."),
+    DialogueLine("Vellum", "We do not seek violence."),
+    DialogueLine("Medusa", "No one ever does. They seek glory, answers, treasure, closure, content. Violence is the delivery method."),
+    DialogueLine("Nib", "I only seek treasure."),
+    DialogueLine("Medusa", "Honest. Repulsive, but honest."),
+    DialogueLine("Questbook", "QUEST ACCEPTED: DEFEAT THE MONSTER."),
+    DialogueLine("Medusa", "There it is. The little book sees a woman with snakes and files paperwork for murder."),
+    DialogueLine("Brugg", "Then we break the paperwork."),
+    DialogueLine("Vellum", "Or at least misfile it.")
+)
+
+private val CHAPTER3_BOSS_MEDUSA_POST_LINES = listOf(
+    DialogueLine("", "The stone light fades. The statues remain statues, but somehow look less blamed."),
+    DialogueLine("Medusa", "You did not kill me."),
+    DialogueLine("Brugg", "Wasn't ordered."),
+    DialogueLine("Nib", "Also, unclear loot table."),
+    DialogueLine("Vellum", "The Questbook named you monster because the story needed one."),
+    DialogueLine("Medusa", "Stories always need monsters. It saves them from needing context."),
+    DialogueLine("Questbook", "QUEST COMPLETE: MONSTER ENCOUNTER RESOLVED."),
+    DialogueLine("Nib", "Resolved is doing a lot of work there."),
+    DialogueLine("Medusa", "Take your page. And if the book asks who the villain was, tell it to look in a mirror."),
+    DialogueLine("Vellum", "Hard-won knowledge.", "bark/vellum/hard-won_knowledge.wav"),
+    DialogueLine("", "The party receives a torn Questbook page, warm as if recently embarrassed.")
+)
+
+private val VILLAGE_ELDER_LINES = listOf(
+    DialogueLine("Elder", "Well met.", "bark/guildmaster/well_met.wav"),
+    DialogueLine("Nib", "That depends on whether this becomes unpaid advice."),
+    DialogueLine("Elder", "The Questbook was built after the old wars, when heroes became too expensive and prophecies too vague."),
+    DialogueLine("Brugg", "So the city automated courage."),
+    DialogueLine("Elder", "The city automated liability."),
+    DialogueLine("Vellum", "Knowledge is the answer.", "bark/vellum/knowledge_is_the_answer.wav"),
+    DialogueLine("Elder", "Knowledge was the first draft. Then came committees."),
+    DialogueLine("Nib", "And nobody stopped them?"),
+    DialogueLine("Elder", "Everyone thought it would help the little man."),
+    DialogueLine("Brugg", "Did it?"),
+    DialogueLine("Elder", "It helped the little man fill out forms explaining why help was unavailable."),
+    DialogueLine("Nib", "That sounds like government."),
+    DialogueLine("Elder", "That sounds like everything, eventually."),
+    DialogueLine("Elder", "Remember this: the Questbook does not hate people."),
+    DialogueLine("Elder", "It merely turns their needs into obligations."),
+    DialogueLine("Vellum", "That may be worse.")
+)
+
+private val CHAPTER2_BRIDGE_LINES = listOf(
+    DialogueLine("", "A narrow bridge crosses the muddy river east of Stokeport."),
+    DialogueLine("Citizen", "Greetings, stranger.", "bark/citizen/greetings_stranger.wav"),
+    DialogueLine("Citizen", "Careful crossing. The bridge has been asking travelers for purpose."),
+    DialogueLine("Nib", "Bridges should ask for tolls. Like honest criminals."),
+    DialogueLine("Citizen", "A man said he was 'just passing through.' The Questbook marked him as temporary infrastructure."),
+    DialogueLine("Brugg", "Where is he?"),
+    DialogueLine("Citizen", "Second plank from the left."),
+    DialogueLine("Vellum", "This is unusual.", "bark/citizen/this_is_unusual.wav"),
+    DialogueLine("Nib", "No, this is Stokeport."),
+    DialogueLine("Citizen", "If you hear singing under the bridge, do not answer."),
+    DialogueLine("Nib", "Is it a troll?"),
+    DialogueLine("Citizen", "Worse. A bard with unresolved metaphor."),
+    DialogueLine("Questbook", "QUEST NOTED: INSPECT BRIDGE PURPOSE."),
+    DialogueLine("Brugg", "Ignore it."),
+    DialogueLine("Nib", "I love how that has become our strategy.")
+)
+
+private val CHAPTER1_OUTRO_LINES = listOf(
+    DialogueLine("", "The first page settles into the Questbook with a damp administrative sigh."),
+    DialogueLine("Brugg", "Objective complete.", "bark/brugg/grab_your_torch_theres_work_to_be_done.wav"),
+    DialogueLine("Nib", "Do we get paid?"),
+    DialogueLine("Vellum", "We learned something."),
+    DialogueLine("Nib", "That is not currency."),
+    DialogueLine("Questbook", "QUEST UPDATED: REPORT TO CIVIC AUTHORITY."),
+    DialogueLine("Brugg", "Town guard."),
+    DialogueLine("Nib", "Nothing good starts with those two words.")
+)
+
+private val CHAPTER2_OUTRO_LINES = listOf(
+    DialogueLine("", "The guardhouse falls quiet. Several laws stop contradicting themselves out loud."),
+    DialogueLine("Brugg", "Order restored."),
+    DialogueLine("Nib", "Order lightly embarrassed."),
+    DialogueLine("Vellum", "The Questbook is learning the shape of authority."),
+    DialogueLine("Nib", "Does it have to?"),
+    DialogueLine("Questbook", "QUEST UPDATED: FOLLOW THE FOREST TRAIL."),
+    DialogueLine("Brugg", "Just keep to the trail.", "bark/brugg/just_keep_to_the_trail.wav"),
+    DialogueLine("Nib", "The trail has never met us. It should be afraid.")
+)
+
+private val CHAPTER3_OUTRO_LINES = listOf(
+    DialogueLine("", "The forest stops rearranging itself, which somehow feels judgmental."),
+    DialogueLine("Vellum", "The page is real."),
+    DialogueLine("Nib", "The tree was too helpful. I feel violated by advice."),
+    DialogueLine("Brugg", "We ignored the correct path."),
+    DialogueLine("Vellum", "And therefore found the right one."),
+    DialogueLine("Nib", "I hate when wisdom sounds like budget design."),
+    DialogueLine("Questbook", "QUEST COMPLETE: DIRECTIONS ACQUIRED."),
+    DialogueLine("Nib", "Good. Can we acquire lunch?")
 )
 
 // --- Room contexts ---
@@ -841,7 +1078,14 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
             }
         }
     }
-    bridgeScene.onEntityInteraction = { _ -> }
+    bridgeScene.onEntityInteraction = { _ ->
+        if (phase == SlicePhase.CHAPTER2_BRIDGE) {
+            lastActivityTime = clock()
+            dialogueLines = CHAPTER2_BRIDGE_LINES
+            dialogueIndex = 0
+            phase = SlicePhase.CHAPTER2_MARKET_NPC
+        }
+    }
 
     // --- keyboard shortcut for exploration phases ---
 
@@ -891,6 +1135,7 @@ private fun SliceContent(clock: () -> Long, onReset: () -> Unit) {
                                 SlicePhase.CHAPTER2_CHAPEL_EXT  -> chapelExtScene.onEntityInteraction?.invoke(npc)
                                 SlicePhase.CHAPTER2_TEMPLE_EXT  -> templeExtScene.onEntityInteraction?.invoke(npc)
                                 SlicePhase.CHAPTER2_GLASSBLOWERS -> glassblowersExtScene.onEntityInteraction?.invoke(npc)
+                                SlicePhase.CHAPTER2_BRIDGE       -> bridgeScene.onEntityInteraction?.invoke(npc)
                                 else -> {}
                             }
                         }
