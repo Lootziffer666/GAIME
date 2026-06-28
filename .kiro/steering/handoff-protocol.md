@@ -2,6 +2,23 @@
 
 **Status:** BINDING. Diese Regeln gelten für alle Kiro-Aufträge in diesem Repo.
 
+## Modell-Anforderung (verbindlich, vor allem anderen)
+
+**Kiro-Aufträge in diesem Repo laufen ausschließlich auf Opus.** Jeder Brief trägt im
+Header eine Zeile `MODELL: Opus-only`. Wird ein Auftrag auf einem schwächeren Modell
+ausgeführt, gilt das als nicht-konforme Lieferung.
+
+- **Bei neuem oder reaktiviertem Thread zuerst das Modell prüfen**, bevor irgendeine
+  Arbeit beginnt. Ein neuer Thread erbt die Modellwahl NICHT automatisch — sie muss
+  ausgehandelt/bestätigt sein.
+- Steht das Modell nicht fest auf Opus → **nicht starten.** Im Result-Report vermerken:
+  „Abgebrochen — Modell nicht als Opus bestätigt. Claude Code/Owner muss Thread mit
+  Opus aufsetzen."
+- Hintergrund (Erfahrung Step 8, 2026-06-28): Bei degradiertem/totem Thread kam die
+  test-gedeckte `:core`-Logik sauber durch, aber das `:game`-Rendering hatte
+  Flüchtigkeitsfehler (Filter-Stacking-Clobber, Overlay-Position/Farbe). Genau die
+  Fehlerklasse, die ein Nicht-Opus-Lauf produziert. Deshalb: Modell zuerst, dann Arbeit.
+
 ## Pflichtlektüre vor Arbeitsbeginn
 
 Diese Dateien **vor jedem Auftrag** lesen:
