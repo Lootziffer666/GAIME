@@ -35,7 +35,9 @@ class WaterOverlay(
                     rect.y = (y + grid.offsetY).toDouble() * tileHeight
                     rect.width = tileWidth.toDouble()
                     rect.height = tileHeight.toDouble()
-                    rect.color = RGBA(0x33, 0x66, 0xcc, (depth.coerceAtMost(1f) * 120).toInt())
+                    // Alpha floor so shallow puddles still read against busy ground
+                    // (and survive the rain shader overlay); deeper = more opaque.
+                    rect.color = RGBA(0x22, 0x55, 0x99, (110 + depth.coerceAtMost(1f) * 140).toInt())
                     rect.visible = true
                     rectIndex++
                 }

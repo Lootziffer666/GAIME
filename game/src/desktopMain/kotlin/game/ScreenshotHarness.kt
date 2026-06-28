@@ -537,12 +537,13 @@ private fun captureWorldRainPuddles() {
         mapView.x = VW / 2.0 - player.visualGridX * tiledMap.tileWidth * SCALE
         mapView.y = VH / 2.0 - player.visualGridY * tiledMap.tileHeight * SCALE
 
-        // Rain + puddles
+        // Rain + puddles. Grid offset -10/-5 → grid index (gx,gy) = tile (gx-10, gy-5).
+        // Player spawns at tile (-5,9) = grid (5,14); fill around it so the camera
+        // (centred on the player) actually frames the puddles.
         val grid = rpg.weather.WaterGrid(20, 20, offsetX = -10, offsetY = -5)
-        // Pre-fill puddles (deterministic)
-        for (x in 3..7) for (y in 2..4) grid[x, y] = 0.4f
-        for (x in 10..14) for (y in 6..9) grid[x, y] = 0.3f
-        grid[5, 3] = 0.8f // deep center
+        for (x in 3..7) for (y in 12..16) grid[x, y] = 0.4f
+        for (x in 8..11) for (y in 13..15) grid[x, y] = 0.3f
+        grid[5, 14] = 0.85f // deep puddle at the player's feet
         val waterOverlay = WaterOverlay(mapView, tiledMap.tileWidth, tiledMap.tileHeight)
         waterOverlay.update(grid)
 
@@ -572,12 +573,12 @@ private fun captureWorldPuddleDrain() {
         mapView.x = VW / 2.0 - player.visualGridX * tiledMap.tileWidth * SCALE
         mapView.y = VH / 2.0 - player.visualGridY * tiledMap.tileHeight * SCALE
 
-        // Puddles with a drain tile — water flows toward drain, lower levels visible
-        val drainTiles = setOf(8 to 5) // center drain
+        // Puddles with a drain tile — water flows toward drain, lower levels visible.
+        // Drain + fill placed around the player tile (-5,9) = grid (5,14) so they're framed.
+        val drainTiles = setOf(5 to 14) // drain at the player's feet
         val grid = rpg.weather.WaterGrid(20, 20, offsetX = -10, offsetY = -5, drainTiles = drainTiles)
-        // Fill area around drain with water
-        for (x in 5..11) for (y in 3..7) grid[x, y] = 0.5f
-        // Simulate a few flow steps so drain effect is visible
+        for (x in 3..7) for (y in 12..16) grid[x, y] = 0.5f
+        // Simulate a few flow steps so the drain depression around (5,14) is visible
         repeat(5) { grid.flowStep() }
         val waterOverlay = WaterOverlay(mapView, tiledMap.tileWidth, tiledMap.tileHeight)
         waterOverlay.update(grid)
