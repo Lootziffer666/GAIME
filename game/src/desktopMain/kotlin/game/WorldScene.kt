@@ -448,7 +448,7 @@ class WorldScene : Scene() {
                     effects.lightingFilter.lights = listOf(lanternLight.copy(tileX = player.gridX, tileY = player.gridY))
                     effects.attachLighting(mapView, effects.lightingFilter.lights, effects.lightingFilter.tilePixelSize)
                 } else {
-                    effects.detach(mapView)
+                    effects.disable(mapView, effects.lightingFilter)
                     shaderBinder.applyPressure(director.pressure) // restore pressure shader if any
                 }
             }
