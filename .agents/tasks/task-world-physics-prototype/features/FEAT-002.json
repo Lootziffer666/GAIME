@@ -2,7 +2,7 @@
   "id": "FEAT-002",
   "type": "feat",
   "description": "Create SnowFilter and BloodFilter GLSL shader filters in :game, and a prototype test scene (PhysicsTestScene) that demonstrates all 5 systems working together. Add screenshot harness captures for CI verification. Integrate with ShaderEffects registry. Torch light uses existing LightingFilter + LightSource. Wind drives RainFilter's windAngle and SnowFilter's drift direction. The scene is a standalone demo level (not wired into WorldScene gameplay yet).",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "Create game/src/desktopMain/kotlin/game/shader/SnowFilter.kt: ShaderFilter that renders a white overlay with alpha proportional to snow depth. Uses a uniform for a small tile-grid sample (8x8 floats packed into vec4 uniforms) plus wind direction to animate falling snow particles. UniformBlock fixedLocation=11. Fragment shader: white overlay (alpha = snowDepth per pixel region) + procedural falling snow particles drifting with wind.",
     "Create game/src/desktopMain/kotlin/game/shader/BloodFilter.kt: ShaderFilter that renders dark red splatters. Uses a uniform for a small tile-grid sample (8x8 packed). UniformBlock fixedLocation=12. Fragment shader: red-black overlay (alpha = bloodLevel per pixel region) with splatter-edge noise pattern.",
@@ -29,5 +29,5 @@
     "./gradlew :game:screenshot (runs, produces PNGs including the 5 new physics_*.png files > 1KB each)"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "All files created and compile successfully. Screenshot harness produces 5 physics_*.png files (79KB-383KB each). Mesa EGL needed to be installed for screenshots (dnf install mesa-libEGL mesa-dri-drivers mesa-libgbm mesa-libGL). Used nested Container hierarchy for combining multiple filters in capturePhysicsComplete (outermost=BloodFilter, middle=SnowFilter, innermost mapView=LightingFilter). PhysicsTestScene is standalone and not wired into main boot sequence."
 }
