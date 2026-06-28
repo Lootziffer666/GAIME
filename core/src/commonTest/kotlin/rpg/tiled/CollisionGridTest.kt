@@ -118,16 +118,28 @@ class CollisionGridTest {
     }
 
     @Test
-    fun `trees layers do not block the floor underneath`() {
-        // ruined-temple names its foliage trees1..trees6; these are decorative canopy
-        // over walkable ground and must NOT blanket the map as SOLID.
+    fun `land drawn over a full water base is walkable`() {
+        // CraftPix maps (e.g. ruined-temple) paint a full-map water canvas at the
+        // bottom and draw land on top. Water runs BEFORE floor so land wins; a
+        // water cell with no land on top stays WATER.
+        val map = mapWith(
+            "water" to listOf(cell(0, 0), cell(1, 0)), // full water base
+            "ground" to listOf(cell(0, 0))             // land drawn over cell (0,0)
+        )
+        val grid = CollisionGrid.from(map)
+        assertEquals(TileType.WALKABLE, grid[0, 0]) // land over water = walkable
+        assertEquals(TileType.WATER, grid[1, 0])    // bare water = WATER
+    }
+
+    @Test
+    fun `trees block movement (player walks around them)`() {
+        // Trees are obstacles, not walk-through. ground stays walkable, the tree cell blocks.
         val map = mapWith(
             "ground" to listOf(cell(0, 0), cell(1, 0)),
-            "trees1" to listOf(cell(0, 0)),
-            "trees4" to listOf(cell(1, 0))
+            "trees1" to listOf(cell(1, 0))
         )
         val grid = CollisionGrid.from(map)
         assertEquals(TileType.WALKABLE, grid[0, 0])
-        assertEquals(TileType.WALKABLE, grid[1, 0])
+        assertEquals(TileType.BLOCKED, grid[1, 0]) // tree blocks
     }
 }

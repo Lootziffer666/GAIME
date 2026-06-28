@@ -315,7 +315,7 @@ data class MapConfig(
             npcs = emptyList(),
             exits = listOf(
                 MapExit(tileX = 0, tileY = -8, destination = MapId.EXTERIOR, spawnX = 0, spawnY = 9),
-                MapExit(tileX = 0, tileY = 4, destination = MapId.BRIDGE, spawnX = 0, spawnY = 0),
+                MapExit(tileX = 0, tileY = 4, destination = MapId.BRIDGE, spawnX = 0, spawnY = 18),
             ),
         )
 
@@ -341,10 +341,8 @@ data class MapConfig(
 
         /**
          * Ruined Temple Exterior — ruined-temple/Tiled_files/Ruined_temple_exterior.tmx.
-         * Infinite map. Grid: 23x17, offset=(-11,-13).
-         * NOTE: CollisionGrid reports 0 walkable cells (trees layers override ground as SOLID).
-         * This is a known limitation (BLOCKER: CollisionGrid.layerType classifies "trees*" as SOLID
-         * even though ground is underneath). Spawn set at visual center of the temple courtyard.
+         * Infinite map. Grid: 23x17, offset=(-11,-13). ~86 walkable cells.
+         * Spawn (0,-2) verified WALKABLE (temple courtyard). Trees block (walk around).
          * Exit: bottom edge → back to BRIDGE.
          */
         fun ruinedTemple(): MapConfig = MapConfig(
@@ -357,16 +355,14 @@ data class MapConfig(
             displayName = "Ruined Temple",
             npcs = emptyList(),
             exits = listOf(
-                MapExit(tileX = 0, tileY = 3, destination = MapId.BRIDGE, spawnX = 0, spawnY = 48),
+                MapExit(tileX = 0, tileY = 3, destination = MapId.BRIDGE, spawnX = 0, spawnY = 18),
             ),
         )
 
         /**
          * Bridge — bridges/PNG_n_Tiled/Bridges.tmx.
-         * Infinite map. Grid: 85x69, offset=(-32,-16).
-         * NOTE: CollisionGrid reports 0 walkable cells (layer "Bridges" classified as SOLID).
-         * BLOCKER: CollisionGrid.layerType should classify "bridges" as FLOOR for this map.
-         * Spawn set at visual center of the bridge structure.
+         * Infinite map. Grid: 85x69, offset=(-32,-16). Bridge surface is WALKABLE
+         * (spans the water); spawn (0,18) verified walkable with open neighbours.
          * Exits: west → GUILD_HALL, east → RUINED_TEMPLE.
          */
         fun bridge(): MapConfig = MapConfig(
@@ -374,12 +370,12 @@ data class MapConfig(
             tmxDir = "assets/HD/locations/bridges/PNG_n_Tiled",
             tmxFile = "Bridges.tmx",
             spawnX = 0,
-            spawnY = 10,
+            spawnY = 18,
             bgmPath = "assets/audio/music/Sovereign_Heights.mp3",
             displayName = "Stone Bridge",
             npcs = emptyList(),
             exits = listOf(
-                MapExit(tileX = -20, tileY = 10, destination = MapId.GUILD_HALL, spawnX = 0, spawnY = 4),
+                MapExit(tileX = -20, tileY = 10, destination = MapId.GUILD_HALL, spawnX = 0, spawnY = -1),
                 MapExit(tileX = 40, tileY = 10, destination = MapId.RUINED_TEMPLE, spawnX = 0, spawnY = -2),
             ),
         )

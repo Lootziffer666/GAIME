@@ -3,13 +3,17 @@ package rpg.tiled
 /**
  * Tile-derived collision raster generated from layer names of a [TiledMap].
  *
- * Strategy (matches the floor-based model in scripts/tmx_render.py):
- * 1. Cells covered by a FLOOR layer → WALKABLE
- * 2. Cells not covered by any FLOOR layer → BLOCKED (ground rule)
- * 3. SOLID layers override with BLOCKED
- * 4. WATER layers override with WATER
- * 5. TRIGGER layers override with TRIGGER
- * 6. DECORATIVE layers have no collision effect
+ * Strategy: honour Tiled's LAYER ORDER. Layers are declared bottom → top; the
+ * topmost non-empty, non-decorative layer at a cell decides its collision type,
+ * exactly as Tiled renders the visible surface. Role → type:
+ *   FLOOR / BRIDGE → WALKABLE,  WATER → WATER,  SOLID → BLOCKED,  TRIGGER → TRIGGER.
+ * DECORATIVE layers are skipped (flowers/objects never change collision).
+ * Cells covered by no collision layer default to BLOCKED.
+ *
+ * This makes both base-layer cases correct without special priority rules:
+ *   - water canvas at the bottom + land on top  → land wins → WALKABLE (ruined-temple)
+ *   - ground at the bottom + a pond on top       → water wins → WATER
+ *   - water + a bridge on top                    → bridge wins → WALKABLE (Bridges.tmx)
  *
  * Bounding box is derived from all non-empty cells across all layers.
  * Negative grid coordinates (infinite maps) are normalized to 0-based indices.
@@ -58,50 +62,27 @@ class CollisionGrid private constructor(
             val cols = maxX - minX + 1
             val rows = maxY - minY + 1
 
-            // 3. Build grid — default BLOCKED (no floor = blocked)
+            // 3. Build grid — default BLOCKED (cell never covered by a collision layer).
             val grid = Array(rows) { Array(cols) { TileType.BLOCKED } }
 
-            // Pass 1: FLOOR → WALKABLE
+            // Honour TILED LAYER ORDER (declared bottom → top): the topmost non-empty,
+            // non-decorative layer at a cell decides its collision type — exactly how
+            // Tiled renders the visible surface. This makes both base-layer cases work:
+            //  - water canvas at the bottom + land on top  → land wins → WALKABLE
+            //  - ground at the bottom + a pond on top      → water wins → WATER
+            // DECORATIVE layers are skipped so flowers/objects never change collision.
             for (cl in classified) {
-                if (cl.role != LayerRole.FLOOR) continue
+                val type = when (cl.role) {
+                    LayerRole.FLOOR, LayerRole.BRIDGE -> TileType.WALKABLE
+                    LayerRole.WATER -> TileType.WATER
+                    LayerRole.SOLID -> TileType.BLOCKED
+                    LayerRole.TRIGGER -> TileType.TRIGGER
+                    LayerRole.DECORATIVE -> continue
+                }
                 for (c in cl.cells) {
-                    grid[c.gridY - minY][c.gridX - minX] = TileType.WALKABLE
+                    grid[c.gridY - minY][c.gridX - minX] = type
                 }
             }
-
-            // Pass 2: WATER → WATER
-            for (cl in classified) {
-                if (cl.role != LayerRole.WATER) continue
-                for (c in cl.cells) {
-                    grid[c.gridY - minY][c.gridX - minX] = TileType.WATER
-                }
-            }
-
-            // Pass 2b: BRIDGE → WALKABLE (spans water — must override the WATER pass)
-            for (cl in classified) {
-                if (cl.role != LayerRole.BRIDGE) continue
-                for (c in cl.cells) {
-                    grid[c.gridY - minY][c.gridX - minX] = TileType.WALKABLE
-                }
-            }
-
-            // Pass 3: SOLID → BLOCKED (overrides floor)
-            for (cl in classified) {
-                if (cl.role != LayerRole.SOLID) continue
-                for (c in cl.cells) {
-                    grid[c.gridY - minY][c.gridX - minX] = TileType.BLOCKED
-                }
-            }
-
-            // Pass 4: TRIGGER → TRIGGER
-            for (cl in classified) {
-                if (cl.role != LayerRole.TRIGGER) continue
-                for (c in cl.cells) {
-                    grid[c.gridY - minY][c.gridX - minX] = TileType.TRIGGER
-                }
-            }
-
-            // DECORATIVE: no-op
 
             return CollisionGrid(cols, rows, minX, minY, grid)
         }
@@ -121,15 +102,12 @@ class CollisionGrid private constructor(
                 // BRIDGE — walkable surface that spans water (must override WATER).
                 lower.startsWith("bridge") -> LayerRole.BRIDGE
 
-                // SOLID — NOTE: "trees" is intentionally NOT here. Tree layers are
-                // decorative canopy/foliage drawn over walkable ground (heroes-home
-                // keeps its trees in DECORATIVE "Objects"/"Grass_top_details" layers);
-                // classifying "trees*" as SOLID blanketed whole maps (ruined-temple →
-                // 0 walkable). Trees fall through to DECORATIVE (non-blocking).
+                // SOLID — trees block movement (walk around them; destructible via the
+                // BRUGG_ATTACK → ClearObstacle "Demolition Permit" bark is a future hook).
                 lower.startsWith("wall") || lower.startsWith("house") ||
                     lower.startsWith("roof") || lower.startsWith("fence") ||
                     lower.startsWith("statues") || lower.startsWith("columns") ||
-                    lower.startsWith("bricks") ||
+                    lower.startsWith("bricks") || lower.startsWith("trees") ||
                     lower.startsWith("boxes") ||
                     lower.startsWith("tent") || lower.startsWith("stovepipe") ||
                     lower.startsWith("forge") || lower.startsWith("barrel") ||
