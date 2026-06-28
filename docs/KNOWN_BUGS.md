@@ -28,8 +28,19 @@ Format: `[ID] Kurzbeschreibung — gefunden von, Datum, betroffene Datei(en), St
   Spalten = Animationsframes). Die alte `sliceFrames` (frameSize = 256) schnitt 3 Riesen-Slices à
   256², jeder mit mehreren Charakteren → ein Sprite rendert als Duplikat-Reihe. Fix: `sliceFrames`
   nimmt `frameSize = 64` und liefert Reihe 0 (Front-Animation). Visuell per `:game:screenshot`
-  verifiziert (interior/exterior/battle). **Offen als Enhancement:** Richtungs-Reihen (oben/unten/
-  links/rechts) statt nur scaleX-Flip nutzen.
+  verifiziert (interior/exterior/battle). **Enhancement erledigt (Step 6b):** `SpriteLoader.sliceAllRows()`/
+  `loadAllRows()` schneiden alle 4 Reihen; `CharacterSprite` wählt die Reihe per `Facing.rowIndex()`
+  (DOWN=0, LEFT=1, UP=2, RIGHT=3), scaleX-Flip nur noch als Single-Row-Fallback.
+
+- **B009 — In den Battle-Captures rendert nur EIN Sprite (Vampir), der Hero-Swordsman fehlt.**
+  Gefunden: Claude, 2026-06-28 (per Offscreen-Screenshot, Step-6b-Integration). Betrifft:
+  `BattleScene.kt` / `ScreenshotHarness.kt` (`captureBattle*`). Status: **offen**, kein Blocker.
+  Sowohl die bestehende `battle.png` (vor Step 6b) als auch die neuen `battle_midway.png`/
+  `battle_victory.png` zeigen nur den Vampir mittig — der Hero bei `gridX=2,gridY=3` ist unsichtbar.
+  HP-Bars + Labels stimmen, also ist es kein Logik-, sondern ein reines Render-/Positionierungsproblem
+  (vermutlich landet der Hero bei 48px-Tiles außerhalb des sichtbaren Bereichs oder hinter dem
+  Hintergrund-`solidRect`). **Vorbestehend** — keine Regression aus PR#40. Zu untersuchen wenn die
+  BattleScene das nächste Mal angefasst wird (Step 7b Combat-Tiefe).
 
 - **B006 — `resourcesVfs` löst über den Classpath auf, nicht über das Dateisystem.**
   Gefunden: Claude, 2026-06-28. Betrifft: jeden Asset-Load (`resourcesVfs["assets/..."]`).
@@ -74,7 +85,7 @@ Format: `[ID] Kurzbeschreibung — gefunden von, Datum, betroffene Datei(en), St
 - **Kiro briefen während Branches offen sind**: führt zu 3-Way-Divergenz. Immer erst `git fetch --all --prune` + Branch-Audit, dann brief.
 - **`settings.gradle.kts` anfassen ohne Auftrag**: Kiro hat dieses File mehrfach unaufgefordert geändert. Immer explizit in `DO_NOT_TOUCH` setzen wenn ein neues Modul im Auftrag ist.
 - **Compose-UI-Features investieren**: `composeApp/` ist Throwaway (KorGE-Migration). Keinen Aufwand in SliceScreen/DialogueLine/BarkAudioPlayer stecken.
-- **Step-6-Fehllieferung**: 6b (Richtungs-Sprites), 6c (Bark-Pipeline), 6d (Scripted Playthrough) aus PR#38 wurden nicht implementiert, trotz Claim im Result-Brief. Nächstes Brief muss diese explizit fordern und SCOPE auf die richtigen Dateien beschränken.
+- **Step-6-Fehllieferung**: 6b (Richtungs-Sprites), 6c (Bark-Pipeline), 6d (Scripted Playthrough) aus PR#38 wurden nicht implementiert, trotz Claim im Result-Brief. **Erledigt:** PR#40 (Step 6b/c/d) hat alle drei sauber nachgeliefert — und erstmals KEIN B007-Revert. Das explizite, dateigenaue Brief + `localCurrentDirVfs`-Zeile in `DO_NOT_TOUCH` hat funktioniert; dieses Muster für künftige Briefs beibehalten.
 
 ---
 

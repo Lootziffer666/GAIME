@@ -6,7 +6,10 @@ Step 3b done (Android target für `:game`). Step 4 done (Tiled tilemap loader +
 tile-derived collision in `:core`). Step 4b done (TiledMap renderer + PlayerSprite
 in `:game`). Step 5a done (real sprites, BattleScene, audio). Step 5b done (world layer: smooth
 movement, NPCs, dialog, HUD, map transitions). Step 5 done (Compose gameplay
-engine retired; `:composeApp` = Waitroom-only). This document is the agreed, recorded plan for a
+engine retired; `:composeApp` = Waitroom-only). Step 6a done (607 bark WAVs migrated to
+`assets/audio/bark/`). Step 6b/c/d done (directional sprite rows, audio-backed bark
+pipeline in `:game`, scripted playthrough screenshots). Step 7a done (screen-space
+GLSL shader effects + concept docs). This document is the agreed, recorded plan for a
 larger, multi-step effort and is committed *before* the heavy work begins.
 
 It extends `.kiro/steering/rendering-engine.md` (the locked KorGE 2.5D decision)
@@ -186,6 +189,36 @@ Full gameplay world layer replacing TiledMapScene as boot target:
   `PlatformAudioPlayer` expect/actual, gamepad code (in-doubt-keep rule).
 - `App.kt` reduced to render only `WaitroomScreen`.
 **Acceptance met:** all modules compile, all tests green (incl. moved tests in `:core`).
+
+### Step 6a — Bark audio asset migration — ✅ done
+607 bark voice-line WAVs moved from `:composeApp` resources to
+`game/.../assets/audio/bark/`. `:composeApp` is now asset-free. `BarkAudioRegistry`
+resolves paths *without* the `assets/audio/` prefix; the `:game` audio layer adds it.
+
+### Step 6b/c/d — Directional sprites + bark pipeline + scripted playthrough — ✅ done
+- **6b:** `SpriteLoader.sliceAllRows()`/`loadAllRows()` slice all 4 CraftPix rows;
+  `CharacterSprite` selects the row by `Facing` (DOWN=0, LEFT=1, UP=2, RIGHT=3), with
+  scaleX-flip fallback for single-row sheets.
+- **6c:** `GameAudioPlayer` implements `:core`'s `AudioPlayer` over the KorGE audio
+  API; `SliceDirector` is wired into `WorldScene` (E-key bark on NPC interaction,
+  `enterRoom`) and `BattleScene` (`combatAction` + `BRUGG_ATTACK`); `NpcDefinition`
+  gained a `barkEvent` field, configured in `MapConfig`.
+- **6d:** four new `ScreenshotHarness` captures (interior_dialog, exterior_dialog,
+  battle_midway, battle_victory).
+**Acceptance met:** all 3 compile checks green; 12 PNGs render via `:game:screenshot`.
+
+### Step 7a — Screen-space shader effects — ✅ done
+`game/.../shader/`: `ShaderEffects` registry + time driver, and five `ShaderFilter`
+effects (Poison, BeerGoggle, Lighting, Rain, HeatShimmer) with their own GLSL.
+Five shader captures added to the harness. Concept docs (`docs/HORROR_SHADER_CONCEPT.md`,
+`docs/SHADER_GAME_CONCEPT.md`, `docs/ONTOLOGIE_DES_SICHTBAREN.md`, …) record the
+"shader-first" design direction: the shaders are intended to *be* visible game state.
+
+### Step 7b — next (not yet briefed)
+Make the `SliceDirector`'s reactions actually reach the screen in `:game` — either as
+conventional Questbook-UI HUD markers, or driving the Step 7a shaders directly (the
+shader-first vision). Currently `WorldScene` fires barks but the reactions are not
+yet surfaced. Combat depth (BossPhase/Adds visualization) is a parallel follow-up.
 
 ---
 

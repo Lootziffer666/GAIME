@@ -4,7 +4,10 @@
 
 **The Completely Official Quest of Questionable Importance**
 
-![GAIME — in-game screenshot of the HD-2D top-down world](docs/qa/artifacts/screenshot-2026-06-23T16-21-13-589Z.png)
+![GAIME — KorGE HD-2D top-down world, tavern interior with dialog](docs/screenshots/step6-interior-dialog.png)
+
+*Genuine KorGE engine output, rendered headlessly via the offscreen GL screenshot
+harness — not a mockup. See the [screenshot gallery](docs/screenshots/) for more.*
 
 A dry, British-bureaucratic fantasy comedy RPG in an 8/16-bit SNES/Mega-Drive
 top-down pixel style. Three misfit adventurers in the harbour town of
@@ -113,13 +116,18 @@ contradictory quests, the Questbook overloads and imposes a `GAME OVER` upon
 GAIME is a **Kotlin Multiplatform** project targeting **Desktop (JVM)** and
 **Android**. The game logic is fully renderer-agnostic and lives in a pure
 `:core` module so it can be unit-tested headlessly and rendered by any frontend.
+The playable game is rendered by the **`:game` KorGE module**; `:composeApp` has
+been reduced to a thin waitroom/menu shell (its old Compose-Canvas gameplay engine
+was retired in the KorGE migration).
 
 ```
 :core        Pure, engine-agnostic Kotlin game logic. No Compose, no renderer deps.
              - rpg.bark        BarkEvent / BarkRegistry / BarkEventBus / AmbientBarks
+             - rpg.bark.audio  AudioPlayer interface + BarkAudioPlayer (engine-agnostic)
              - rpg.questbook   QuestbookProcessor, QuestPressure, RoomContext, reactions
              - rpg.combat      CombatEngine, boss controllers, EnemyArchetype, AttackStyle
-             - rpg.world       grid world, tilemaps, camera, movement
+             - rpg.tiled       own TMX tilemap loader + tile-derived CollisionGrid
+             - rpg.world       grid world, camera, movement
              - rpg.duel        Insult Duel mini-system
              - rpg.staging     Dramatic entrances (DramaticEntrance / EntranceLibrary)
              - rpg.humor       SatiricalQuestbook
@@ -127,15 +135,26 @@ GAIME is a **Kotlin Multiplatform** project targeting **Desktop (JVM)** and
              - rpg.credits     end-credits data
              - rpg.i18n        Localizer (9 languages; text only, audio stays English)
              - rpg.finale      QuestbookOverload climax mechanic
+             - rpg.SliceDirector   traceable spine: Bark → Questbook → effect, + combat
              - rpg.Chapter / rpg.SlicePhase, core.GameStateMachine, signals.*
              + all pure unit tests (commonTest)
 
-:composeApp  Compose Multiplatform frontend (depends on :core).
-             - ui.*            Compose UI screens (SliceScreen, RPG demo, waitroom)
-             - engine.*        the Compose Canvas rendering/particle engine
-             - rpg.SliceDirector   orchestrates :core logic + audio for the slice
-             - rpg.bark.audio.*    platform audio playback (expect/actual)
-             - app.App         top-level composable, Android & Desktop entry points
+:game        KorGE 6.0.0 frontend (depends on :core). The playable game.
+             - WorldScene      TMX world: smooth movement, NPCs, dialog (E), camera follow
+             - BattleScene     turn-based combat wired to :core CombatEngine + bark pipeline
+             - CharacterSprite directional CraftPix sprite rows (DOWN/LEFT/UP/RIGHT)
+             - TiledMapView    renders :core tilemaps (flip bits, animated tiles)
+             - HudOverlay / DialogOverlay   screen-fixed HUD + dialog box
+             - GameAudioPlayer KorGE AudioPlayer impl (music, SFX, bark voice lines)
+             - shader.*        screen-space GLSL effects (poison, beer-goggle, lighting, rain, heat)
+             - ScreenshotHarness   headless offscreen-GL render harness for CI screenshots
+             Desktop (JVM 21) is primary; Android target compiles.
+
+:composeApp  Interim Compose Multiplatform shell (depends on :core).
+             - WaitroomScreen / GameCanvas   menu / waitroom only
+             - rpg.bark.audio  PlatformAudioPlayer expect/actual
+             - app.App         renders the waitroom; Android & Desktop entry points
+             Treated as throwaway — removed once :game reaches full parity.
 ```
 
 ### Localization
@@ -146,16 +165,33 @@ All user-facing **text** is localized via `:core`'s `Localizer` into 9 languages
 
 ### Rendering engine direction
 
-The current playable frontend uses a **Compose Canvas** engine. The locked
-long-term renderer is **KorGE 2.5D** (GPU-accelerated, HD-2D layered look, still
-Kotlin Multiplatform); the staged migration extracts `:core` (done), adds a
-`:game` KorGE module (done), and ports gameplay before retiring the Compose
-engine. **Steps 3, 3b, and 4 are done**: the 2.5D HD-2D stage is ported to KorGE
-6.0.0 (compiles), `:game` has an Android target, and the Tiled tilemap loader +
-tile-derived collision grid lives in `:core`; **Step 4b** (gameplay into KorGE —
-world movement, sprites, dialogue, combat) is next. See
+The playable frontend is **KorGE 6.0.0** (GPU-accelerated, HD-2D layered look,
+still Kotlin Multiplatform), the locked long-term renderer. The staged migration
+is essentially complete: `:core` extracted, the `:game` KorGE module built, the
+TMX tilemap loader + tile-derived collision moved to `:core`, real CraftPix
+sprites + battle + audio ported, the full world layer (movement, NPCs, dialog,
+HUD, map transitions) implemented, and the old Compose-Canvas gameplay engine
+**retired** (`:composeApp` is now waitroom-only). Recent work added directional
+sprite rows, an audio-backed bark pipeline in `:game`, and screen-space GLSL
+shader effects. See
 [`.kiro/steering/rendering-engine.md`](.kiro/steering/rendering-engine.md) and
 [`docs/KORGE_MIGRATION_PLAN.md`](docs/KORGE_MIGRATION_PLAN.md).
+
+### Screenshots
+
+All rendered headlessly through the offscreen-GL [`ScreenshotHarness`](game/src/desktopMain/kotlin/game/ScreenshotHarness.kt)
+— genuine engine output, reproducible with `./gradlew :game:screenshot` (see
+[`docs/screenshots/`](docs/screenshots/)).
+
+| Tavern interior + dialog | Village exterior + dialog | Battle |
+|---|---|---|
+| ![interior](docs/screenshots/step6-interior-dialog.png) | ![exterior](docs/screenshots/step6-exterior-dialog.png) | ![battle](docs/screenshots/step6-battle-victory.png) |
+
+Screen-space shader effects (poison, beer-goggle, lighting, rain, heat shimmer):
+
+| Poison | Beer goggle | Lighting |
+|---|---|---|
+| ![poison](docs/screenshots/step7a-shader-poison.png) | ![beer](docs/screenshots/step7a-shader-beer-goggle.png) | ![lighting](docs/screenshots/step7a-shader-lighting.png) |
 
 ---
 
@@ -174,21 +210,27 @@ world movement, sprites, dialogue, combat) is next. See
 # Run the pure logic + tests for the core module (fast, headless, no UI)
 ./gradlew :core:desktopTest
 
-# Run the Compose app's tests
-./gradlew :composeApp:desktopTest
+# Compile the KorGE game module (the playable frontend)
+./gradlew :game:compileKotlinDesktop
+
+# Run the KorGE game in a desktop window (needs a GL-capable display)
+./gradlew :game:run
+
+# Render the game headlessly to PNGs (no window; uses Mesa EGL software GL)
+bash scripts/setup-gl.sh          # one-time: install the headless GL stack
+./gradlew :game:screenshot        # writes build/screenshots/*.png
 
 # Build everything
 ./gradlew build
 
-# Run the desktop app
+# Run / build the interim Compose waitroom shell
 ./gradlew :composeApp:run
-
-# Build a debug Android APK (requires Android SDK)
-./gradlew :composeApp:assembleDebug
+./gradlew :composeApp:assembleDebug   # debug Android APK (requires Android SDK)
 ```
 
-> CI/headless environments can compile and unit-test `:core` and compile
-> `:composeApp`, but cannot open a GL/desktop window — visual verification is
+> CI/headless environments can compile and unit-test `:core`, compile `:game`
+> and `:composeApp`, and **render the game to PNGs via the offscreen-GL
+> screenshot harness**. Opening an interactive GL window (`:game:run`) is
 > manual/local.
 
 ---
