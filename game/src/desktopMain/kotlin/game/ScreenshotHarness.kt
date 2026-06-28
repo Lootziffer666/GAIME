@@ -57,6 +57,11 @@ fun main() {
     captureQuestbookReaction()
     captureWorldPressureHigh()
     captureBattleBossPhase2()
+    captureWorldRainPuddles()
+    captureWorldPuddleDrain()
+    captureWorldLantern()
+    captureWorldDrunk()
+    captureQuestbookOpen()
 }
 
 private fun captureWorld(config: MapConfig, name: String, withDialog: Boolean) {
@@ -515,5 +520,169 @@ private fun captureBattleBossPhase2() {
         QuestbookOverlay(this, VW, VH).showMessage("The Accountant files objections!", QuestPressure.HIGH)
 
         save("battle_boss_phase2")
+    }
+}
+
+private fun captureWorldRainPuddles() {
+    val config = MapConfig.exterior()
+    korgeScreenshotTest(Size(VW, VH)) {
+        val tiledMap = rpg.tiled.TmxLoader.parse(resourcesVfs[config.tmxPath].readString())
+        val atlases = tiledMap.tilesets.map { TilesetAtlas.load(it, config.tmxDir) }
+        val mapView = TiledMapView(tiledMap, atlases)
+        mapView.scale = SCALE
+        addChild(mapView)
+        val player = CharacterSprite(mapView, tiledMap.tileWidth, tiledMap.tileHeight)
+        player.loadSwordsman(); player.gridX = config.spawnX; player.gridY = config.spawnY
+        player.play(SpriteAnimation.IDLE)
+        mapView.x = VW / 2.0 - player.visualGridX * tiledMap.tileWidth * SCALE
+        mapView.y = VH / 2.0 - player.visualGridY * tiledMap.tileHeight * SCALE
+
+        // Rain + puddles. Grid offset -10/-5 → grid index (gx,gy) = tile (gx-10, gy-5).
+        // Player spawns at tile (-5,9) = grid (5,14); fill around it so the camera
+        // (centred on the player) actually frames the puddles.
+        val grid = rpg.weather.WaterGrid(20, 20, offsetX = -10, offsetY = -5)
+        for (x in 3..7) for (y in 12..16) grid[x, y] = 0.4f
+        for (x in 8..11) for (y in 13..15) grid[x, y] = 0.3f
+        grid[5, 14] = 0.85f // deep puddle at the player's feet
+        val waterOverlay = WaterOverlay(mapView, tiledMap.tileWidth, tiledMap.tileHeight)
+        waterOverlay.update(grid)
+
+        // Rain shader
+        val effects = game.shader.ShaderEffects()
+        effects.rainFilter.intensity = 0.7f
+        effects.rainFilter.time = 2.0f
+        effects.attachRain(mapView)
+
+        val hero = Combatant(id = "nib", name = "Nib", maxHp = 80, side = Side.PLAYER, attackPower = 12)
+        HudOverlay(this, hero, Inventory(initialGold = 50), "Village (RAINING)")
+        save("world_rain_puddles")
+    }
+}
+
+private fun captureWorldPuddleDrain() {
+    val config = MapConfig.exterior()
+    korgeScreenshotTest(Size(VW, VH)) {
+        val tiledMap = rpg.tiled.TmxLoader.parse(resourcesVfs[config.tmxPath].readString())
+        val atlases = tiledMap.tilesets.map { TilesetAtlas.load(it, config.tmxDir) }
+        val mapView = TiledMapView(tiledMap, atlases)
+        mapView.scale = SCALE
+        addChild(mapView)
+        val player = CharacterSprite(mapView, tiledMap.tileWidth, tiledMap.tileHeight)
+        player.loadSwordsman(); player.gridX = config.spawnX; player.gridY = config.spawnY
+        player.play(SpriteAnimation.IDLE)
+        mapView.x = VW / 2.0 - player.visualGridX * tiledMap.tileWidth * SCALE
+        mapView.y = VH / 2.0 - player.visualGridY * tiledMap.tileHeight * SCALE
+
+        // Puddles with a drain tile — water flows toward drain, lower levels visible.
+        // Drain + fill placed around the player tile (-5,9) = grid (5,14) so they're framed.
+        val drainTiles = setOf(5 to 14) // drain at the player's feet
+        val grid = rpg.weather.WaterGrid(20, 20, offsetX = -10, offsetY = -5, drainTiles = drainTiles)
+        for (x in 3..7) for (y in 12..16) grid[x, y] = 0.5f
+        // Simulate a few flow steps so the drain depression around (5,14) is visible
+        repeat(5) { grid.flowStep() }
+        val waterOverlay = WaterOverlay(mapView, tiledMap.tileWidth, tiledMap.tileHeight)
+        waterOverlay.update(grid)
+
+        val hero = Combatant(id = "nib", name = "Nib", maxHp = 80, side = Side.PLAYER, attackPower = 12)
+        HudOverlay(this, hero, Inventory(initialGold = 50), "Village (DRAIN)")
+        save("world_puddle_drain")
+    }
+}
+
+private fun captureWorldLantern() {
+    val config = MapConfig.interior()
+    korgeScreenshotTest(Size(VW, VH)) {
+        val tiledMap = rpg.tiled.TmxLoader.parse(resourcesVfs[config.tmxPath].readString())
+        val atlases = tiledMap.tilesets.map { TilesetAtlas.load(it, config.tmxDir) }
+        val mapView = TiledMapView(tiledMap, atlases)
+        mapView.scale = SCALE
+        addChild(mapView)
+        val player = CharacterSprite(mapView, tiledMap.tileWidth, tiledMap.tileHeight)
+        player.loadSwordsman(); player.gridX = config.spawnX; player.gridY = config.spawnY
+        player.play(SpriteAnimation.IDLE)
+        mapView.x = VW / 2.0 - player.visualGridX * tiledMap.tileWidth * SCALE
+        mapView.y = VH / 2.0 - player.visualGridY * tiledMap.tileHeight * SCALE
+
+        // Lantern lighting on player
+        val tilePx = (tiledMap.tileWidth * SCALE).toFloat()
+        val effects = game.shader.ShaderEffects()
+        effects.lightingFilter.ambientDarkness = 0.1f
+        effects.lightingFilter.tilePixelSize = tilePx
+        effects.lightingFilter.time = 1.5f
+        effects.lightingFilter.lights = listOf(
+            game.shader.LightSource(tileX = config.spawnX, tileY = config.spawnY,
+                radius = 5f, r = 1.0f, g = 0.8f, b = 0.4f, intensity = 0.9f, flickerSpeed = 3f)
+        )
+        effects.attachLighting(mapView, effects.lightingFilter.lights, tilePx)
+
+        val hero = Combatant(id = "nib", name = "Nib", maxHp = 80, side = Side.PLAYER, attackPower = 12)
+        HudOverlay(this, hero, Inventory(initialGold = 50), "Heroes' Home (LANTERN)")
+        save("world_lantern")
+    }
+}
+
+private fun captureWorldDrunk() {
+    val config = MapConfig.interior()
+    korgeScreenshotTest(Size(VW, VH)) {
+        val tiledMap = rpg.tiled.TmxLoader.parse(resourcesVfs[config.tmxPath].readString())
+        val atlases = tiledMap.tilesets.map { TilesetAtlas.load(it, config.tmxDir) }
+        val mapView = TiledMapView(tiledMap, atlases)
+        mapView.scale = SCALE
+        addChild(mapView)
+        val player = CharacterSprite(mapView, tiledMap.tileWidth, tiledMap.tileHeight)
+        player.loadSwordsman(); player.gridX = config.spawnX; player.gridY = config.spawnY
+        player.play(SpriteAnimation.IDLE)
+        for (npc in config.npcs) {
+            val s = CharacterSprite(mapView, tiledMap.tileWidth, tiledMap.tileHeight)
+            s.loadFromSheet(npc.idleSheetPath); s.gridX = npc.tileX; s.gridY = npc.tileY; s.facing = npc.facing
+            s.play(SpriteAnimation.IDLE)
+        }
+        mapView.x = VW / 2.0 - player.visualGridX * tiledMap.tileWidth * SCALE
+        mapView.y = VH / 2.0 - player.visualGridY * tiledMap.tileHeight * SCALE
+
+        // Beer Goggles (3 ales deep)
+        val effects = game.shader.ShaderEffects()
+        effects.beerGoggleFilter.drunkLevel = 0.7f
+        effects.beerGoggleFilter.time = 3.0f
+        effects.attachBeerGoggle(mapView)
+
+        val hero = Combatant(id = "nib", name = "Nib", maxHp = 80, side = Side.PLAYER, attackPower = 12)
+        HudOverlay(this, hero, Inventory(initialGold = 12), "Heroes' Home (DRUNK)")
+        save("world_drunk")
+    }
+}
+
+private fun captureQuestbookOpen() {
+    korgeScreenshotTest(Size(VW, VH)) {
+        // Simulate an open questbook with real pipeline data
+        val director = SliceDirector { 0L }
+        director.enterRoom(rpg.questbook.RoomContext(mapId = "tavern", roomId = rpg.questbook.RoomContext.ROOM_TAVERN, hasInteractableTarget = true))
+        director.fireBark(BarkEvent.NIB_SMELL_TREASURE)
+        director.fireBark(BarkEvent.BRUGG_ATTACK)
+
+        // Build the questbook screen content directly (no scene transition in harness)
+        solidRect(VW, VH, RGBA(0x1a, 0x12, 0x08, 0xff))
+        val bookW = VW * 0.85; val bookH = VH * 0.8
+        val bookX = (VW - bookW) / 2.0; val bookY = (VH - bookH) / 2.0
+        solidRect(bookW, bookH, RGBA(0xf5, 0xe6, 0xc8, 0xff)).apply { x = bookX; y = bookY }
+        solidRect(4.0, bookH, Colors["#5c3a1e"]).apply { x = bookX + bookW / 2.0 - 2.0; y = bookY }
+
+        // Left page: entries
+        text("OFFICIAL QUEST LOG", textSize = 12.0, color = Colors["#5c3a1e"]).apply { x = bookX + 16.0; y = bookY + 16.0 }
+        for ((i, entry) in director.questbook.log.withIndex()) {
+            val t = if (entry.questbookText.length > 45) entry.questbookText.take(45) + "..." else entry.questbookText
+            text("\u2022 $t", textSize = 10.0, color = Colors["#3a2a1a"]).apply { x = bookX + 16.0; y = bookY + 36.0 + i * 16.0 }
+        }
+
+        // Right page: markers + party
+        val rightX = bookX + bookW / 2.0 + 16.0
+        text("ACTIVE ASSIGNMENTS", textSize = 12.0, color = Colors["#5c3a1e"]).apply { x = rightX; y = bookY + 16.0 }
+        val allMarkers = director.questMarkers + director.falseMarkers
+        for ((i, m) in allMarkers.withIndex()) {
+            text("\u25B6 $m", textSize = 10.0, color = Colors["#3a2a1a"]).apply { x = rightX; y = bookY + 36.0 + i * 16.0 }
+        }
+        text("PRESSURE: ${director.pressure.name}", textSize = 10.0, color = Colors["#22cc22"]).apply { x = rightX; y = bookY + bookH - 30.0 }
+
+        save("questbook_open")
     }
 }
