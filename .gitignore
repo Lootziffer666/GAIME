@@ -53,3 +53,4 @@ Thumbs.db
 
 # Extracted audio archives (temporary)
 .extracted/
+node_modules/

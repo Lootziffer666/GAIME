@@ -1,0 +1,23 @@
+{
+  "name": "gaime",
+  "version": "1.0.0",
+  "description": "![Quest Accepted: Unfortunately — title screen](composeApp/src/commonMain/composeResources/drawable/title_screen.png)",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://us-east-1.gateway.connections.autonomous-agents.kiro.dev/Lootziffer666/GAIME.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "cue-agent": "github:Lootziffer666/CUE-AGENT"
+  }
+}
