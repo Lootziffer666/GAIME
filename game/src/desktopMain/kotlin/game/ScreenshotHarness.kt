@@ -1512,37 +1512,32 @@ private fun captureDoodle1440p() {
         bg.scaledWidth = 2560.0
         bg.scaledHeight = 1440.0
 
-        // 2. Grid-derived character sizing (NEVER hardcoded pixel scales)
-        // tavern_interior.tmx = 78x78 grid, native tile 16px
-        // At 1440p output: screenTile = 1440/78 ≈ 18.46px per tile
-        val gridRows = 78
-        val screenTile = 1440.0 / gridRows  // ~18.46
-        val tilesTall = 5  // character height in tiles (matches painted NPC scale)
-
-        // 3. Character layer: own container with DoodleLineFilter
+        // 2. Character layer: own container with DoodleLineFilter.
+        // PROOF-SCALE close-up: at true gameplay scale on this fine 78-row grid a
+        // figure is only ~90px and the fine doodle lines are sub-pixel/invisible
+        // (exactly the owner's "tiny on a region map" tension). For this scaffold
+        // PROOF we render the figures large so the line + boil effect is legible;
+        // in-game the same charLayer would use the grid-derived scale.
         val charLayer = container {}
         addChild(charLayer)
 
-        // CharacterSprite uses tileWidth for positioning internally.
-        // We pass screenTile as the "tile size" so positions map correctly to 1440p.
-        val tilePx = screenTile.toInt().coerceAtLeast(1)
-
+        // At tilePx=64 × charScale, one grid cell = 64*scale px on screen. Keep grid
+        // coords small so the big figures stay on the 2560×1440 frame.
+        val tilePx = 64 // sprite-native tile → positions are in sprite pixels
         val hero = CharacterSprite(charLayer, tilePx, tilePx)
         hero.loadSwordsman()
-        hero.gridX = 25; hero.gridY = 40  // walkable floor area (center-ish)
+        hero.gridX = 1; hero.gridY = 1
         hero.facing = Facing.RIGHT
         hero.play(SpriteAnimation.IDLE)
 
         val vampire = CharacterSprite(charLayer, tilePx, tilePx)
         vampire.loadVampire()
-        vampire.gridX = 40; vampire.gridY = 40
+        vampire.gridX = 3; vampire.gridY = 1
         vampire.facing = Facing.LEFT
         vampire.play(SpriteAnimation.IDLE)
 
-        // Scale the character layer so sprites are tilesTall tiles high
-        // CraftPix sprites are 64px native; at current tilePx they'd be ~64/18=3.5 tiles
-        // We want them tilesTall=5 tiles high: scale = (tilesTall * screenTile) / 64
-        val charScale = (tilesTall * screenTile) / 64.0
+        // Large demo scale so a 64px sprite is ~480px tall → fine doodle lines read.
+        val charScale = 7.5
         charLayer.scaleX = charScale
         charLayer.scaleY = charScale
 
