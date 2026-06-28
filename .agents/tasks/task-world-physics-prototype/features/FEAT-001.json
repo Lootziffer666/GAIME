@@ -2,7 +2,7 @@
   "id": "FEAT-001",
   "type": "feat",
   "description": "Create per-tile state grids in :core for the 5 world physics systems (Snow, Footprints, Wind, Blood). These are pure Kotlin data structures with simulation logic (accumulation, decay, direction). LightSource already exists in :game so torch light needs no :core grid. All grids are renderer-agnostic and fully unit-tested.",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "Create directory core/src/commonMain/kotlin/rpg/weather/",
     "Create WindState.kt: data class with direction (angle in radians), strength (0.0-1.0), and gustiness. Provides dx/dy components derived from angle+strength. Include update(dt) that slowly drifts direction with Perlin-like smoothness (deterministic seed-based for testing).",
@@ -28,5 +28,5 @@
     "./gradlew :composeApp:compileKotlinDesktop (still compiles)"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "All 9 source+test files created. ./gradlew :core:desktopTest passes (all 37+ tests green including 4 new weather test classes). ./gradlew :game:compileKotlinDesktop passes. No issues encountered. WindState uses data class with private var for elapsed time tracking. SnowGrid.accumulate takes rate as separate parameter (not from wind) for flexibility."
 }
