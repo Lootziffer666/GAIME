@@ -9,7 +9,6 @@ import korlibs.korge.view.SContainer
 import korlibs.korge.view.addUpdater
 import korlibs.korge.view.solidRect
 import korlibs.korge.view.text
-import korlibs.math.geom.Size
 import kotlinx.coroutines.launch
 import rpg.combat.CombatAction
 import rpg.combat.CombatEngine
@@ -25,6 +24,12 @@ import rpg.combat.Side
  * - ENTER/SPACE: Attack
  * - E: Heal
  * - Q: Return to map (flee / after victory/defeat)
+ *
+ * Audio:
+ * - BGM: Defiance_at_Dawn.mp3 (battle theme)
+ * - Attack SFX: 07_human_atk_sword_1.wav
+ * - Hit SFX: 26_sword_hit_1.wav
+ * - Victory SFX: Level up Pickup (Rpg).wav
  */
 class BattleScene : Scene() {
 
@@ -62,31 +67,38 @@ class BattleScene : Scene() {
         // --- HP Bars ---
         val barWidth = 120.0
         val barHeight = 12.0
-        val heroBarBg = solidRect(barWidth, barHeight, Colors["#333333"]).apply { x = 40.0; y = 20.0 }
+        solidRect(barWidth, barHeight, Colors["#333333"]).apply { x = 40.0; y = 20.0 }
         val heroBarFg = solidRect(barWidth, barHeight, Colors["#22cc22"]).apply { x = 40.0; y = 20.0 }
-        val vampBarBg = solidRect(barWidth, barHeight, Colors["#333333"]).apply { x = vw - 160.0; y = 20.0 }
+        solidRect(barWidth, barHeight, Colors["#333333"]).apply { x = vw - 160.0; y = 20.0 }
         val vampBarFg = solidRect(barWidth, barHeight, Colors["#cc2222"]).apply { x = vw - 160.0; y = 20.0 }
 
-        val heroLabel = text("Nib: 80/80", textSize = 14.0, color = Colors.WHITE).apply { x = 40.0; y = 36.0 }
-        val vampLabel = text("Vampire: 60/60", textSize = 14.0, color = Colors.WHITE).apply { x = vw - 160.0; y = 36.0 }
+        val heroLabel = text("Nib: ${hero.hp}/${hero.maxHp}", textSize = 14.0, color = Colors.WHITE)
+            .apply { x = 40.0; y = 36.0 }
+        val vampLabel = text("Vampire: ${vampire.hp}/${vampire.maxHp}", textSize = 14.0, color = Colors.WHITE)
+            .apply { x = vw - 160.0; y = 36.0 }
 
-        val statusText = text("ENTER=Attack  E=Heal  Q=Back", textSize = 12.0, color = Colors["#aaaaaa"]).apply {
-            x = vw / 2.0 - 100.0; y = vh - 30.0
-        }
+        text("ENTER=Attack  E=Heal  Q=Back", textSize = 12.0, color = Colors["#aaaaaa"])
+            .apply { x = vw / 2.0 - 100.0; y = vh - 30.0 }
 
-        val resultText = text("", textSize = 24.0, color = Colors["#ffcc00"]).apply {
-            x = vw / 2.0 - 60.0; y = vh / 2.0 - 12.0
-        }
+        val resultText = text("", textSize = 24.0, color = Colors["#ffcc00"])
+            .apply { x = vw / 2.0 - 60.0; y = vh / 2.0 - 12.0 }
 
-        // --- Audio ---
+        // --- Audio: battle BGM ---
         audioManager.playMusic("assets/audio/music/Defiance_at_Dawn.mp3")
+
+        // --- SFX paths ---
+        val sfxAttack = "assets/audio/sfx/Minifantasy_Dungeon_SFX/07_human_atk_sword_1.wav"
+        val sfxHit = "assets/audio/sfx/Minifantasy_Dungeon_SFX/26_sword_hit_1.wav"
+        val sfxVictory = "assets/audio/sfx/Level up Pickup (Rpg).wav"
 
         // --- Input + Combat Logic ---
         var battleOver = false
+        var heroHpBefore = hero.hp
 
         addUpdater {
             val keys = views.input.keys
 
+            // Q → flee / return to map
             if (keys.justPressed(Key.Q)) {
                 audioManager.stopMusic()
                 launch { sceneContainer.changeTo<TiledMapScene>() }
@@ -96,17 +108,31 @@ class BattleScene : Scene() {
             if (battleOver) return@addUpdater
 
             var acted = false
+
             if (keys.justPressed(Key.RETURN) || keys.justPressed(Key.SPACE)) {
                 // Attack the first living enemy
                 val target = engine.livingEnemies().firstOrNull()
                 if (target != null) {
+                    heroHpBefore = hero.hp
+
+                    // Hero attack animation
                     heroSprite.play(SpriteAnimation.ATTACK, loop = false) {
                         heroSprite.play(SpriteAnimation.IDLE)
                     }
+                    // Attack SFX
+                    launch { audioManager.playSfx(sfxAttack) }
+
+                    // Tick the engine (hero attacks, then enemy retaliates)
                     engine.tick(CombatAction.Attack(target.id))
                     acted = true
+
+                    // Hit SFX for the enemy taking damage
+                    if (vampire.isAlive || !vampire.isAlive) {
+                        launch { audioManager.playSfx(sfxHit) }
+                    }
                 }
             } else if (keys.justPressed(Key.E)) {
+                heroHpBefore = hero.hp
                 engine.tick(CombatAction.Heal)
                 acted = true
             }
@@ -118,25 +144,33 @@ class BattleScene : Scene() {
                 heroLabel.text = "Nib: ${hero.hp}/${hero.maxHp}"
                 vampLabel.text = "Vampire: ${vampire.hp}/${vampire.maxHp}"
 
-                // Animations for damage
+                // --- Vampire animations ---
                 if (!vampire.isAlive) {
                     vampireSprite.play(SpriteAnimation.DEATH, loop = false)
-                } else if (acted) {
+                } else {
+                    // Vampire was hit → hurt animation, then back to idle
                     vampireSprite.play(SpriteAnimation.HURT, loop = false) {
                         vampireSprite.play(SpriteAnimation.IDLE)
                     }
                 }
+
+                // --- Hero animations after enemy retaliation ---
                 if (!hero.isAlive) {
                     heroSprite.play(SpriteAnimation.DEATH, loop = false)
+                } else if (hero.hp < heroHpBefore) {
+                    // Hero took damage from enemy's counter-attack → hurt anim
+                    heroSprite.play(SpriteAnimation.HURT, loop = false) {
+                        heroSprite.play(SpriteAnimation.IDLE)
+                    }
+                    launch { audioManager.playSfx(sfxHit) }
                 }
 
-                // Check result
+                // --- Check result ---
                 when (engine.result) {
                     CombatResult.VICTORY -> {
                         resultText.text = "VICTORY!"
                         battleOver = true
-                        // SFX
-                        kotlinx.coroutines.MainScope().let { /* SFX best-effort */ }
+                        launch { audioManager.playSfx(sfxVictory) }
                     }
                     CombatResult.DEFEAT -> {
                         resultText.text = "DEFEAT"
