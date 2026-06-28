@@ -32,17 +32,34 @@ Ein Kiro-Auftrag muss folgende Felder enthalten:
 ```
 BASE_SHA: <aktueller main-SHA aus git log>
 BRANCH_NAME: kiro/<kurzer-name>
-TOUCH_ONLY:
-  - <Datei/Modul 1>
-  - <Datei/Modul 2>
+SCOPE:
+  modify:
+    - <bestehende Datei die geändert werden darf>
+  create:
+    - <neuer Dateipfad der erstellt werden darf>       # expliziter Pfad
+    - <verzeichnis/>*                                   # ODER: Verzeichnis-Wildcard
 DO_NOT_TOUCH:
-  - <alle anderen relevanten Dateien explizit nennen>
+  - <Datei/Verzeichnis das explizit verboten ist>
 ACCEPTANCE:
   - ./gradlew :core:desktopTest  → grün
   - ./gradlew :composeApp:compileKotlinDesktop → grün (falls composeApp berührt)
   - ./gradlew :game:compileKotlinDesktop → grün (falls :game berührt)
 PR_TITLE: <präziser Titel, max 70 Zeichen>
 ```
+
+### Neue Dateien im SCOPE
+
+`create` kennt zwei Formen:
+
+- **Expliziter Pfad** — genau eine Datei: `game/src/desktopMain/kotlin/game/TitleScene.kt`
+- **Verzeichnis-Wildcard** — freie Erstellung innerhalb eines Verzeichnisses: `core/src/commonMain/kotlin/rpg/tiled/*`
+
+Verzeichnis-Wildcard nur vergeben wenn der Auftrag eine neue Package/Modul-Struktur aufbaut
+(z.B. Tiled-Loader mit 5–10 Klassen). Für 1–3 Dateien immer explizite Pfade.
+
+Dateien **außerhalb** von `SCOPE.modify` und `SCOPE.create` sind implizit verboten —
+`DO_NOT_TOUCH` nur für Fälle wo Kiro erfahrungsgemäß reingreifen würde (z.B. `settings.gradle.kts`
+wenn ein neues Modul entsteht, aber das Modul nicht im Auftrag ist).
 
 **Scope:** Kiro arbeitet in genau einem Modul oder einer Querschnittsaufgabe.
 Nie mehrere unabhängige Dinge in einem Auftrag mischen.

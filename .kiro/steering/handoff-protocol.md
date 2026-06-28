@@ -19,9 +19,30 @@ git checkout -b <BRANCH_NAME> origin/main
 
 ## Während der Arbeit
 
-**Nur die in `TOUCH_ONLY` genannten Dateien/Module ändern.**
+Der Auftrag enthält ein `SCOPE`-Feld mit zwei Listen:
 
-- Wenn eine andere Datei geändert werden müsste: im PR-Body als Blocker vermerken, nicht eigenmächtig anfassen.
+- `SCOPE.modify` — bestehende Dateien, die geändert werden dürfen
+- `SCOPE.create` — neue Dateien/Verzeichnisse, die erstellt werden dürfen
+
+**Alles außerhalb von `SCOPE.modify` + `SCOPE.create` ist verboten**, auch wenn es
+technisch sinnvoll wirkt.
+
+### Neue Dateien erstellen
+
+Erlaubt nur wenn der Pfad unter `SCOPE.create` fällt:
+
+- Expliziter Pfad (`game/src/.../TitleScene.kt`) → genau diese Datei
+- Verzeichnis-Wildcard (`core/src/commonMain/kotlin/rpg/tiled/*`) → beliebig viele
+  Dateien innerhalb dieses Verzeichnisses, aber nicht in Unterverzeichnissen davon
+  und nicht außerhalb
+
+Neue Testdateien (`*Test.kt`) sind innerhalb der entsprechenden `*Test`-Source-Sets
+des betroffenen Moduls immer erlaubt — auch ohne expliziten Pfad in `SCOPE.create` —
+sofern sie ausschließlich Code aus `SCOPE.modify`/`SCOPE.create` testen.
+
+### Weitere Einschränkungen
+
+- Wenn eine Datei außerhalb des Scopes geändert werden müsste: im PR-Body als Blocker vermerken, nicht eigenmächtig anfassen.
 - Keine Reformatierungen, Renames oder Cleanups außerhalb des Scopes.
 - Keine neuen Abhängigkeiten in `build.gradle.kts` ohne explizite Erwähnung im Auftrag.
 - Keine neuen Branches erstellen — genau ein Branch pro Auftrag.
