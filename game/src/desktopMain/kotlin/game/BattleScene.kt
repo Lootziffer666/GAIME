@@ -10,7 +10,6 @@ import korlibs.korge.view.addUpdater
 import korlibs.korge.view.solidRect
 import korlibs.korge.view.text
 import korlibs.time.seconds
-import korlibs.time.seconds
 import kotlinx.coroutines.launch
 import rpg.SliceDirector
 import rpg.bark.BarkEvent
