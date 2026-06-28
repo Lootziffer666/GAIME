@@ -134,6 +134,8 @@ button.primary { background: #e94560; border-color: #e94560; color: white; font-
 button.primary:hover { background: #c73e54; }
 button.secondary { background: #0f3460; border-color: #4488cc; color: #88ccff; }
 button.secondary:hover { background: #1a4a7a; }
+button.accent { background: #7b2ff7; border-color: #9d5cfa; color: white; font-weight: bold; }
+button.accent:hover { background: #5a1fb8; }
 button.tool.active { background: #0f3460; border-color: #e94560; }
 
 /* Toolbar */
@@ -230,3 +232,20 @@ button.tool.active { background: #0f3460; border-color: #e94560; }
 
 .layer-eye.visible { opacity: 1.0; }
 .layer-eye:hover { opacity: 1.0; transform: scale(1.2); }
+
+/* Auto-mode toast notification */
+.auto-toast {
+    position: fixed;
+    bottom: 1.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #0f3460;
+    color: #88ccff;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    border: 1px solid #4488cc;
+    font-size: 0.85rem;
+    z-index: 1000;
+    animation: fadeInUp 0.3s ease;
+}
+@keyframes fadeInUp { from { opacity: 0; transform: translate(-50%, 10px); } to { opacity: 1; transform: translate(-50%, 0); } }

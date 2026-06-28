@@ -283,6 +283,148 @@ def learn_status():
     })
 
 
+@app.route("/api/vision_annotate", methods=["POST"])
+def vision_annotate():
+    """
+    Use a Vision LLM to auto-annotate the current map.
+    Renders the map, sends it to the LLM, returns layer annotations.
+    
+    Requires one of: OPENAI_API_KEY, ANTHROPIC_API_KEY, or local Ollama.
+    """
+    from vision_annotate import annotate_with_vision
+    
+    layers = SESSION.get("layers") or {"ground": SESSION.get("grid")}
+    if not layers or not layers.get("ground"):
+        return jsonify({"error": "No map loaded. Load a map first."}), 400
+    
+    data = request.get_json() or {}
+    mode = data.get("mode", "hydrology")
+    
+    # Detect available backend
+    backend = _detect_vision_backend()
+    if not backend:
+        return jsonify({
+            "error": "No Vision AI available. Set OPENAI_API_KEY or ANTHROPIC_API_KEY, or run Ollama locally with a vision model (llava)."
+        }), 400
+    
+    try:
+        annotations = annotate_with_vision(layers, mode=mode, backend=backend)
+        return jsonify({"annotations": annotations, "backend": backend})
+    except Exception as e:
+        return jsonify({"error": f"Vision annotation failed: {str(e)}"}), 500
+
+
+@app.route("/api/full_auto", methods=["POST"])
+def full_auto():
+    """
+    FULL AUTO MODE: Zero human interaction.
+    
+    1. Loads all specified project maps
+    2. For each: parses TMX → Vision-annotates hydrology/exits/NPCs
+    3. Feeds all annotated maps to the learner (extracts rules)
+    4. Generates a brand new map using the learned rules
+    5. Returns the generated map ready for export
+    
+    The user just clicks one button. That's it.
+    """
+    from vision_annotate import annotate_with_vision
+    from tmx_loader import parse_tmx_to_layers
+    
+    data = request.get_json() or {}
+    map_paths = data.get("maps", [])
+    gen_width = data.get("generate_width", 32)
+    gen_height = data.get("generate_height", 24)
+    
+    if not map_paths:
+        return jsonify({"error": "No maps specified"}), 400
+    
+    # Detect vision backend
+    backend = _detect_vision_backend()
+    
+    # Reset learner for fresh run
+    learner = MapLearner()
+    maps_analyzed = 0
+    
+    for tmx_path in map_paths:
+        full_path = REPO_ROOT / tmx_path
+        if not full_path.exists():
+            continue
+        
+        try:
+            # Parse TMX
+            content = full_path.read_text()
+            layers, w, h = parse_tmx_to_layers(content)
+            
+            # Vision annotate (if backend available)
+            if backend and w <= 64 and h <= 64:  # skip huge maps for speed
+                try:
+                    annotations = annotate_with_vision(layers, mode="full", backend=backend)
+                    for key, layer_data in annotations.items():
+                        if key in layers:
+                            layers[key] = layer_data
+                except Exception:
+                    pass  # Vision failed for this map, continue without
+            else:
+                # No vision backend: auto-derive hydrology heuristically
+                from learn import MapGenerator
+                temp_gen = MapGenerator(MapLearner())
+                layers["weather"] = temp_gen._auto_hydrology(layers["ground"], w, h)
+            
+            # Learn from this annotated map
+            learner.learn(layers)
+            maps_analyzed += 1
+            
+        except Exception:
+            continue  # Skip broken maps
+    
+    if maps_analyzed == 0:
+        return jsonify({"error": "Could not process any maps"}), 400
+    
+    # Save learned rules
+    learner.save(str(RULES_PATH))
+    global LEARNER
+    LEARNER = learner
+    
+    # Generate new map
+    generator = MapGenerator(learner, seed=None)
+    new_layers = generator.generate(width=gen_width, height=gen_height)
+    
+    # Store in session
+    SESSION["layers"] = new_layers
+    SESSION["grid"] = new_layers.get("ground")
+    SESSION["grid_width"] = gen_width
+    SESSION["grid_height"] = gen_height
+    
+    # Count rules
+    total_rules = sum(
+        sum(len(neighbors) for neighbors in dirs.values())
+        for tiles in learner.adjacency.values()
+        for tile, dirs in tiles.items()
+    )
+    
+    return jsonify({
+        "layers": new_layers,
+        "width": gen_width,
+        "height": gen_height,
+        "maps_analyzed": maps_analyzed,
+        "rules_extracted": total_rules,
+    })
+
+
+def _detect_vision_backend() -> str:
+    """Detect which Vision AI backend is available."""
+    if os.environ.get("OPENAI_API_KEY"):
+        return "openai"
+    if os.environ.get("ANTHROPIC_API_KEY"):
+        return "anthropic"
+    try:
+        import urllib.request
+        urllib.request.urlopen("http://localhost:11434/api/tags", timeout=2)
+        return "ollama"
+    except Exception:
+        return ""
+
+
 if __name__ == "__main__":
     print("\n  GAIME Map Builder")
     print("  Open http://localhost:5000 in your browser")

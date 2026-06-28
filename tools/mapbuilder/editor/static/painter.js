@@ -121,6 +121,58 @@ function init() {
     buildPalette();
     setupEvents();
     loadProjectMapList();
+    
+    // AUTO MODE BY DEFAULT: analyze all project maps and generate immediately.
+    // The editor exists only for corrections.
+    autoStart();
+}
+
+async function autoStart() {
+    try {
+        const res = await fetch("/api/project_maps");
+        const maps = await res.json();
+        if (maps.length === 0) return;
+        
+        // Show editor immediately with loading indicator
+        document.getElementById("editor-section").style.display = "block";
+        document.getElementById("upload-section").style.display = "none";
+        canvas.width = 512; canvas.height = 384;
+        ctx.fillStyle = "#16213e"; ctx.fillRect(0, 0, 512, 384);
+        ctx.fillStyle = "#e94560"; ctx.font = "16px sans-serif"; ctx.textAlign = "center";
+        ctx.fillText("Generating map from project data...", 256, 180);
+        ctx.fillStyle = "#666"; ctx.font = "12px sans-serif";
+        ctx.fillText(`Analyzing ${maps.length} locations`, 256, 210);
+        
+        // Full auto
+        const autoRes = await fetch("/api/full_auto", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ maps: maps.map(m => m.path), generate_width: 32, generate_height: 24 }),
+        });
+        const data = await autoRes.json();
+        
+        if (data.error) {
+            // Fallback to manual
+            document.getElementById("upload-section").style.display = "block";
+            return;
+        }
+        
+        // Show generated result
+        gridWidth = data.width; gridHeight = data.height;
+        for (const [key, ld] of Object.entries(data.layers)) { if (LAYERS[key]) LAYERS[key].data = ld; }
+        for (const key of Object.keys(LAYERS)) {
+            if (!LAYERS[key].data) LAYERS[key].data = Array.from({length: gridHeight}, () => Array(gridWidth).fill("none"));
+        }
+        canvas.width = gridWidth * CELL_SIZE; canvas.height = gridHeight * CELL_SIZE;
+        render();
+        
+        // Toast
+        const t = document.createElement("div"); t.className = "auto-toast";
+        t.textContent = `Auto-generated from ${data.maps_analyzed} maps. Edit if needed, then Export.`;
+        document.body.appendChild(t); setTimeout(() => t.remove(), 6000);
+    } catch (e) {
+        document.getElementById("upload-section").style.display = "block";
+    }
 }
 
 async function loadProjectMapList() {
@@ -223,6 +275,8 @@ function setupEvents() {
     document.getElementById("btn-generate").onclick = doGenerate;
     document.getElementById("btn-load-project").onclick = doLoadProjectMap;
     document.getElementById("btn-load-tmx").onclick = doLoadTmxFile;
+    document.getElementById("btn-vision").onclick = doVisionAnnotate;
+    document.getElementById("btn-auto").onclick = doFullAuto;
     
     const tmxInput = document.getElementById("tmx-input");
     tmxInput.onchange = () => { document.getElementById("btn-load-tmx").disabled = !tmxInput.files.length; };
@@ -579,6 +633,108 @@ async function doGenerate() {
 }
 
 // --- Load existing maps ---
+
+async function doVisionAnnotate() {
+    await saveGrid();
+    
+    const mode = confirm("Full annotation (hydrology + exits + NPCs + deco)?\n\nOK = Full\nCancel = Hydrology only") ? "full" : "hydrology";
+    
+    const btn = document.getElementById("btn-vision");
+    btn.disabled = true;
+    btn.textContent = "Analyzing...";
+    
+    try {
+        const res = await fetch("/api/vision_annotate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ mode }),
+        });
+        const data = await res.json();
+        
+        if (data.error) {
+            alert("Vision AI: " + data.error);
+            return;
+        }
+        
+        // Merge annotations into current layers
+        for (const [key, layerData] of Object.entries(data.annotations)) {
+            if (LAYERS[key] && layerData) {
+                LAYERS[key].data = layerData;
+            }
+        }
+        
+        render();
+        alert(`Vision AI annotated ${Object.keys(data.annotations).length} layer(s). Review and correct as needed.`);
+    } catch (err) {
+        alert("Vision annotation failed: " + err.message);
+    } finally {
+        btn.disabled = false;
+        btn.textContent = "Vision Annotate";
+    }
+}
+
+async function doFullAuto() {
+    const btn = document.getElementById("btn-auto");
+    btn.disabled = true;
+    const origText = btn.textContent;
+    
+    const log = (msg) => { btn.textContent = msg; };
+    
+    try {
+        // Step 1: Load all project maps and auto-annotate each
+        log("Loading maps...");
+        const mapsRes = await fetch("/api/project_maps");
+        const maps = await mapsRes.json();
+        
+        if (maps.length === 0) {
+            alert("No project maps found!");
+            return;
+        }
+        
+        log(`Processing ${maps.length} maps...`);
+        
+        const res = await fetch("/api/full_auto", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ 
+                maps: maps.map(m => m.path),
+                generate_width: parseInt(document.getElementById("grid-width").value) || 32,
+                generate_height: parseInt(document.getElementById("grid-height").value) || 24,
+            }),
+        });
+        const data = await res.json();
+        
+        if (data.error) {
+            alert("Full Auto: " + data.error);
+            return;
+        }
+        
+        // Load the generated map into the editor
+        gridWidth = data.width;
+        gridHeight = data.height;
+        for (const [key, layerData] of Object.entries(data.layers)) {
+            if (LAYERS[key]) LAYERS[key].data = layerData;
+        }
+        for (const key of Object.keys(LAYERS)) {
+            if (!LAYERS[key].data) {
+                LAYERS[key].data = Array.from({ length: gridHeight }, () => Array(gridWidth).fill("none"));
+            }
+        }
+        
+        ghostImage = null;
+        document.getElementById("editor-section").style.display = "block";
+        canvas.width = gridWidth * CELL_SIZE;
+        canvas.height = gridHeight * CELL_SIZE;
+        render();
+        
+        alert(`Done! Processed ${data.maps_analyzed} maps, learned ${data.rules_extracted} rules, generated a ${gridWidth}x${gridHeight} map.\n\nYou can export directly or tweak if you want.`);
+    } catch (err) {
+        alert("Full Auto failed: " + err.message);
+    } finally {
+        btn.disabled = false;
+        btn.textContent = origText;
+    }
+}
 
 async function doLoadProjectMap() {
     const select = document.getElementById("project-maps");
