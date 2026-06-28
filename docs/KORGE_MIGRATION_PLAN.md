@@ -1,8 +1,9 @@
 # KorGE Migration & Tilemap World — Exact Plan
 
-**Status:** Step 1 done (`:core` extracted). Step 2 in progress (`:game` KorGE
-module). Steps 3–5 not started. This document is the agreed, recorded plan for a
-larger, multi-step effort and is committed *before* the heavy work begins.
+**Status:** Step 1 done (`:core` extracted). Step 2 done (`:game` KorGE module).
+Step 3 done (2.5D HD-2D stage ported & compiling against KorGE 6.0.0). Steps 4–5
+not started. This document is the agreed, recorded plan for a larger, multi-step
+effort and is committed *before* the heavy work begins.
 
 It extends `.kiro/steering/rendering-engine.md` (the locked KorGE 2.5D decision)
 with the concrete tasks, the build setup actually used, the "donor code" policy,
@@ -65,9 +66,9 @@ Acceptance is what **headless CI can verify**: compile `:core`/`:game`, run
 ### Step 1 — Extract `:core` ✅ (done, PR #15)
 Pure logic + tests moved to a KMP module; `:composeApp` depends on it.
 
-### Step 2 — `:game` KorGE module (minimal compiling entry) — IN PROGRESS
-- New `:game` module, `kotlin("multiplatform")`, `jvm("desktop")`, JVM 17.
-- **KorGE 6.0.0 consumed as a LIBRARY** (`com.soywiz.korlibs.korge:korge:6.0.0`),
+### Step 2 — `:game` KorGE module (minimal compiling entry) — ✅ done
+- New `:game` module, `kotlin("multiplatform")`, `jvm("desktop")`.
+- **KorGE 6.0.0 consumed as a LIBRARY** (`com.soywiz.korge:korge:6.0.0`),
   **not** via the KorGE Gradle plugin.
   - *Rationale:* the KorGE plugin is opinionated and applies its own Kotlin
     Multiplatform plugin/version. This project already pins **Kotlin 2.1.21**
@@ -85,10 +86,25 @@ Pure logic + tests moved to a KMP module; `:composeApp` depends on it.
   module is reverted (build stays green) and the blocker + fix path (version
   alignment) is reported. Nothing else is touched.
 
-### Step 3 — Port the 2.5D stage
-Bring `demos/korge-hd2d/Hd2dStage.kt` into `:game`, fix `korlibs.*` imports for
-6.0, render a non-blank 2.5D scene (depth-sorted parallax + per-band `BlurFilter`
-DoF + additive bloom + `smoothing = false` pixel sampling). Verify: compiles.
+### Step 3 — Port the 2.5D stage — ✅ done
+Brought `demos/korge-hd2d/Hd2dStage.kt` into `:game` as
+`game/src/desktopMain/kotlin/game/Hd2dStage.kt`, fixed the `korlibs.*` imports
+for KorGE 6.0, and made `Main.kt` boot into it via
+`sceneContainer().changeTo<Hd2dStage>()`. The scene renders a depth-sorted
+parallax stack with per-band `BlurFilter` DoF, additive bloom glow, and
+`smoothing = false` pixel sampling. Procedural placeholder bitmaps are kept (real
+assets land in Step 4b). **Acceptance met:** `:game:compileKotlinDesktop`,
+`:core:desktopTest`, `:composeApp:compileKotlinDesktop` all green.
+
+**JVM target finding (build config):** KorGE 6.0.0 publishes its JVM artifacts as
+**JVM target 21** bytecode (verified: all 948 classes in `korge-core-jvm` and the
+inline builders in `korge-jvm` are class-file major 65 = Java 21). The first
+*inline* KorGE calls (`container()`, `image()`, `solidRect()`, `addUpdater {}`,
+`sceneContainer()`, `changeTo<>()`) therefore cannot be inlined into a JVM-17
+target. `:game` was raised from `JVM_17` to **`JVM_21`** (desktop-only module, no
+Android target, so `:core`/`:composeApp` stay at 17 for Android). This is the
+blocker the §4 risk table anticipated; Step 2's minimal `Korge { println }` never
+exercised it because `Korge(...)` itself is not inline.
 
 ### Step 4 — Own Tiled tilemap loader + tile collision (in `:core`)
 The visual quality lever: render the **artist-authored Tiled scenes** (17 `.tmx`
