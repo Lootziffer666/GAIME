@@ -77,6 +77,14 @@ class CollisionGrid private constructor(
                 }
             }
 
+            // Pass 2b: BRIDGE → WALKABLE (spans water — must override the WATER pass)
+            for (cl in classified) {
+                if (cl.role != LayerRole.BRIDGE) continue
+                for (c in cl.cells) {
+                    grid[c.gridY - minY][c.gridX - minX] = TileType.WALKABLE
+                }
+            }
+
             // Pass 3: SOLID → BLOCKED (overrides floor)
             for (cl in classified) {
                 if (cl.role != LayerRole.SOLID) continue
@@ -110,12 +118,19 @@ class CollisionGrid private constructor(
                 // WATER
                 lower.startsWith("water") -> LayerRole.WATER
 
-                // SOLID
+                // BRIDGE — walkable surface that spans water (must override WATER).
+                lower.startsWith("bridge") -> LayerRole.BRIDGE
+
+                // SOLID — NOTE: "trees" is intentionally NOT here. Tree layers are
+                // decorative canopy/foliage drawn over walkable ground (heroes-home
+                // keeps its trees in DECORATIVE "Objects"/"Grass_top_details" layers);
+                // classifying "trees*" as SOLID blanketed whole maps (ruined-temple →
+                // 0 walkable). Trees fall through to DECORATIVE (non-blocking).
                 lower.startsWith("wall") || lower.startsWith("house") ||
                     lower.startsWith("roof") || lower.startsWith("fence") ||
                     lower.startsWith("statues") || lower.startsWith("columns") ||
-                    lower.startsWith("bricks") || lower.startsWith("trees") ||
-                    lower.startsWith("boxes") || lower.startsWith("bridges") ||
+                    lower.startsWith("bricks") ||
+                    lower.startsWith("boxes") ||
                     lower.startsWith("tent") || lower.startsWith("stovepipe") ||
                     lower.startsWith("forge") || lower.startsWith("barrel") ||
                     lower.startsWith("altar") || lower.startsWith("spikes") ||
@@ -133,4 +148,4 @@ class CollisionGrid private constructor(
     }
 }
 
-private enum class LayerRole { FLOOR, WATER, SOLID, TRIGGER, DECORATIVE }
+private enum class LayerRole { FLOOR, WATER, BRIDGE, SOLID, TRIGGER, DECORATIVE }
