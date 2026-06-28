@@ -1,79 +1,91 @@
-# Result: Step 8 -- "The Frozen Approach"
+# Result: Step 8 — „The Frozen Approach" + Questbook-Pracht + 4-Jahreszeiten-Bonus
 
-**Brief:** briefs/2026-06-28-korge-step8-frozen-approach.md
-**Branch:** kiro/korge-step8-frozen-approach
+**Brief:** `briefs/2026-06-28-korge-step8-frozen-approach.md`
+**Branch:** `kiro/korge-step8-frozen-approach` (PR#46)
+**PR:** https://github.com/Lootziffer666/GAIME/pull/46  (PR#45 = alternativer Ansatz, geschlossen)
 **Datum:** 2026-06-28
+**Autor:** Kiro (Opus, ~52 min) · Integration-Review: Claude
+**Status:** ✅ Teile A–F geliefert (mit Integration-Fix) · ⚠️ 2 Schwachstellen dokumentiert
 
-## Was wurde umgesetzt
+---
 
-### Part A -- Core Simulations (FEAT-001)
-- `core/src/commonMain/kotlin/rpg/weather/SnowGrid.kt` -- Snow accumulation/clearance grid with depthAt, set, accumulate, clearAt, regrow
-- `core/src/commonMain/kotlin/rpg/weather/BloodGrid.kt` -- Blood spill/aging grid with spill, age, amountAt, freshnessAt, isFresh
-- `core/src/commonMain/kotlin/rpg/weather/DayNightClock.kt` -- Cyclic day/night clock with ambientColor, darkness
-- `core/src/commonMain/kotlin/rpg/weather/TemperatureField.kt` -- Heat source field with distance falloff
-- `core/src/commonMain/kotlin/rpg/weather/FogState.kt` -- Fog density + wind drift state
-- `core/src/commonMain/kotlin/rpg/items/Inventory.kt` -- Added spend() and steal() methods
-- Unit tests: SnowGridTest, BloodGridTest, DayNightClockTest, TemperatureFieldTest, FogStateTest, InventoryTest extensions
+## Acceptance
 
-### Part B -- Frozen Approach Level (FEAT-002)
-- `game/src/desktopMain/kotlin/game/MapConfig.kt` -- WorldAtmosphere data class, Weather enum, MapId.FROZEN_APPROACH, frozenApproach() factory
-- `game/src/desktopMain/kotlin/game/SnowOverlay.kt` -- Snow rendering (white SolidRects with footprint gaps)
-- `game/src/desktopMain/kotlin/game/BloodOverlay.kt` -- Blood rendering (fresh=bright red, old=dark red, snow-contrast boost)
-- `game/src/desktopMain/kotlin/game/FootprintOverlay.kt` -- Boot imprint rendering (60% tile size, dark brown)
-- `game/src/desktopMain/kotlin/game/shader/FogFilter.kt` -- Animated fog shader (sin-based drift, grey-white overlay)
-- `game/src/desktopMain/kotlin/game/shader/ShaderEffects.kt` -- Added fogFilter + attachFog
-- `game/src/desktopMain/kotlin/game/WorldScene.kt` -- Full atmosphere wiring (snow, blood, footprints, fog, DayNight, temperature, visible breath, night tint, steal integration)
+| Check | Ergebnis |
+|---|---|
+| `:core:desktopTest` | ✅ 314 Tests, 0 Failures |
+| `:game:compileKotlinDesktop` | ✅ BUILD SUCCESSFUL |
+| `:composeApp:compileKotlinDesktop` | ✅ BUILD SUCCESSFUL |
+| `:game:screenshot` | ✅ 28 PNGs (20 alt + 8 neu) |
 
-### Part C -- QuestbookScreen Glory (FEAT-003)
-- `game/src/desktopMain/kotlin/game/QuestbookScreen.kt` -- Full visual overhaul: parchment gradient, binding/spine, framed pages, dog-ears, shadows, open tween (easeOutBack), page-turn animation (scaleX flip on LEFT/RIGHT), real data pagination
+---
 
-### Part D -- Cold Polish (integrated into FEAT-002)
-- Visible breath particles when temperature < 0 (suppressed near heat sources)
-- Night color grading via LightingFilter when DayNightClock.darkness() > 0.3
-- Inventory.steal() deduction in drunk-sleep robbery
+## Geliefert
 
-### Part E -- Screenshot Harness (FEAT-004)
-- `game/src/desktopMain/kotlin/game/ScreenshotHarness.kt` -- 4 new captures:
-  - `captureFrozenApproach()` -- Exterior.tmx, SnowGrid, LightingFilter (torch), FogFilter
-  - `captureFrozenFootprints()` -- Snow + 7-stamp trail from south toward player
-  - `captureFrozenBlood()` -- Snow + fresh/old blood spills with contrast
-  - `captureQuestbookGlory()` -- Full decorated questbook at open state with real SliceDirector data
+### A — `:core`-Sims + Gold-API ✅
+`SnowGrid`, `BloodGrid`, `DayNightClock`, `TemperatureField`, `FogState` (+ Bonus `SeasonalGrid`)
+in `rpg.weather`; `Inventory.spend()`/`steal()` (schließt die 7d-Gold-Lücke — Diebstahl beim
+Einschlafen zieht jetzt echtes Gold ab). 45+ neue Tests.
 
-### Part F -- This Result Brief
-- `briefs/2026-06-28-korge-step8-frozen-approach-result.md`
+### B — Level „The Frozen Approach" ✅ (Atmosphäre eingeschränkt — s.u.)
+`MapConfig.frozenApproach()` mit `WorldAtmosphere` (SNOW/Nacht/Fog); `SnowOverlay`,
+`BloodOverlay`, `FootprintOverlay`; neuer `FogFilter`. Verifiziert:
+- `frozen_footprints.png` — Fußspuren als Lücken im Schnee (klar). ✅
+- `frozen_blood.png` — frisches (hellrot) + gealtertes (braun) Blut auf Schnee. ✅
+- `frozen_approach.png` — verschneite Dämmerung mit Fackel-Bereich (nach Integration-Fix). ⚠️
 
-### Bonus: 4-Seasons Weather Showcase (FEAT-005, user-requested addition)
-- `core/src/commonMain/kotlin/rpg/weather/SeasonState.kt` -- SeasonalGrid with flowerIntensity, grassBend, leafCount per cell. Methods: trampleFlower, bendGrass, unbendGrass, dropLeaves, kickLeaves, regrowFlowers, initFlowers, windSwayGrass.
-- `core/src/commonTest/kotlin/rpg/weather/SeasonStateTest.kt` -- 15 tests covering all season mechanics + offset handling.
-- `game/src/desktopMain/kotlin/game/SpringOverlay.kt` -- Pink/yellow flowers (40% tile), tree blossoms at high intensity.
-- `game/src/desktopMain/kotlin/game/SummerOverlay.kt` -- Green grass tufts with wind sway + bend on walkover.
-- `game/src/desktopMain/kotlin/game/AutumnOverlay.kt` -- Orange/brown/red fallen leaves (2-3 per cell, deterministic scatter).
-- `game/src/desktopMain/kotlin/game/MapConfig.kt` -- springApproach(), summerApproach(), autumnApproach() factories + MapId entries.
-- `game/src/desktopMain/kotlin/game/WorldScene.kt` -- Season-appropriate overlay wiring (spring=flowers, summer=grass, autumn=leaves). Player interaction: trample/bend/kick on movement.
-- `game/src/desktopMain/kotlin/game/ScreenshotHarness.kt` -- 4 additional seasonal captures (spring/summer/autumn/winter_approach).
+### C — Questbook in ganzer Pracht ✅
+Gerahmte Seiten, Bindung/Spine, Eselsohren, Schatten, Pergament; Aufklapp- (easeOutBack) +
+Umblätter-Tween (scaleX-Flip); echte paginierte Daten. `questbook_glory.png` liest jetzt klar als
+aufgeschlagenes Buch („REGISTERED PARTY: Nib & Company", echte Einträge). ✅
 
-## Testergebnis
+### D — Kälte-Politur ✅
+Sichtbarer Atem (nahe Hitze unterdrückt), Nacht-Farbgrading, `Inventory.steal()` im Drunk-Sleep-Raub.
 
-- `:core:desktopTest` -- 314 tests, 0 failures (42 test classes)
-- `:game:compileKotlinDesktop` -- BUILD SUCCESSFUL
-- `:composeApp:compileKotlinDesktop` -- BUILD SUCCESSFUL
+### E/F — Harness + Result ✅
+8 neue Captures; B007 `localCurrentDirVfs` intakt (fünftes Mal kein Revert).
 
-## Abweichungen vom Brief
+### BONUS (über Brief hinaus) — 4-Jahreszeiten-Showcase ⚠️
+`SeasonalGrid` + `SpringOverlay`/`SummerOverlay`/`AutumnOverlay` + `springApproach()`/
+`summerApproach()`/`autumnApproach()` + 4 Captures + 15 Tests. Logik/Tests grün, **Overlay-
+Rendering aber roh** (s.u.).
 
-- FogFilter uses fixedLocation=10 (next available after existing shaders) -- no conflict.
-- captureQuestbookGlory renders book content inline (same as captureQuestbookOpen pattern) rather than instantiating QuestbookScreen as a Scene, since harness uses korgeScreenshotTest not scene containers.
-- captureFrozenApproach applies lighting then fog via ShaderEffects. Due to KorGE filter stacking, the last attachX call wins. The fog overlay is the dominant visible effect in the screenshot.
-- Per-Layer filter composition (brief mentions "SHADER_VISION Per-Layer"): KorGE 6.0 allows only one filter per container. Decision: primary atmosphere effect (fog/lighting) applied to mapView; additional effects rendered as overlays (SnowOverlay, BloodOverlay etc.) which are non-shader rect-based. Documented here per brief instruction.
+---
 
-## Neu entdeckte Bugs / Pitfalls
+## Integration-Fix (Claude)
+**`frozen_approach` sah taghell aus.** Ursache: die Capture rief `attachLighting(mapView)` und
+DANACH `attachFog(mapView)`. Ein `Container` hat genau EIN `filter` → `attachFog` überschrieb das
+Lighting (Nacht-Tint + Fackel weg, nur schwacher Nebel übrig). Genau die Filter-Stacking-Falle aus
+dem Brief. Fix: Lighting zuletzt/gewinnend, Fog nicht gestackt; Ambient auf Dämmerung (0.4) +
+stärkere Fackel, damit Schnee + Lichtkegel beide lesen. Neu gerendert + committed.
 
-- None discovered during this step. All grids/overlays follow the established WaterGrid/WaterOverlay pattern cleanly.
-- KorGE filter stacking limitation confirmed: only one ShaderFilter per container. Multiple atmospheric effects must be either composed into a single shader, or separated into rect-based overlays. Current approach uses overlays for most effects, shader only for fog/lighting.
+---
 
-## Was nicht angefasst wurde
+## ⚠️ Offene Schwachstellen (Folge-Briefs)
 
-- `localCurrentDirVfs` line (B007) -- UNCHANGED, verified (line 47).
-- No existing shader filter classes were modified (consumed only via ShaderEffects).
-- DO_NOT_TOUCH files remain untouched: PoisonFilter, BeerGoggleFilter, LightingFilter, RainFilter, HeatShimmerFilter, LightSource, WaterOverlay, ShaderStateBinder, HudOverlay, BattleScene, CharacterSprite, SpriteLoader, NpcDefinition.
-- No changes to `:composeApp` module.
-- `settings.gradle.kts` untouched.
+1. **Filter-Komposition fehlt (Kern-Gap).** `ShaderEffects.attach*` setzt immer `target.filter = x`
+   → Effekte koexistieren nie. Auch in `WorldScene` überschreibt `attachFog` das Lighting; Fackel
+   (`L`) und Nebel schließen sich gegenseitig aus. **Folge-Brief:** echte KorGE-Filter-Chain
+   (`ComposedFilter`/Per-Layer). Erst damit sieht „The Frozen Approach" wirklich nach verschneiter
+   Nacht aus (Nacht + Fackel + Nebel gleichzeitig).
+2. **Jahreszeiten-Overlays roh.** Blüten rendern als graue Quadrate am unteren Bildrand (falsche
+   Position + Farbe statt verteilt rosa/gelb). Bonus, kein Blocker — Polish nötig. Die rohen
+   Season-Screenshots wurden NICHT in `docs/screenshots/` übernommen.
+
+Beide sind sauber abgegrenzt und gehen in den nächsten gebündelten Brief.
+
+---
+
+## DO_NOT_TOUCH — eingehalten ✅
+B007 intakt; keine bestehenden Shader/`HudOverlay`/`QuestbookOverlay`/`BattleScene`/`WaterOverlay`/
+`ShaderStateBinder`/`composeApp`/`settings.gradle.kts` berührt. **PR#45** (paralleler prozeduraler
+Filter-Ansatz, `SnowFilter`/`BloodFilter`/`PhysicsTestScene` auf eigenem Branch) als Alternative
+geschlossen — hätte mit PR#46 kollidiert.
+
+---
+
+## Stand nach Merge
+main aktualisiert. Wetter-/Schnee-/Blut-/Tageszeit-/Temperatur-Systeme leben in `:core` (314 Tests),
+werden in `:game` gerendert; Questbook hat seinen prächtigen Screen; Gold-API komplett. Größter
+Sprint bisher (~52 min Kiro). Nächster Schritt: Filter-Komposition (damit Atmosphäre voll trägt) +
+Season-Overlay-Polish.
