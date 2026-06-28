@@ -44,6 +44,11 @@ fun main() {
     captureShaderLighting()
     captureShaderRain()
     captureShaderHeatShimmer()
+    // 6d: Scripted playthrough captures
+    captureInteriorDialog()
+    captureExteriorDialog()
+    captureBattleMidway()
+    captureBattleVictory()
 }
 
 private fun captureWorld(config: MapConfig, name: String, withDialog: Boolean) {
@@ -299,5 +304,108 @@ private fun captureShaderHeatShimmer() {
         HudOverlay(this, hero, Inventory(initialGold = 50), "Heroes' Home (HOT)")
 
         save("shader_heat_shimmer")
+    }
+}
+
+// =============================================================================
+// 6d: SCRIPTED PLAYTHROUGH CAPTURES
+// =============================================================================
+
+private fun captureInteriorDialog() {
+    val config = MapConfig.interior()
+    korgeScreenshotTest(Size(VW, VH)) {
+        val tiledMap = TmxLoader.parse(resourcesVfs[config.tmxPath].readString())
+        val atlases = tiledMap.tilesets.map { TilesetAtlas.load(it, config.tmxDir) }
+        val mapView = TiledMapView(tiledMap, atlases)
+        mapView.scale = SCALE
+        addChild(mapView)
+        val player = CharacterSprite(mapView, tiledMap.tileWidth, tiledMap.tileHeight)
+        player.loadSwordsman(); player.gridX = config.spawnX; player.gridY = config.spawnY
+        player.play(SpriteAnimation.IDLE)
+        for (npc in config.npcs) {
+            val s = CharacterSprite(mapView, tiledMap.tileWidth, tiledMap.tileHeight)
+            s.loadFromSheet(npc.idleSheetPath); s.gridX = npc.tileX; s.gridY = npc.tileY; s.facing = npc.facing
+            s.play(SpriteAnimation.IDLE)
+        }
+        mapView.x = VW / 2.0 - player.visualGridX * tiledMap.tileWidth * SCALE
+        mapView.y = VH / 2.0 - player.visualGridY * tiledMap.tileHeight * SCALE
+        val hero = Combatant(id = "nib", name = "Nib", maxHp = 80, side = Side.PLAYER, attackPower = 12)
+        HudOverlay(this, hero, Inventory(initialGold = 50), config.displayName)
+        DialogOverlay(this, VW, VH).show(config.npcs.first().dialog)
+        save("interior_dialog")
+    }
+}
+
+private fun captureExteriorDialog() {
+    val config = MapConfig.exterior()
+    korgeScreenshotTest(Size(VW, VH)) {
+        val tiledMap = TmxLoader.parse(resourcesVfs[config.tmxPath].readString())
+        val atlases = tiledMap.tilesets.map { TilesetAtlas.load(it, config.tmxDir) }
+        val mapView = TiledMapView(tiledMap, atlases)
+        mapView.scale = SCALE
+        addChild(mapView)
+        val player = CharacterSprite(mapView, tiledMap.tileWidth, tiledMap.tileHeight)
+        player.loadSwordsman(); player.gridX = config.spawnX; player.gridY = config.spawnY
+        player.play(SpriteAnimation.IDLE)
+        for (npc in config.npcs) {
+            val s = CharacterSprite(mapView, tiledMap.tileWidth, tiledMap.tileHeight)
+            s.loadFromSheet(npc.idleSheetPath); s.gridX = npc.tileX; s.gridY = npc.tileY; s.facing = npc.facing
+            s.play(SpriteAnimation.IDLE)
+        }
+        mapView.x = VW / 2.0 - player.visualGridX * tiledMap.tileWidth * SCALE
+        mapView.y = VH / 2.0 - player.visualGridY * tiledMap.tileHeight * SCALE
+        val hero = Combatant(id = "nib", name = "Nib", maxHp = 80, side = Side.PLAYER, attackPower = 12)
+        HudOverlay(this, hero, Inventory(initialGold = 50), config.displayName)
+        DialogOverlay(this, VW, VH).show(config.npcs.first().dialog)
+        save("exterior_dialog")
+    }
+}
+
+private fun captureBattleMidway() {
+    korgeScreenshotTest(Size(VW, VH)) {
+        solidRect(VW, VH, RGBA(0x0a, 0x0a, 0x14, 0xff))
+        // Hero 80 HP, Vampire 36 HP (after 2 attacks of 12 dmg each)
+        val hero = Combatant(id = "nib", name = "Nib", maxHp = 80, side = Side.PLAYER, attackPower = 12)
+        val vampire = Combatant(id = "vampire_1", name = "Vampire", maxHp = 60, side = Side.ENEMY, attackPower = 8)
+        // Simulate 2 attacks worth of damage on vampire
+        vampire.takeDamage(24) // 60 - 24 = 36 HP
+        val heroSprite = CharacterSprite(this, 48, 48)
+        heroSprite.loadSwordsman(); heroSprite.gridX = 2; heroSprite.gridY = 3; heroSprite.facing = Facing.RIGHT
+        heroSprite.play(SpriteAnimation.IDLE)
+        val vampSprite = CharacterSprite(this, 48, 48)
+        vampSprite.loadVampire(); vampSprite.gridX = 9; vampSprite.gridY = 3; vampSprite.facing = Facing.LEFT
+        vampSprite.play(SpriteAnimation.HURT)
+        val barW = 120.0
+        solidRect(barW, 12.0, Colors["#333333"]).apply { x = 40.0; y = 20.0 }
+        solidRect(barW * hero.hpFraction, 12.0, Colors["#22cc22"]).apply { x = 40.0; y = 20.0 }
+        solidRect(barW, 12.0, Colors["#333333"]).apply { x = VW - 160.0; y = 20.0 }
+        solidRect(barW * vampire.hpFraction, 12.0, Colors["#cc2222"]).apply { x = VW - 160.0; y = 20.0 }
+        text("Nib: ${hero.hp}/${hero.maxHp}", textSize = 14.0, color = Colors.WHITE).apply { x = 40.0; y = 36.0 }
+        text("Vampire: ${vampire.hp}/${vampire.maxHp}", textSize = 14.0, color = Colors.WHITE).apply { x = VW - 160.0; y = 36.0 }
+        save("battle_midway")
+    }
+}
+
+private fun captureBattleVictory() {
+    korgeScreenshotTest(Size(VW, VH)) {
+        solidRect(VW, VH, RGBA(0x0a, 0x0a, 0x14, 0xff))
+        val hero = Combatant(id = "nib", name = "Nib", maxHp = 80, side = Side.PLAYER, attackPower = 12)
+        val vampire = Combatant(id = "vampire_1", name = "Vampire", maxHp = 60, side = Side.ENEMY, attackPower = 8)
+        vampire.takeDamage(60) // dead
+        val heroSprite = CharacterSprite(this, 48, 48)
+        heroSprite.loadSwordsman(); heroSprite.gridX = 2; heroSprite.gridY = 3; heroSprite.facing = Facing.RIGHT
+        heroSprite.play(SpriteAnimation.IDLE)
+        val vampSprite = CharacterSprite(this, 48, 48)
+        vampSprite.loadVampire(); vampSprite.gridX = 9; vampSprite.gridY = 3; vampSprite.facing = Facing.LEFT
+        vampSprite.play(SpriteAnimation.DEATH)
+        val barW = 120.0
+        solidRect(barW, 12.0, Colors["#333333"]).apply { x = 40.0; y = 20.0 }
+        solidRect(barW, 12.0, Colors["#22cc22"]).apply { x = 40.0; y = 20.0 }
+        solidRect(barW, 12.0, Colors["#333333"]).apply { x = VW - 160.0; y = 20.0 }
+        solidRect(0.0, 12.0, Colors["#cc2222"]).apply { x = VW - 160.0; y = 20.0 }
+        text("Nib: 80/80", textSize = 14.0, color = Colors.WHITE).apply { x = 40.0; y = 36.0 }
+        text("Vampire: 0/60", textSize = 14.0, color = Colors.WHITE).apply { x = VW - 160.0; y = 36.0 }
+        text("VICTORY!", textSize = 24.0, color = Colors["#ffcc00"]).apply { x = VW / 2.0 - 60.0; y = VH / 2.0 - 12.0 }
+        save("battle_victory")
     }
 }

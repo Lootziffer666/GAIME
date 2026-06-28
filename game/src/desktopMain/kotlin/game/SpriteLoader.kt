@@ -62,4 +62,34 @@ object SpriteLoader {
         for (y in 4 until s - 4) for (x in 8 until s - 8) bmp[x, y] = color
         return bmp
     }
+
+    /**
+     * Slices ALL rows of a CraftPix grid sheet.
+     * Returns List<row> where each row = List<BmpSlice> (left-to-right frames).
+     * Row count = bitmap.height / frameSize (coerced to >= 1).
+     */
+    fun sliceAllRows(bitmap: Bitmap, frameSize: Int = DEFAULT_FRAME_SIZE): List<List<BmpSlice>> {
+        if (bitmap.height <= 0 || bitmap.width <= 0) return listOf(listOf(bitmap.slice()))
+        val fs = if (frameSize <= 0 || frameSize > bitmap.height) bitmap.height else frameSize
+        val rowCount = (bitmap.height / fs).coerceAtLeast(1)
+        val colCount = (bitmap.width / fs).coerceAtLeast(1)
+        return List(rowCount) { row ->
+            List(colCount) { col ->
+                bitmap.slice(RectangleInt(col * fs, row * fs, fs, fs))
+            }
+        }
+    }
+
+    /**
+     * Convenience: load a sheet and return all rows.
+     * Fallback: single row with the procedural fallback frame.
+     */
+    suspend fun loadAllRows(assetPath: String, frameSize: Int = DEFAULT_FRAME_SIZE): List<List<BmpSlice>> {
+        return try {
+            val bitmap = resourcesVfs[assetPath].readBitmap()
+            sliceAllRows(bitmap, frameSize)
+        } catch (_: Exception) {
+            listOf(listOf(buildFallbackBitmap().slice()))
+        }
+    }
 }

@@ -7,9 +7,12 @@ import korlibs.korge.scene.sceneContainer
 import korlibs.korge.view.SContainer
 import korlibs.korge.view.addUpdater
 import kotlinx.coroutines.launch
+import rpg.SliceDirector
+import rpg.bark.audio.BarkAudioPlayer
 import rpg.combat.Combatant
 import rpg.combat.Side
 import rpg.items.Inventory
+import rpg.questbook.RoomContext
 import rpg.tiled.CollisionGrid
 import rpg.tiled.TileType
 import rpg.tiled.TmxLoader
@@ -48,6 +51,12 @@ class WorldScene : Scene() {
             id = "nib", name = "Nib", maxHp = 80, side = Side.PLAYER, attackPower = 12
         )
         val inventory = Inventory(initialGold = 50)
+
+        // SliceDirector for Bark pipeline
+        val director = SliceDirector { System.currentTimeMillis() }
+        director.barkAudioPlayer = BarkAudioPlayer(GameAudioPlayer(this@WorldScene))
+        val roomId = if (config.id == MapId.INTERIOR) RoomContext.ROOM_TAVERN else "exterior"
+        director.enterRoom(RoomContext(mapId = config.id.name.lowercase(), roomId = roomId))
 
         // 4. Hero-Sprite in mapView (skaliert + kamerakorrigiert)
         val player = CharacterSprite(mapView, tiledMap.tileWidth, tiledMap.tileHeight)
@@ -104,6 +113,9 @@ class WorldScene : Scene() {
                 }
                 if (npc != null) {
                     dialog.show(npc.first.dialog)
+                    npc.first.barkEvent?.let { event ->
+                        launch { director.fireBark(event) }
+                    }
                     return@addUpdater
                 }
             }
