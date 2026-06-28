@@ -35,8 +35,8 @@ class TiledMapScene : Scene() {
         mapView.scale = mapScale
         this.addChild(mapView)
 
-        // 4. Player sprite overlaid on the map
-        val player = PlayerSprite(this, tiledMap.tileWidth, tiledMap.tileHeight)
+        // 4. Player sprite inside mapView so it scales and scrolls with the map
+        val player = PlayerSprite(mapView, tiledMap.tileWidth, tiledMap.tileHeight)
         player.gridX = 8
         player.gridY = 12
 
