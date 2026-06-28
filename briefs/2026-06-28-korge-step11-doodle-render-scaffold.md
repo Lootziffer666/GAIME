@@ -1,4 +1,4 @@
-# Brief: Step 11 — Render-Gerüst: Doodle-Figuren vor hi-res Hintergrund @ 1440p
+# Brief: Step 11 — Render-Gerüst: Doodle-Figuren vor hi-res Hintergrund @ 1440p + unsichtbares Logik-Raster
 
 **MODELL: Opus-only** (vor Start Modell prüfen — neuer Thread erbt die Wahl NICHT;
 `.kiro/steering/handoff-protocol.md` → „Modell-Anforderung").
@@ -100,12 +100,37 @@ NICHT verwaschen/gefiltert sein; Figuren MÜSSEN den Linien-Effekt tragen.
 
 ---
 
+## Teil D — Bild + unsichtbares Logik-Raster koppeln
+
+Owner-Architektur: **„Unter dem hochauflösenden Bild liegt unsichtbar das Tile-Raster, die
+gesamte Logik läuft über das Raster."** Genau das beweist dieser Teil — das Bild ist nur die Haut,
+das Grid ist das Logik-Substrat.
+
+Das Raster liegt schon bereit: `assets/HD/backgrounds/sylvanoria_wildwood.tmx` (86×48, vom
+mapbuilder aus exakt diesem Bild segmentiert → Layer `Floor`/`Walls`/`Water`). Es deckt sich 1:1
+mit dem Bild (16px/Tile), d.h. Grid-Zelle (gx,gy) ↔ Bild-Region.
+
+1. TMX laden (`TmxLoader.parse(resourcesVfs[...])`), `CollisionGrid.from(map)` bauen — das ist die
+   **unsichtbare Logik-Ebene** unter dem Bild. Die Physik-Grids in `:core` (Water/Snow/Blood/…)
+   sind alle gitter-basiert und renderer-agnostisch — sie laufen über genau dieses Raster.
+2. Die Figur(en) aus Teil B auf eine **verifiziert begehbare** Zelle setzen (gegen `CollisionGrid`
+   prüfen — B004-Methode: offset + WALKABLE-bbox), Position aus Grid-Koordinate × Bild-Tile-Größe.
+3. **Debug-Beweis-Capture** `grid_overlay_debug.png` (2560×1440): das Bild vollflächig + das
+   CollisionGrid halbtransparent darübergelegt (WATER = blauer Tint, BLOCKED = roter Tint, WALKABLE
+   = klar), auf passender Skala. Beweist, dass das unsichtbare Raster zum gemalten Hintergrund
+   passt — der blaue Tint muss über dem gemalten Fluss/See liegen, roter über Dorf/Mauern.
+
+**Hinweis:** Die Collision ist auto-segmentiert (grob — Wald = begehbar, Wasser = blockiert,
+erkannte Gebäude = blockiert). Das reicht, um die **Kopplung** zu beweisen; Feinschliff der
+Collision ist späterer Schritt. Im echten Spiel würde der Spieler sich auf diesem Grid bewegen,
+während er das Bild sieht.
+
 ## SCOPE
 
 ```
 modify:
   - game/src/desktopMain/kotlin/game/shader/ShaderEffects.kt   (DoodleLineFilter registrieren + time-driven)
-  - game/src/desktopMain/kotlin/game/ScreenshotHarness.kt      (1 Capture anfügen + registrieren)
+  - game/src/desktopMain/kotlin/game/ScreenshotHarness.kt      (2 Captures anfügen + registrieren)
   - docs/SHADER_VISION.md
   - docs/KORGE_MIGRATION_PLAN.md
 
@@ -123,7 +148,7 @@ create:
 - core/                          NUR konsumieren
 - game/  WorldScene, BattleScene, alle Overlays, QuestbookScreen, MapConfig, CharacterSprite,
         SpriteLoader, NpcDefinition, ShaderStateBinder  (unberührt)
-- assets/   nur lesen (Hintergrundbild ist schon committed)
+- assets/   nur lesen (Hintergrundbild + sylvanoria_wildwood.tmx sind schon committed)
 - tools/mapbuilder/   NICHT anfassen (separates Owner-Tool)
 - composeApp/ , settings.gradle.kts
 - docs/KNOWN_BUGS.md   nur lesen
@@ -137,10 +162,14 @@ create:
 ./gradlew :core:desktopTest                  → BUILD SUCCESSFUL
 ./gradlew :game:compileKotlinDesktop         → BUILD SUCCESSFUL
 ./gradlew :composeApp:compileKotlinDesktop   → BUILD SUCCESSFUL
-bash scripts/setup-gl.sh; ./gradlew :game:screenshot   → bestehende + doodle_1440p.png (2560x1440)
+bash scripts/setup-gl.sh; ./gradlew :game:screenshot   → bestehende + doodle_1440p.png + grid_overlay_debug.png (je 2560x1440)
 ```
 Bei GL-„Too many callbacks" einmal wiederholen. Bestehende Screenshots müssen weiter funktionieren
 (Regression — der neue Filter darf die anderen nicht beeinflussen).
+
+`grid_overlay_debug.png` muss zeigen, dass das unsichtbare Raster zum Bild passt: blauer Tint über
+dem gemalten Fluss/See, roter über Dorf/Mauern, der Rest klar/begehbar. Damit ist die Kopplung
+„Bild = Haut, Grid = Logik" bewiesen.
 
 ---
 
@@ -153,7 +182,8 @@ Bei GL-„Too many callbacks" einmal wiederholen. Bestehende Screenshots müssen
 - **KNOWN_BUGS B007** (localCurrentDirVfs), **Step 3** (`addUpdater { dt -> }` = `Duration`, `dt.seconds`).
 - **Reproduzierbarkeit:** Screenshot mit festem `u_Time`; kein `Random` im Shader.
 - **Donor-Policy** (`KORGE_MIGRATION_PLAN §1`): Anime4K nur als Konzept-Referenz, kein Code kopieren.
+- **Bild + Grid-Kopplung** ist jetzt Teil D dieses Briefs (war vorher Folge-Schritt).
 - **Nächste Stufe (NICHT hier):** echte 1440p-Fenster-Ausgabe (`:game:run`, virtuelle Res/Scale),
-  Anime4K HQ A+B CNN-Kette als Austausch, Bild-Hintergrund + segmentierte TMX-Collision koppeln
-  (mapbuilder-Ausgabe → spielbarer Screen).
+  Anime4K HQ A+B CNN-Kette als Shader-Austausch, eine echte spielbare Szene (WorldScene) mit
+  Bild-Hintergrund + diesem Grid (Bewegung/Physik live), Collision-Feinschliff.
 ```

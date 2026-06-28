@@ -10,13 +10,18 @@
 
 ## Implementierungsstatus
 
+> **Aktualisiert 2026-06-28 (Step 11).** 13 von 40 Systemen haben echte, unit-getestete
+> `:core`-Logik (alle grid-basiert in `rpg.weather`). `:game`-Spalte: ✅ sauber gerendert,
+> ⚠️ speist andere Effekte / Rendering roh oder fehlt. Zusätzlich (nicht im 40er-Katalog
+> nummeriert): `SnowGrid`, `WetnessState`, `DrunkState` — alle `:core` + Tests.
+
 | # | System | :core | :game | Screenshot |
 |---|---|---|---|---|
 | 1 | Schmutz/Staub/Ruß | ✅ DirtState | — | — |
-| 2 | Fußspuren | ✅ FootprintGrid | — | — |
-| 3 | Material-Ermüdung | — | — | — |
+| 2 | Fußspuren | ✅ FootprintGrid | ✅ FootprintOverlay | ✅ (frozen) |
+| 3 | Material-Ermüdung | ✅ MaterialFatigue | ⚠️ Overlay rendert nicht | — |
 | 4 | Druck/Gewicht/Belastung | — | — | — |
-| 5 | Wind | ✅ WindState | — | — |
+| 5 | Wind | ✅ WindState | ⚠️ treibt Regen/Schnee-Schräge | — |
 | 6 | Geruch als Shader-Wolke | — | — | — |
 | 7 | Klang als sichtbare Wellen | — | — | — |
 | 8 | Feuchtigkeit im Mauerwerk | — | — | — |
@@ -28,17 +33,17 @@
 | 14 | Krankheit/Gift/Infektion | ✅ PoisonFilter | ✅ | ✅ |
 | 15 | Pflanzen reagieren | — | — | — |
 | 16 | Insekten-/Kleintier-Schwärme | — | — | — |
-| 17 | Blut als Information | — | — | — |
+| 17 | Blut als Information | ✅ BloodGrid | ✅ BloodOverlay | ✅ (frozen) |
 | 18 | Magie als Brechungsfehler | — | — | — |
-| 19 | Tageszeit als Materialverhalten | — | — | — |
-| 20 | Temperaturgradienten | — | — | — |
+| 19 | Tageszeit als Materialverhalten | ✅ DayNightClock | ⚠️ speist Lighting-Ambient | — |
+| 20 | Temperaturgradienten | ✅ TemperatureField | ⚠️ speist Trocknen/Atem | — |
 | 21 | Kälte als Kristallwachstum | — | — | — |
 | 22 | Wasserströmung als Topologie | ✅ WaterGrid (flow) | ✅ WaterOverlay | ✅ |
-| 23 | Kleidung als Weltzustand-Träger | — | — | — |
+| 23 | Kleidung als Weltzustand-Träger | (≈ WetnessState) | ⚠️ Nass/Trocknen gewirkt | — |
 | 24 | NPC-Stimmung über Farbtemperatur | — | — | — |
 | 25 | Besitz/Verbot als sichtbare Ordnung | — | — | — |
 | 26 | Lärm-/Lichtverschmutzung | — | — | — |
-| 27 | Jahreszeiten als Shader-Migration | — | — | — |
+| 27 | Jahreszeiten als Shader-Migration | ✅ SeasonState | ⚠️ Overlays roh positioniert | ⚠️ |
 | 28 | Hunger/Durst/Erschöpfung ohne HUD | — | — | — |
 | 29 | Unsichtbarkeit als optisches Problem | — | — | — |
 | 30 | Reparatur als sichtbarer Eingriff | — | — | — |
@@ -48,8 +53,8 @@
 | 34 | Biom-Mischzonen | — | — | — |
 | 35 | Karte als Shader-Objekt | — | — | — |
 | 36 | Feuer-Nachwirkungen | — | — | — |
-| 37 | Nebel als Informationsfilter | — | — | — |
-| 38 | Sternenlicht/Mondlicht | — | — | — |
+| 37 | Nebel als Informationsfilter | ✅ FogState | ✅ FogFilter | ✅ (compose) |
+| 38 | Sternenlicht/Mondlicht | ✅ DayNightClock.moon | ⚠️ speist Ambient | — |
 | 39 | Wolken als wandernde Regelzonen | — | — | — |
 | 40 | Falsche Sauberkeit als Hinweis | — | — | — |
 
