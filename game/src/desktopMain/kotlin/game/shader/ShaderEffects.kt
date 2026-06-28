@@ -25,6 +25,7 @@ class ShaderEffects {
     val lightingFilter = LightingFilter()
     val heatShimmerFilter = HeatShimmerFilter()
     val rainFilter = RainFilter()
+    val fogFilter = FogFilter()
 
     private var time = 0f
 
@@ -40,6 +41,7 @@ class ShaderEffects {
             lightingFilter.time = time
             heatShimmerFilter.time = time
             rainFilter.time = time
+            fogFilter.time = time
         }
     }
 
@@ -68,6 +70,11 @@ class ShaderEffects {
     /** Applies rain to [target]. */
     fun attachRain(target: Container) {
         target.filter = rainFilter
+    }
+
+    /** Applies fog to [target]. */
+    fun attachFog(target: Container) {
+        target.filter = fogFilter
     }
 
     /** Removes all filters from [target]. */

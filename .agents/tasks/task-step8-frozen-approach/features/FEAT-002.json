@@ -1,0 +1,34 @@
+{
+  "id": "FEAT-002",
+  "type": "feat",
+  "description": "Parts B + D: The Frozen Approach level - MapConfig extension (WorldAtmosphere, frozenApproach, MapId.FROZEN_APPROACH), rendering overlays (SnowOverlay, BloodOverlay, FootprintOverlay), FogFilter shader, atmosphere wiring in WorldScene, visible breath (Part D cold polish)",
+  "status": "in_progress",
+  "steps": [
+    "Modify game/src/desktopMain/kotlin/game/MapConfig.kt: Add data class WorldAtmosphere(val season: String = 'summer', val timeOfDay: Float = 0.5f, val weather: Weather = Weather.CLEAR, val fog: Float = 0f) with enum Weather { CLEAR, RAIN, SNOW }. Add atmosphere: WorldAtmosphere = WorldAtmosphere() field to MapConfig. Existing interior()/exterior() get default WorldAtmosphere. Add MapId.FROZEN_APPROACH. Add frozenApproach() factory using Exterior.tmx with weather=SNOW, timeOfDay=0.1f (night), fog=0.4f. Wire in forId().",
+    "Create game/src/desktopMain/kotlin/game/SnowOverlay.kt: Following WaterOverlay pattern exactly. Reads SnowGrid + FootprintGrid. Per cell: white SolidRect with alpha proportional to snowDepth (alpha = 80 + depth*170). Where FootprintGrid has footprint, alpha is reduced (shows ground through snow = footprint visible as dark gap). Position using grid.offsetX/Y * tileWidth.",
+    "Create game/src/desktopMain/kotlin/game/BloodOverlay.kt: Following WaterOverlay pattern. Reads BloodGrid. Per cell with blood: red SolidRect. Fresh blood (isFresh) = bright red RGBA(0xcc, 0x11, 0x11, alpha), old blood = dark red RGBA(0x55, 0x11, 0x11, alpha). Alpha scales with bloodAmount. On snow (SnowGrid depth > 0.3 at same cell) boost alpha by 40 for extra contrast.",
+    "Create game/src/desktopMain/kotlin/game/FootprintOverlay.kt: Reads FootprintGrid. Per cell with footprint: small dark SolidRect (brownish, RGBA(0x44, 0x33, 0x22, alpha)) representing boot imprint. Alpha proportional to footprint intensity. Size slightly smaller than full tile (e.g. tileWidth*0.6 centered).",
+    "Create game/src/desktopMain/kotlin/game/shader/FogFilter.kt: New ShaderFilter following RainFilter pattern. UniformBlock (fixedLocation=10) with u_Density, u_Time, u_DriftX, u_DriftY. Fragment shader: sample original, compute fog factor using sin-based drift (not full Perlin, but animated halbtransparenz), mix original toward grey-white (0.7, 0.75, 0.8) proportional to density. Output = lerp(original, fogColor, fogFactor * density). Time drives the drift animation.",
+    "Modify game/src/desktopMain/kotlin/game/shader/ShaderEffects.kt: Add val fogFilter = FogFilter(). Add fun attachFog(target: Container). In startTimeUpdater, add fogFilter.time = time. DO NOT modify any existing filter classes.",
+    "Modify game/src/desktopMain/kotlin/game/WorldScene.kt: When config.atmosphere.weather == SNOW, instantiate SnowGrid + BloodGrid + FootprintGrid + SnowOverlay + BloodOverlay + FootprintOverlay. On player movement, stamp FootprintGrid and clearAt SnowGrid. Wire DayNightClock (from Part A) to LightingFilter.ambientDarkness. Wire TemperatureField with lantern as heat source. Wire FogState + FogFilter when atmosphere.fog > 0. Add visible breath effect: when TemperatureField.tempAt(player) < 0, create/show small white SolidRect puffs near player (simple alpha-fade particles, 2-3 small rects that fade out over 1s). Suppress breath when lantern/fire nearby (temp > 0). Night color grading: when DayNightClock.darkness() > 0.3, apply blue tint via LightingFilter with low ambient. Integrate Inventory.steal() to actually deduct gold in the drunk-sleep robbery sequence.",
+    "Verify ./gradlew :game:compileKotlinDesktop compiles successfully.",
+    "Verify ./gradlew :composeApp:compileKotlinDesktop still compiles (no regression)."
+  ],
+  "acceptance_criteria": [
+    "./gradlew :game:compileKotlinDesktop succeeds",
+    "./gradlew :composeApp:compileKotlinDesktop succeeds",
+    "MapConfig.frozenApproach() returns a config with SNOW weather, night timeOfDay, and fog",
+    "SnowOverlay renders white rects per SnowGrid cell with footprint gaps",
+    "BloodOverlay renders red rects with fresh/old distinction",
+    "FootprintOverlay renders boot marks from FootprintGrid",
+    "FogFilter.kt is a new file in game/shader/ that compiles correctly",
+    "WorldScene integrates the atmosphere system when weather is SNOW",
+    "Existing shader files (Poison/BeerGoggle/Lighting/Rain/HeatShimmer) are NOT modified"
+  ],
+  "verification": [
+    "./gradlew :game:compileKotlinDesktop",
+    "./gradlew :composeApp:compileKotlinDesktop"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

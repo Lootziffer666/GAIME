@@ -1,0 +1,27 @@
+{
+  "id": "FEAT-003",
+  "type": "feat",
+  "description": "Part C: QuestbookScreen in its full glory - parchment look, binding/spine, framed pages, dog-ears/shadows, open animation (scale tween), page-turn animation (scaleX flip), real data from SliceDirector",
+  "status": "pending",
+  "steps": [
+    "Modify game/src/desktopMain/kotlin/game/QuestbookScreen.kt: Complete visual overhaul while keeping the same data flow (companion object vars for entries/markers/partyName/pressure). Replace flat colored rects with: (1) parchment gradient background using multiple overlapping SolidRects with graduated RGBA values to simulate aged paper, (2) dark binding/spine in the center (multiple narrow rects for 3D depth illusion), (3) framed pages with ornamental border rects (inner+outer frame), (4) dog-ear corner effect (small triangular overlay in top-right using angled SolidRect), (5) page edge shadows (thin dark rects on right side of left page, left side of right page).",
+    "Add open animation: Use KorGE tween API (korlibs.korge.tween.tween with korlibs.time Easing). On scene enter, the book container starts at scaleX=0.0, scaleY=0.8 and tweens to scaleX=1.0, scaleY=1.0 over 0.4s with easeOutBack. Wrap all book content in a Container that gets the tween applied.",
+    "Add page-turn animation: Track currentPage (left=0, right=1 to start, then pairs). On LEFT/RIGHT arrow key press, animate a 'page flip' by tweening an overlay rect's scaleX from 1.0 to 0.0 then 0.0 to 1.0 (simulating a page folding over) over 0.3s. Update content between the two half-tweens.",
+    "Content pages: Page 0 (left) = quest log entries from entries (show up to 8, truncated), Page 1 (right) = active assignments + party name + pressure. Additional pages for overflow entries (paginated). Use existing data from companion object vars.",
+    "Verify tween imports: korlibs.korge.tween.tween, korlibs.korge.tween.get (for property animation), korlibs.time.seconds for duration, korlibs.math.interpolation.Easing for easing curves. These are standard KorGE 6.0 APIs.",
+    "Verify ./gradlew :game:compileKotlinDesktop compiles."
+  ],
+  "acceptance_criteria": [
+    "./gradlew :game:compileKotlinDesktop succeeds",
+    "QuestbookScreen renders parchment background with visible binding, frames, and dog-ears",
+    "Open animation uses tween API for scale transition",
+    "Page-turn responds to LEFT/RIGHT keys with scaleX flip animation",
+    "Real data from SliceDirector is displayed (entries, markers, partyName, pressure)",
+    "J/ESC still closes the screen and returns to WorldScene"
+  ],
+  "verification": [
+    "./gradlew :game:compileKotlinDesktop"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

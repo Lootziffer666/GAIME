@@ -1,11 +1,14 @@
 package game
 
 import korlibs.event.Key
+import korlibs.image.color.RGBA
 import korlibs.io.file.std.resourcesVfs
 import korlibs.korge.scene.Scene
 import korlibs.korge.scene.sceneContainer
 import korlibs.korge.view.SContainer
+import korlibs.korge.view.SolidRect
 import korlibs.korge.view.addUpdater
+import korlibs.korge.view.solidRect
 import korlibs.time.seconds
 import kotlinx.coroutines.launch
 import rpg.BarkOutcome
@@ -18,6 +21,7 @@ import rpg.questbook.RoomContext
 import rpg.tiled.CollisionGrid
 import rpg.tiled.TileType
 import rpg.tiled.TmxLoader
+import rpg.weather.*
 import game.shader.ShaderEffects
 
 /**
@@ -118,6 +122,74 @@ class WorldScene : Scene() {
             intensity = 0.9f, flickerSpeed = 3.0f
         )
 
+        // 8c. Atmosphere system (SNOW weather — Frozen Approach)
+        val isSnow = config.atmosphere.weather == Weather.SNOW
+        val snowGrid: SnowGrid?
+        val bloodGrid: BloodGrid?
+        val footprintGrid: FootprintGrid?
+        val snowOverlay: SnowOverlay?
+        val bloodOverlay: BloodOverlay?
+        val footprintOverlay: FootprintOverlay?
+        val dayNightClock: DayNightClock?
+        val temperatureField: TemperatureField?
+        val fogState: FogState?
+        val windState: WindState?
+
+        if (isSnow) {
+            snowGrid = SnowGrid(
+                width = collision.cols, height = collision.rows,
+                offsetX = collision.offsetX, offsetY = collision.offsetY
+            )
+            // Initialize with some snow coverage
+            snowGrid.accumulate(0.7f)
+
+            bloodGrid = BloodGrid(
+                width = collision.cols, height = collision.rows,
+                offsetX = collision.offsetX, offsetY = collision.offsetY
+            )
+            footprintGrid = FootprintGrid(
+                width = collision.cols, height = collision.rows,
+                offsetX = collision.offsetX, offsetY = collision.offsetY
+            )
+            snowOverlay = SnowOverlay(mapView, tiledMap.tileWidth, tiledMap.tileHeight)
+            bloodOverlay = BloodOverlay(mapView, tiledMap.tileWidth, tiledMap.tileHeight)
+            footprintOverlay = FootprintOverlay(mapView, tiledMap.tileWidth, tiledMap.tileHeight)
+            dayNightClock = DayNightClock(config.atmosphere.timeOfDay)
+            temperatureField = TemperatureField(baseTemp = -0.5f)
+            fogState = if (config.atmosphere.fog > 0f) FogState().apply { setDensity(config.atmosphere.fog) } else null
+            windState = WindState()
+
+            // Disable rain for snow weather
+            isRaining = false
+
+            // Apply fog shader if fog is active
+            if (fogState != null) {
+                effects.fogFilter.density = fogState.density
+                effects.attachFog(mapView)
+            }
+
+            // Apply night lighting
+            effects.lightingFilter.ambientDarkness = dayNightClock.darkness().coerceAtLeast(0.1f)
+            effects.lightingFilter.tilePixelSize = (tiledMap.tileWidth * mapScale).toFloat()
+        } else {
+            snowGrid = null
+            bloodGrid = null
+            footprintGrid = null
+            snowOverlay = null
+            bloodOverlay = null
+            footprintOverlay = null
+            dayNightClock = null
+            temperatureField = null
+            fogState = null
+            windState = null
+        }
+
+        // 8d. Visible breath effect (cold polish)
+        // Small white rects that alpha-fade near the player when temperature is cold
+        data class BreathPuff(val rect: SolidRect, var life: Float, var maxLife: Float)
+        val breathPuffs = mutableListOf<BreathPuff>()
+        var breathTimer = 0f
+
         // 9. Input loop
         addUpdater { dt ->
             val dtSec = dt.seconds.toFloat()
@@ -135,6 +207,85 @@ class WorldScene : Scene() {
             }
             if (lanternActive) playerWetness.dryNearHeat(0.03f * dtSec)
 
+            // Atmosphere tick (SNOW weather)
+            if (isSnow) {
+                // Day/night cycle
+                dayNightClock!!.advance(dtSec)
+                val darkness = dayNightClock.darkness()
+                if (!lanternActive) {
+                    effects.lightingFilter.ambientDarkness = darkness.coerceAtLeast(0.1f)
+                }
+
+                // Wind
+                windState!!.tick(dtSec, time = dtSec)
+
+                // Snow accumulation (slow regrowth over cleared spots)
+                snowGrid!!.regrow(0.001f * dtSec)
+
+                // Fog drift
+                if (fogState != null) {
+                    fogState.drift(dtSec, windState)
+                    effects.fogFilter.driftX = fogState.driftX
+                    effects.fogFilter.driftY = fogState.driftY
+                    effects.fogFilter.density = fogState.density
+                }
+
+                // Temperature: update lantern heat source position
+                temperatureField!!.clearSources()
+                if (lanternActive) {
+                    temperatureField.addHeatSource(
+                        x = player.gridX.toFloat(),
+                        y = player.gridY.toFloat(),
+                        radius = 4f,
+                        strength = 1.2f,
+                    )
+                }
+
+                // Update overlays
+                footprintGrid!!.fade(dtSec, isRaining = false, isWindy = windState.effectiveStrength > 0.5f)
+                snowOverlay!!.update(snowGrid, footprintGrid)
+                bloodOverlay!!.update(bloodGrid!!, snowGrid)
+                footprintOverlay!!.update(footprintGrid)
+
+                // Visible breath effect
+                breathTimer += dtSec
+                val playerTemp = temperatureField.tempAt(player.gridX.toFloat(), player.gridY.toFloat())
+                if (playerTemp < 0f && breathTimer > 1.0f) {
+                    breathTimer = 0f
+                    // Spawn 2-3 small puffs
+                    val puffCount = 2 + (if (playerTemp < -0.3f) 1 else 0)
+                    for (i in 0 until puffCount) {
+                        val puffRect = mapView.solidRect(3.0, 3.0, RGBA(0xff, 0xff, 0xff, 0xaa))
+                        puffRect.x = player.visualGridX * tiledMap.tileWidth + tiledMap.tileWidth * 0.5 + (i - 1) * 2.0
+                        puffRect.y = player.visualGridY * tiledMap.tileHeight - 2.0 - i * 1.5
+                        breathPuffs.add(BreathPuff(puffRect, life = 1.0f, maxLife = 1.0f))
+                    }
+                }
+                // Fade existing breath puffs
+                val puffIter = breathPuffs.iterator()
+                while (puffIter.hasNext()) {
+                    val puff = puffIter.next()
+                    puff.life -= dtSec
+                    if (puff.life <= 0f) {
+                        puff.rect.visible = false
+                        puff.rect.removeFromParent()
+                        puffIter.remove()
+                    } else {
+                        val alpha = (puff.life / puff.maxLife * 170).toInt().coerceIn(0, 255)
+                        puff.rect.color = RGBA(0xff, 0xff, 0xff, alpha)
+                        puff.rect.y -= dtSec * 4.0  // drift upward
+                    }
+                }
+
+                // Night color grading: lighting filter with low ambient when dark
+                if (darkness > 0.3f && lanternActive) {
+                    effects.lightingFilter.lights = listOf(
+                        lanternLight.copy(tileX = player.gridX, tileY = player.gridY)
+                    )
+                    effects.attachLighting(mapView, effects.lightingFilter.lights, effects.lightingFilter.tilePixelSize)
+                }
+            }
+
             // Drunk sobering + DrunkState tick
             if (drunkLevel > 0f) {
                 drunkLevel = (drunkLevel - soberRate * dtSec).coerceAtLeast(0f)
@@ -146,13 +297,12 @@ class WorldScene : Scene() {
                 questbook.showMessage("Ow. What happened last night? (-$soberDmg HP)", director.pressure)
             }
 
-            // Drunk idle → sleep → robbed
+            // Drunk idle -> sleep -> robbed
             drunkState.tickIdle(dtSec)
             if (drunkState.isAsleep) {
                 val stolen = drunkState.goldStolenWhileAsleep(inventory.gold)
                 if (stolen > 0) {
-                    // NOTE: Inventory.gold has private set — actual gold deduction needs
-                    // a :core API change (Inventory.loseGold()). For now: visual + bark only.
+                    inventory.steal(stolen)
                     drunkState.wakeUp()
                     questbook.showMessage("You fell asleep. Someone took $stolen gold.\n(Where did I put that map?)", director.pressure)
                 }
@@ -274,6 +424,12 @@ class WorldScene : Scene() {
                     if (!npcBlocking && player.startMove(nx, ny)) {
                         player.play(SpriteAnimation.WALK)
                         drunkState.resetIdle()
+
+                        // Stamp footprint and clear snow on movement (SNOW weather)
+                        if (isSnow) {
+                            footprintGrid!!.stamp(nx, ny)
+                            snowGrid!!.clearAt(nx, ny, 0.3f)
+                        }
 
                         // Torkeln: drunk stumble — L-shaped drift like a chess knight.
                         // Player moves to target, then drifts perpendicular (1 step sideways).
