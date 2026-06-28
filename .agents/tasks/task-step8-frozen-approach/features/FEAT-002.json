@@ -2,7 +2,7 @@
   "id": "FEAT-002",
   "type": "feat",
   "description": "Parts B + D: The Frozen Approach level - MapConfig extension (WorldAtmosphere, frozenApproach, MapId.FROZEN_APPROACH), rendering overlays (SnowOverlay, BloodOverlay, FootprintOverlay), FogFilter shader, atmosphere wiring in WorldScene, visible breath (Part D cold polish)",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "Modify game/src/desktopMain/kotlin/game/MapConfig.kt: Add data class WorldAtmosphere(val season: String = 'summer', val timeOfDay: Float = 0.5f, val weather: Weather = Weather.CLEAR, val fog: Float = 0f) with enum Weather { CLEAR, RAIN, SNOW }. Add atmosphere: WorldAtmosphere = WorldAtmosphere() field to MapConfig. Existing interior()/exterior() get default WorldAtmosphere. Add MapId.FROZEN_APPROACH. Add frozenApproach() factory using Exterior.tmx with weather=SNOW, timeOfDay=0.1f (night), fog=0.4f. Wire in forId().",
     "Create game/src/desktopMain/kotlin/game/SnowOverlay.kt: Following WaterOverlay pattern exactly. Reads SnowGrid + FootprintGrid. Per cell: white SolidRect with alpha proportional to snowDepth (alpha = 80 + depth*170). Where FootprintGrid has footprint, alpha is reduced (shows ground through snow = footprint visible as dark gap). Position using grid.offsetX/Y * tileWidth.",
@@ -30,5 +30,5 @@
     "./gradlew :composeApp:compileKotlinDesktop"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "All builds pass cleanly. Both :game:compileKotlinDesktop and :composeApp:compileKotlinDesktop and :core:desktopTest succeed. FogFilter uses fixedLocation=10 as planned. WorldScene atmosphere system is conditional on Weather.SNOW so existing EXTERIOR/INTERIOR maps are unaffected. Inventory.steal() is now properly wired in the drunk-sleep robbery sequence. The breath effect creates simple SolidRect puffs that fade out over 1 second. Existing shader files (Poison/BeerGoggle/Lighting/Rain/HeatShimmer) were NOT modified."
 }
