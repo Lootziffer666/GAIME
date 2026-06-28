@@ -6,7 +6,9 @@ import korlibs.korge.scene.Scene
 import korlibs.korge.scene.sceneContainer
 import korlibs.korge.view.SContainer
 import korlibs.korge.view.addUpdater
+import korlibs.time.seconds
 import kotlinx.coroutines.launch
+import rpg.BarkOutcome
 import rpg.SliceDirector
 import rpg.bark.audio.BarkAudioPlayer
 import rpg.combat.Combatant
@@ -82,11 +84,16 @@ class WorldScene : Scene() {
         // 7. Dialog overlay (in scene root)
         val dialog = DialogOverlay(this, width, height)
 
+        // 7b. Questbook overlay (in scene root)
+        val questbook = QuestbookOverlay(this, width, height)
+        questbook.refresh(director.pressure, director.questMarkers + director.falseMarkers)
+
         // 8. BGM
         audioManager.playMusic(config.bgmPath)
 
         // 9. Input loop
-        addUpdater {
+        addUpdater { dt ->
+            questbook.update(dt.seconds.toFloat())
             val keys = views.input.keys
 
             // --- Dialog has priority ---
@@ -114,7 +121,16 @@ class WorldScene : Scene() {
                 if (npc != null) {
                     dialog.show(npc.first.dialog)
                     npc.first.barkEvent?.let { event ->
-                        launch { director.fireBark(event) }
+                        launch {
+                            val outcome = director.fireBark(event)
+                            if (outcome is BarkOutcome.Fired) {
+                                questbook.showReaction(
+                                    outcome.reaction,
+                                    director.pressure,
+                                    director.questMarkers + director.falseMarkers,
+                                )
+                            }
+                        }
                     }
                     return@addUpdater
                 }
