@@ -204,6 +204,8 @@ function setupEvents() {
     document.getElementById("btn-segment").onclick = doSegment;
     document.getElementById("btn-export").onclick = doExport;
     document.getElementById("btn-new").onclick = doNewBlank;
+    document.getElementById("btn-teach").onclick = doTeachAI;
+    document.getElementById("btn-generate").onclick = doGenerate;
 
     // Tools
     document.getElementById("btn-brush").onclick = () => setTool("brush");
@@ -518,6 +520,42 @@ async function doExport() {
     a.download = "generated_map.tmx";
     a.click();
     URL.revokeObjectURL(url);
+}
+
+async function doTeachAI() {
+    await saveGrid();
+    const res = await fetch("/api/learn", { method: "POST" });
+    const data = await res.json();
+    if (data.error) { alert(data.error); return; }
+    alert(data.message);
+}
+
+async function doGenerate() {
+    const w = parseInt(document.getElementById("grid-width").value) || 32;
+    const h = parseInt(document.getElementById("grid-height").value) || 24;
+    
+    const res = await fetch("/api/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ width: w, height: h }),
+    });
+    const data = await res.json();
+    
+    if (data.error) { alert(data.error); return; }
+    
+    // Load generated layers into editor
+    gridWidth = data.width;
+    gridHeight = data.height;
+    
+    for (const [key, layerData] of Object.entries(data.layers)) {
+        if (LAYERS[key]) LAYERS[key].data = layerData;
+    }
+    
+    ghostImage = null;
+    document.getElementById("editor-section").style.display = "block";
+    canvas.width = gridWidth * CELL_SIZE;
+    canvas.height = gridHeight * CELL_SIZE;
+    render();
 }
 
 // --- Boot ---

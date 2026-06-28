@@ -96,6 +96,8 @@ button:hover { background: #0f3460; }
 button:disabled { opacity: 0.4; cursor: not-allowed; }
 button.primary { background: #e94560; border-color: #e94560; color: white; font-weight: bold; }
 button.primary:hover { background: #c73e54; }
+button.secondary { background: #0f3460; border-color: #4488cc; color: #88ccff; }
+button.secondary:hover { background: #1a4a7a; }
 button.tool.active { background: #0f3460; border-color: #e94560; }
 
 /* Toolbar */

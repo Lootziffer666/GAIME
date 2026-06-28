@@ -26,6 +26,7 @@ from flask import Flask, render_template, request, jsonify, send_file
 from segment import segment_image, grid_to_preview, TileLabel
 from wfc import apply_variants
 from export_tmx import export_tmx, GROUND_TILE_IDS
+from learn import MapLearner, MapGenerator
 
 app = Flask(__name__,
             template_folder="editor/templates",
@@ -39,6 +40,12 @@ SESSION = {
     "grid_width": 32,
     "grid_height": 24,
 }
+
+# AI learner (persists across requests)
+LEARNER = MapLearner()
+RULES_PATH = Path(__file__).parent / "learned_rules.json"
+if RULES_PATH.exists():
+    LEARNER.load(str(RULES_PATH))
 
 
 @app.route("/")
@@ -142,6 +149,85 @@ def get_labels():
         {"id": TileLabel.EMPTY, "name": "Empty", "color": "#000000"},
     ]
     return jsonify(labels)
+
+
+@app.route("/api/learn", methods=["POST"])
+def learn_from_map():
+    """
+    Feed the current map to the AI learner.
+    Call this on 1-2 hand-painted example maps, then generate new ones.
+    """
+    layers = SESSION.get("layers") or {"ground": SESSION.get("grid")}
+    if not layers or not layers.get("ground"):
+        return jsonify({"error": "No map to learn from. Paint a map first."}), 400
+    
+    LEARNER.learn(layers)
+    LEARNER.save(str(RULES_PATH))
+    
+    # Stats about what was learned
+    ground_tiles = len(LEARNER.frequency.get("ground", {}))
+    total_rules = sum(
+        sum(len(neighbors) for neighbors in dirs.values())
+        for tiles in LEARNER.adjacency.values()
+        for tile, dirs in tiles.items()
+    )
+    
+    return jsonify({
+        "ok": True,
+        "message": f"Learned! {ground_tiles} tile types, {total_rules} adjacency rules extracted.",
+        "examples_fed": sum(LEARNER.frequency["ground"].values()) if "ground" in LEARNER.frequency else 0,
+    })
+
+
+@app.route("/api/generate", methods=["POST"])
+def generate_map():
+    """
+    Generate a new map using the learned rules (WFC).
+    Requires at least one map to have been fed via /api/learn first.
+    """
+    if not LEARNER.frequency:
+        return jsonify({"error": "No rules learned yet. Paint 1-2 maps and click 'Teach AI' first."}), 400
+    
+    data = request.get_json() or {}
+    width = data.get("width") or SESSION.get("grid_width", 32)
+    height = data.get("height") or SESSION.get("grid_height", 24)
+    seed = data.get("seed")
+    
+    generator = MapGenerator(LEARNER, seed=seed)
+    layers = generator.generate(width=width, height=height)
+    
+    SESSION["layers"] = layers
+    SESSION["grid"] = layers.get("ground")
+    SESSION["grid_width"] = width
+    SESSION["grid_height"] = height
+    
+    return jsonify({
+        "layers": layers,
+        "width": width,
+        "height": height,
+    })
+
+
+@app.route("/api/learn_status")
+def learn_status():
+    """Check if the AI has learned any rules."""
+    if not LEARNER.frequency:
+        return jsonify({"learned": False, "message": "No rules yet. Paint a map and click 'Teach AI'."})
+    
+    ground_tiles = len(LEARNER.frequency.get("ground", {}))
+    total_cells = sum(LEARNER.frequency["ground"].values()) if "ground" in LEARNER.frequency else 0
+    
+    return jsonify({
+        "learned": True,
+        "tile_types": ground_tiles,
+        "cells_analyzed": total_cells,
+        "dimensions": {
+            "min_width": LEARNER.min_width,
+            "max_width": LEARNER.max_width,
+            "min_height": LEARNER.min_height,
+            "max_height": LEARNER.max_height,
+        },
+    })
 
 
 if __name__ == "__main__":
