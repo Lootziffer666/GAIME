@@ -8,6 +8,7 @@ import korlibs.io.file.std.localCurrentDirVfs
 import korlibs.io.file.std.resourcesVfs
 import korlibs.korge.testing.OffscreenStage
 import korlibs.korge.testing.korgeScreenshotTest
+import korlibs.korge.view.filter.filter
 import korlibs.korge.view.renderToBitmap
 import korlibs.korge.view.solidRect
 import korlibs.korge.view.text
@@ -38,6 +39,11 @@ fun main() {
     captureWorld(MapConfig.interior(), "interior", withDialog = true)
     captureWorld(MapConfig.exterior(), "exterior", withDialog = false)
     captureBattle()
+    captureShaderBeerGoggle()
+    captureShaderPoison()
+    captureShaderLighting()
+    captureShaderRain()
+    captureShaderHeatShimmer()
 }
 
 private fun captureWorld(config: MapConfig, name: String, withDialog: Boolean) {
@@ -103,4 +109,195 @@ private suspend fun OffscreenStage.save(name: String) {
     OUT.mkdirs()
     bmp.writeTo(OUT["$name.png"], PNG)
     println("SCREENSHOT_OK: ${bmp.width}x${bmp.height} -> build/screenshots/$name.png")
+}
+
+// =============================================================================
+// SHADER EFFECT DEMOS
+// =============================================================================
+
+/**
+ * Beer goggles: Interior scene through 3 flagons of ale.
+ * The world is warm, soft, and gently swaying.
+ */
+private fun captureShaderBeerGoggle() {
+    val config = MapConfig.interior()
+    korgeScreenshotTest(Size(VW, VH)) {
+        val tiledMap = TmxLoader.parse(resourcesVfs[config.tmxPath].readString())
+        val atlases = tiledMap.tilesets.map { TilesetAtlas.load(it, config.tmxDir) }
+        val mapView = TiledMapView(tiledMap, atlases)
+        mapView.scale = SCALE
+        addChild(mapView)
+
+        val player = CharacterSprite(mapView, tiledMap.tileWidth, tiledMap.tileHeight)
+        player.loadSwordsman()
+        player.gridX = config.spawnX; player.gridY = config.spawnY
+        player.play(SpriteAnimation.IDLE)
+
+        for (npc in config.npcs) {
+            val s = CharacterSprite(mapView, tiledMap.tileWidth, tiledMap.tileHeight)
+            s.loadFromSheet(npc.idleSheetPath)
+            s.gridX = npc.tileX; s.gridY = npc.tileY; s.facing = npc.facing
+            s.play(SpriteAnimation.IDLE)
+        }
+
+        mapView.x = VW / 2.0 - player.visualGridX * tiledMap.tileWidth * SCALE
+        mapView.y = VH / 2.0 - player.visualGridY * tiledMap.tileHeight * SCALE
+
+        // Apply beer goggle shader (3 ales deep)
+        val beerFilter = game.shader.BeerGoggleFilter(drunkLevel = 0.6f, time = 2.5f)
+        mapView.filter = beerFilter
+
+        val hero = Combatant(id = "nib", name = "Nib", maxHp = 80, side = Side.PLAYER, attackPower = 12)
+        HudOverlay(this, hero, Inventory(initialGold = 12), "Heroes' Home (3 ales)")
+
+        save("shader_beer_goggle")
+    }
+}
+
+/**
+ * Poison: Exterior scene with growing disorientation.
+ * Chromatic aberration + tunnel vision.
+ */
+private fun captureShaderPoison() {
+    val config = MapConfig.exterior()
+    korgeScreenshotTest(Size(VW, VH)) {
+        val tiledMap = TmxLoader.parse(resourcesVfs[config.tmxPath].readString())
+        val atlases = tiledMap.tilesets.map { TilesetAtlas.load(it, config.tmxDir) }
+        val mapView = TiledMapView(tiledMap, atlases)
+        mapView.scale = SCALE
+        addChild(mapView)
+
+        val player = CharacterSprite(mapView, tiledMap.tileWidth, tiledMap.tileHeight)
+        player.loadSwordsman()
+        player.gridX = config.spawnX; player.gridY = config.spawnY
+        player.facing = Facing.DOWN
+        player.play(SpriteAnimation.WALK)
+
+        mapView.x = VW / 2.0 - player.visualGridX * tiledMap.tileWidth * SCALE
+        mapView.y = VH / 2.0 - player.visualGridY * tiledMap.tileHeight * SCALE
+
+        // Apply poison shader (severity 0.7)
+        val poisonFilter = game.shader.PoisonFilter(intensity = 0.7f, time = 4.2f)
+        mapView.filter = poisonFilter
+
+        val hero = Combatant(id = "nib", name = "Nib", maxHp = 30, side = Side.PLAYER, attackPower = 12)
+        HudOverlay(this, hero, Inventory(initialGold = 50), "Village (POISONED)")
+
+        save("shader_poison")
+    }
+}
+
+/**
+ * 2D Lighting: Interior tavern scene with 3 candle light sources.
+ * Ambient darkness = 0.12 (very dark), lights illuminate warm pools.
+ */
+private fun captureShaderLighting() {
+    val config = MapConfig.interior()
+    korgeScreenshotTest(Size(VW, VH)) {
+        val tiledMap = TmxLoader.parse(resourcesVfs[config.tmxPath].readString())
+        val atlases = tiledMap.tilesets.map { TilesetAtlas.load(it, config.tmxDir) }
+        val mapView = TiledMapView(tiledMap, atlases)
+        mapView.scale = SCALE
+        addChild(mapView)
+
+        val player = CharacterSprite(mapView, tiledMap.tileWidth, tiledMap.tileHeight)
+        player.loadSwordsman()
+        player.gridX = config.spawnX; player.gridY = config.spawnY
+        player.play(SpriteAnimation.IDLE)
+
+        for (npc in config.npcs) {
+            val s = CharacterSprite(mapView, tiledMap.tileWidth, tiledMap.tileHeight)
+            s.loadFromSheet(npc.idleSheetPath)
+            s.gridX = npc.tileX; s.gridY = npc.tileY; s.facing = npc.facing
+            s.play(SpriteAnimation.IDLE)
+        }
+
+        mapView.x = VW / 2.0 - player.visualGridX * tiledMap.tileWidth * SCALE
+        mapView.y = VH / 2.0 - player.visualGridY * tiledMap.tileHeight * SCALE
+
+        // Apply 2D lighting — 3 candles in the tavern
+        val tilePixelSize = (tiledMap.tileWidth * SCALE).toFloat()
+        val lightingFilter = game.shader.LightingFilter(
+            ambientDarkness = 0.12f,
+            time = 1.7f,  // frozen moment for deterministic screenshot
+        )
+        lightingFilter.tilePixelSize = tilePixelSize
+        lightingFilter.lights = listOf(
+            // Bar area candle (warm, medium)
+            game.shader.LightSource(tileX = 5, tileY = 7, radius = 6f, r = 1.0f, g = 0.8f, b = 0.4f, intensity = 0.9f, flickerSpeed = 2.5f, flickerAmount = 0.15f),
+            // Center room candle (warm, large)
+            game.shader.LightSource(tileX = 8, tileY = 12, radius = 7f, r = 1.0f, g = 0.85f, b = 0.5f, intensity = 1.0f, flickerSpeed = 3.0f, flickerAmount = 0.12f),
+            // Corner candle (dimmer, smaller)
+            game.shader.LightSource(tileX = 13, tileY = 15, radius = 4f, r = 0.9f, g = 0.7f, b = 0.3f, intensity = 0.7f, flickerSpeed = 4.0f, flickerAmount = 0.2f),
+        )
+        mapView.filter = lightingFilter
+
+        val hero = Combatant(id = "nib", name = "Nib", maxHp = 80, side = Side.PLAYER, attackPower = 12)
+        HudOverlay(this, hero, Inventory(initialGold = 50), "Heroes' Home (night)")
+
+        save("shader_lighting")
+    }
+}
+
+/**
+ * Rain: Exterior scene with downpour (diagonal rain streaks).
+ */
+private fun captureShaderRain() {
+    val config = MapConfig.exterior()
+    korgeScreenshotTest(Size(VW, VH)) {
+        val tiledMap = TmxLoader.parse(resourcesVfs[config.tmxPath].readString())
+        val atlases = tiledMap.tilesets.map { TilesetAtlas.load(it, config.tmxDir) }
+        val mapView = TiledMapView(tiledMap, atlases)
+        mapView.scale = SCALE
+        addChild(mapView)
+
+        val player = CharacterSprite(mapView, tiledMap.tileWidth, tiledMap.tileHeight)
+        player.loadSwordsman()
+        player.gridX = config.spawnX; player.gridY = config.spawnY
+        player.facing = Facing.DOWN
+        player.play(SpriteAnimation.WALK)
+
+        mapView.x = VW / 2.0 - player.visualGridX * tiledMap.tileWidth * SCALE
+        mapView.y = VH / 2.0 - player.visualGridY * tiledMap.tileHeight * SCALE
+
+        // Rain shader (heavy downpour with slight wind)
+        val rainFilter = game.shader.RainFilter(intensity = 0.8f, windAngle = 0.2f, time = 3.7f)
+        mapView.filter = rainFilter
+
+        val hero = Combatant(id = "nib", name = "Nib", maxHp = 80, side = Side.PLAYER, attackPower = 12)
+        HudOverlay(this, hero, Inventory(initialGold = 50), "Village (RAINING)")
+
+        save("shader_rain")
+    }
+}
+
+/**
+ * Heat shimmer: Interior near forge/oven — rising hot air distortion.
+ */
+private fun captureShaderHeatShimmer() {
+    val config = MapConfig.interior()
+    korgeScreenshotTest(Size(VW, VH)) {
+        val tiledMap = TmxLoader.parse(resourcesVfs[config.tmxPath].readString())
+        val atlases = tiledMap.tilesets.map { TilesetAtlas.load(it, config.tmxDir) }
+        val mapView = TiledMapView(tiledMap, atlases)
+        mapView.scale = SCALE
+        addChild(mapView)
+
+        val player = CharacterSprite(mapView, tiledMap.tileWidth, tiledMap.tileHeight)
+        player.loadSwordsman()
+        player.gridX = config.spawnX; player.gridY = config.spawnY
+        player.play(SpriteAnimation.IDLE)
+
+        mapView.x = VW / 2.0 - player.visualGridX * tiledMap.tileWidth * SCALE
+        mapView.y = VH / 2.0 - player.visualGridY * tiledMap.tileHeight * SCALE
+
+        // Heat shimmer (strong, near forge)
+        val heatFilter = game.shader.HeatShimmerFilter(intensity = 0.8f, time = 2.1f, frequency = 35f)
+        mapView.filter = heatFilter
+
+        val hero = Combatant(id = "nib", name = "Nib", maxHp = 80, side = Side.PLAYER, attackPower = 12)
+        HudOverlay(this, hero, Inventory(initialGold = 50), "Heroes' Home (HOT)")
+
+        save("shader_heat_shimmer")
+    }
 }
