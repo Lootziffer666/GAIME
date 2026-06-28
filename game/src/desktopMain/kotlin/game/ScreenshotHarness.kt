@@ -90,6 +90,7 @@ fun main() {
     captureBridge()
     captureDoodle1440p()
     captureGridOverlayDebug()
+    captureDoodleUpscaleCompare()
 }
 
 private fun captureWorld(config: MapConfig, name: String, withDialog: Boolean) {
@@ -1599,5 +1600,81 @@ private fun captureGridOverlayDebug() {
         }
 
         save("grid_overlay_debug")
+    }
+}
+
+/**
+ * Step 12: Side-by-side upscale comparison at ~6x magnification.
+ * 4 panels: bilinear | nearest | EPX+doodle | EPX only (no outline).
+ * Proves the EPX shader is sharper than bilinear, smoother than nearest.
+ */
+private fun captureDoodleUpscaleCompare() {
+    korgeScreenshotTest(Size(1680.0, 620.0)) {
+        solidRect(1680.0, 620.0, RGBA(0x1a, 0x1a, 0x2e, 0xff))
+
+        // Load a single sprite frame
+        val frames = SpriteLoader.load(
+            "assets/HD/characters/swordsman/PNG/Swordsman_lvl1/Without_shadow/Swordsman_lvl1_Idle_without_shadow.png"
+        )
+        val frame = frames[0]
+
+        val panelW = 400.0
+        val panelH = 500.0
+        val gap = 20.0
+        val startX = (1680.0 - 4 * panelW - 3 * gap) / 2.0
+        val startY = 60.0
+        val scale = 6.0  // ~6x magnification
+
+        val labels = listOf("bilinear", "nearest", "EPX + doodle", "EPX only")
+
+        for (i in 0 until 4) {
+            val px = startX + i * (panelW + gap)
+
+            // Label
+            text(labels[i], textSize = 14.0, color = Colors.WHITE).apply {
+                x = px + panelW / 2.0 - 40.0
+                y = startY - 20.0
+            }
+
+            // Panel background
+            solidRect(panelW, panelH, RGBA(0x10, 0x10, 0x20, 0xff)).apply {
+                x = px; y = startY
+            }
+
+            // Sprite image
+            val panel = container {
+                val img = image(frame)
+                img.smoothing = (i == 0)  // bilinear only for panel 0
+                img.scaleX = scale
+                img.scaleY = scale
+            }
+            panel.x = px + (panelW - 64.0 * scale) / 2.0
+            panel.y = startY + (panelH - 64.0 * scale) / 2.0
+            addChild(panel)
+
+            // Apply filter for panels 2 and 3
+            when (i) {
+                2 -> {
+                    // EPX + doodle (full effect)
+                    val doodle = game.shader.DoodleLineFilter(
+                        time = 1.5f,
+                        lineStrength = 0.8f,
+                        jitter = 0.3f,
+                    )
+                    panel.filter = doodle
+                }
+                3 -> {
+                    // EPX only (no outline — lineStrength = 0)
+                    val epxOnly = game.shader.DoodleLineFilter(
+                        time = 1.5f,
+                        lineStrength = 0f,
+                        jitter = 0f,
+                    )
+                    panel.filter = epxOnly
+                }
+            }
+        }
+
+        save("doodle_upscale_compare")
     }
 }
