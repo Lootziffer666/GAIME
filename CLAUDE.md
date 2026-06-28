@@ -66,20 +66,38 @@ Nie mehrere unabhängige Dinge in einem Auftrag mischen.
 
 ---
 
+## Branch-Strategie (Pflicht für alle größeren Änderungen)
+
+```
+main  ←──────────────────────────────  niemals direktes Ziel von Feature-Arbeit
+  ↑
+claude/integration-<datum>  ←──────── Claude Code: merged, resolved, testet hier
+  ↑
+kiro/<name>  ───────────────────────── Kiro: arbeitet und pusht hier
+```
+
+- Kiro pusht **immer** auf den eigenen Feature-Branch (`kiro/<name>`)
+- Claude Code öffnet einen **Integration-Branch** (`claude/integration-<datum>`)
+  und merged Kiros Branch dort hinein
+- Erst nach grünen Tests wird der Integration-Branch in `main` gemergt
+- Bei konfliktfreien, kleinen Änderungen (Docs, reine `:core`-Additions ohne
+  Berührung bestehender Dateien) darf Claude Code direkt auf `main` pushen —
+  aber nur nach expliziter Prüfung
+
 ## Nach einem Kiro-PR
 
 1. `git fetch --all --prune`
 2. PR-Diff lesen (alle geänderten Dateien)
-3. Bei Konflikten mit main: Integration-Branch (`claude/integration-<datum>`), nie direkt auf main mergen solange Konflikte
-4. Tests lokal laufen lassen
-5. Mergen → Branch löschen (remote + lokal)
-6. `git push -u origin main`
-
----
+3. Integration-Branch erstellen: `git checkout -b claude/integration-<datum> origin/main`
+4. Kiros Branch mergen: `git merge --no-ff origin/kiro/<name>`
+5. Konflikte auflösen (immer: unsere kanonische API bevorzugen)
+6. Tests: `./gradlew :core:desktopTest` (+ compile-checks falls composeApp/:game berührt)
+7. In main mergen → `git push -u origin main`
+8. Kiros Branch + Integration-Branch löschen
 
 ## Branches löschen
 
-Remote-Delete läuft ggf. nur über GitHub-Web (Proxy blockt `git push --delete`).
+`git push origin --delete <branch>` — falls Proxy 403 zurückgibt: GitHub-Web nutzen.
 Nach jedem Merge sofort löschen — keine "ich mach das später"-Branches.
 
 ---

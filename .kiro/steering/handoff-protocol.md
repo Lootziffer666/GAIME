@@ -81,8 +81,25 @@ und was der Blocker ist.** Nie still fehlschlagen.
 - Eigenen PR mergen
 - Branches anderer löschen
 - `main` direkt pushen
+- Auf Claude's `claude/integration-*`-Branch pushen — der gehört Claude Code
 - `settings.gradle.kts` oder `build.gradle.kts` ändern ohne expliziten Auftrag
 - Konflikte mit main eigenmächtig auflösen — das macht Claude Code
+
+### Binärdateien niemals als Inhalt öffnen
+
+PNG, WAV, MP3, PDF, ZIP und andere Binärdateien **niemals** per Read-Tool als
+Dateiinhalt lesen. Base64-Inhalt eines 2 MB PNG = ~2,7 MB Text = Kontext geflutet,
+Thread unbrauchbar.
+
+**Stattdessen:** Nur Metadaten abfragen. Das korrekte Format:
+
+```json
+{"message":"Image: /projects/sandbox/GAIME/assets/HD/ui/file.png\nFormat: png\nSize: 63618 bytes\nMediaType: image/png"}
+```
+
+Für Asset-Entscheidungen (welches Sprite passt?) → Pfad und Dateiname lesen,
+Größe prüfen, nie den Inhalt öffnen. Wenn der Inhalt eines Bildes tatsächlich
+gebraucht wird: im PR-Body als Blocker vermerken, Claude Code entscheidet.
 
 ---
 
