@@ -1,14 +1,14 @@
 """
-Phase 3: TMX Export — Label Grid / Tile-ID Grid → Tiled-compatible .tmx file.
+Phase 3: TMX Export — Multi-Layer Grid → Tiled-compatible .tmx file.
 
-Generates a TMX file that GAIME's TmxLoader can directly load.
-Uses the infinite map format with 16x16 chunks, matching the existing CraftPix maps.
+Exports ALL layers from the editor:
+- Ground → Floor/Walls/Water TMX layers (CollisionGrid-compatible names)
+- Weather Zones → custom "Weather" layer with zone properties
+- Exits/Entrances → "Exits" layer (spawn + exit markers with direction)
+- Decorative → "Decorative" layer
 
-Layer naming follows CollisionGrid conventions:
-- "Floor" → WALKABLE
-- "Walls" → SOLID (BLOCKED)
-- "Water" → WATER
-- "Decorative" → no collision
+Generated TMX is loadable by GAIME's TmxLoader. Layer names follow
+CollisionGrid conventions so collision works out of the box.
 """
 
 import xml.etree.ElementTree as ET
@@ -16,32 +16,86 @@ from xml.dom import minidom
 from segment import TileLabel
 
 
-# Tile IDs mapping (using a simple tileset where each material = one tile ID)
-# In a real tileset these would map to specific tiles in the PNG
-LABEL_TO_TILE_ID = {
-    TileLabel.FLOOR: 1,
-    TileLabel.WALL: 2,
-    TileLabel.WATER: 3,
-    TileLabel.GRASS: 4,
-    TileLabel.STONE: 5,
-    TileLabel.DOOR: 6,
-    TileLabel.EMPTY: 0,
+# Ground labels → Tile IDs
+GROUND_TILE_IDS = {
+    "floor": 1,
+    "wall": 2,
+    "water": 3,
+    "grass": 4,
+    "stone": 5,
+    "door": 6,
+    "empty": 0,
 }
 
-# Which layer each label belongs to
-LABEL_TO_LAYER = {
-    TileLabel.FLOOR: "Floor",
-    TileLabel.STONE: "Floor",
-    TileLabel.GRASS: "Floor",
-    TileLabel.DOOR: "Floor",
-    TileLabel.WALL: "Walls",
-    TileLabel.WATER: "Water",
-    TileLabel.EMPTY: None,  # not placed
+# Weather zone IDs (stored as tile IDs in a custom layer)
+WEATHER_TILE_IDS = {
+    "rain_zone": 20,
+    "snow_zone": 21,
+    "leaves_zone": 22,
+    "wind_zone": 23,
+    "fog_zone": 24,
+    "none": 0,
+}
+
+# Exit/entrance marker IDs
+EXIT_TILE_IDS = {
+    "spawn": 30,
+    "exit_north": 31,
+    "exit_south": 32,
+    "exit_east": 33,
+    "exit_west": 34,
+    "none": 0,
+}
+
+# NPC Route marker IDs
+NPC_ROUTE_TILE_IDS = {
+    "npc_waypoint": 50,
+    "npc_patrol_a": 51,
+    "npc_patrol_b": 52,
+    "npc_patrol_c": 53,
+    "npc_idle_spot": 54,
+    "npc_spawn": 55,
+    "none": 0,
+}
+
+# Interactive object IDs
+INTERACT_TILE_IDS = {
+    "lever": 60,
+    "button": 61,
+    "gate": 62,
+    "npc_talk": 63,
+    "shop": 64,
+    "save_point": 65,
+    "pickup": 66,
+    "trap": 67,
+    "none": 0,
+}
+
+# Decorative IDs
+DECO_TILE_IDS = {
+    "tree": 40,
+    "rock": 41,
+    "flower": 42,
+    "torch": 43,
+    "chest": 44,
+    "sign": 45,
+    "none": 0,
+}
+
+# Ground labels → which TMX layer they belong to
+GROUND_LAYER_MAPPING = {
+    "floor": "Floor",
+    "stone": "Floor",
+    "grass": "Floor",
+    "door": "Floor",
+    "wall": "Walls",
+    "water": "Water",
+    "empty": None,
 }
 
 
 def export_tmx(
-    grid: list[list[str]],
+    layers: dict,
     output_path: str,
     tileset_image: str = "tileset.png",
     tile_width: int = 16,
@@ -50,20 +104,33 @@ def export_tmx(
     tileset_tilecount: int = 64,
 ) -> str:
     """
-    Export a label grid to a Tiled-compatible TMX file.
+    Export multi-layer grids to a Tiled-compatible TMX file.
     
     Args:
-        grid: 2D list of TileLabel strings [row][col].
+        layers: Dict with keys "ground", "weather", "exits", "decorative".
+                Each value is a 2D list of label strings [row][col].
+                Can also be a plain 2D list (legacy: treated as ground only).
         output_path: Where to write the .tmx file.
-        tileset_image: Relative path to the tileset PNG.
-        tile_width: Tile width in pixels.
-        tile_height: Tile height in pixels.
     
     Returns:
         The output path.
     """
-    height = len(grid)
-    width = len(grid[0]) if grid else 0
+    # Handle legacy format (plain grid = ground only)
+    if isinstance(layers, list):
+        layers = {"ground": layers}
+    
+    ground = layers.get("ground", [])
+    weather = layers.get("weather")
+    exits = layers.get("exits")
+    npc_routes = layers.get("npc_routes")
+    interactable = layers.get("interactable")
+    decorative = layers.get("decorative")
+    
+    height = len(ground)
+    width = len(ground[0]) if ground else 0
+    
+    if height == 0 or width == 0:
+        raise ValueError("Ground layer is empty")
     
     # Root map element
     map_el = ET.Element("map", {
@@ -93,54 +160,57 @@ def export_tmx(
         "height": str((tileset_tilecount // tileset_columns) * tile_height),
     })
     
-    # Build layers from the grid
-    layers = {"Floor": [], "Walls": [], "Water": []}
+    # --- Ground layers (Floor, Walls, Water) ---
+    floor_data = [[0] * width for _ in range(height)]
+    wall_data = [[0] * width for _ in range(height)]
+    water_data = [[0] * width for _ in range(height)]
     
-    for y, row in enumerate(grid):
-        floor_row = []
-        wall_row = []
-        water_row = []
+    for y, row in enumerate(ground):
         for x, label in enumerate(row):
-            tile_id = LABEL_TO_TILE_ID.get(label, 0)
-            target_layer = LABEL_TO_LAYER.get(label)
-            
-            floor_row.append(tile_id if target_layer == "Floor" else 0)
-            wall_row.append(tile_id if target_layer == "Walls" else 0)
-            water_row.append(tile_id if target_layer == "Water" else 0)
-        
-        layers["Floor"].append(floor_row)
-        layers["Walls"].append(wall_row)
-        layers["Water"].append(water_row)
+            tile_id = GROUND_TILE_IDS.get(label, 0)
+            target = GROUND_LAYER_MAPPING.get(label)
+            if target == "Floor":
+                floor_data[y][x] = tile_id
+            elif target == "Walls":
+                wall_data[y][x] = tile_id
+            elif target == "Water":
+                water_data[y][x] = tile_id
     
-    # Write each layer
     layer_id = 1
-    for layer_name, tile_data in layers.items():
-        # Skip empty layers
-        if all(all(t == 0 for t in row) for row in tile_data):
-            continue
-        
-        layer_el = ET.SubElement(map_el, "layer", {
-            "id": str(layer_id),
-            "name": layer_name,
-            "width": str(width),
-            "height": str(height),
-        })
-        layer_id += 1
-        
-        # CSV data
-        data_el = ET.SubElement(layer_el, "data", {"encoding": "csv"})
-        csv_rows = []
-        for row in tile_data:
-            csv_rows.append(",".join(str(t) for t in row))
-        data_el.text = "\n" + "\n".join(csv_rows) + "\n"
+    layer_id = _write_layer(map_el, "Floor", floor_data, width, height, layer_id)
+    layer_id = _write_layer(map_el, "Walls", wall_data, width, height, layer_id)
+    layer_id = _write_layer(map_el, "Water", water_data, width, height, layer_id)
     
-    # Write to file
-    tree = ET.ElementTree(map_el)
+    # --- Weather Zones layer ---
+    if weather:
+        weather_data = [[WEATHER_TILE_IDS.get(cell, 0) for cell in row] for row in weather]
+        layer_id = _write_layer(map_el, "Weather_Zones", weather_data, width, height, layer_id)
+    
+    # --- Exits / Entrances layer ---
+    if exits:
+        exit_data = [[EXIT_TILE_IDS.get(cell, 0) for cell in row] for row in exits]
+        layer_id = _write_layer(map_el, "Exits", exit_data, width, height, layer_id)
+    
+    # --- NPC Routes layer ---
+    if npc_routes:
+        npc_data = [[NPC_ROUTE_TILE_IDS.get(cell, 0) for cell in row] for row in npc_routes]
+        layer_id = _write_layer(map_el, "NPC_Routes", npc_data, width, height, layer_id)
+    
+    # --- Interactive Objects layer ---
+    if interactable:
+        interact_data = [[INTERACT_TILE_IDS.get(cell, 0) for cell in row] for row in interactable]
+        layer_id = _write_layer(map_el, "Interactive", interact_data, width, height, layer_id)
+    
+    # --- Decorative layer ---
+    if decorative:
+        deco_data = [[DECO_TILE_IDS.get(cell, 0) for cell in row] for row in decorative]
+        layer_id = _write_layer(map_el, "Decorative", deco_data, width, height, layer_id)
+    
+    # --- Write file ---
     rough_string = ET.tostring(map_el, encoding="unicode")
     reparsed = minidom.parseString(rough_string)
     pretty = reparsed.toprettyxml(indent="  ")
     
-    # Remove extra XML declaration from minidom
     lines = pretty.split("\n")
     if lines[0].startswith("<?xml"):
         lines = lines[1:]
@@ -150,3 +220,22 @@ def export_tmx(
         f.write("\n".join(lines))
     
     return output_path
+
+
+def _write_layer(map_el, name: str, data: list, width: int, height: int, layer_id: int) -> int:
+    """Write a single tile layer. Skips if all zeros. Returns next layer_id."""
+    if all(all(t == 0 for t in row) for row in data):
+        return layer_id
+    
+    layer_el = ET.SubElement(map_el, "layer", {
+        "id": str(layer_id),
+        "name": name,
+        "width": str(width),
+        "height": str(height),
+    })
+    
+    data_el = ET.SubElement(layer_el, "data", {"encoding": "csv"})
+    csv_rows = [",".join(str(t) for t in row) for row in data]
+    data_el.text = "\n" + "\n".join(csv_rows) + "\n"
+    
+    return layer_id + 1

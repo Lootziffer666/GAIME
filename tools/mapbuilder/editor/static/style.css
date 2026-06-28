@@ -157,3 +157,38 @@ button.tool.active { background: #0f3460; border-color: #e94560; }
     display: flex;
     gap: 2rem;
 }
+
+.shortcuts { margin-left: auto; color: #444; }
+
+/* Layer tabs */
+.layer-bar {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+}
+
+.layer-tab {
+    padding: 0.4rem 0.8rem;
+    border: 1px solid #0f3460;
+    border-radius: 4px 4px 0 0;
+    background: #1a1a2e;
+    color: #aaa;
+    cursor: pointer;
+    font-size: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.layer-tab:hover { background: #0f3460; color: #fff; }
+.layer-tab.active { background: #0f3460; color: #e94560; border-bottom: 2px solid #e94560; }
+
+.layer-eye {
+    font-size: 0.7rem;
+    opacity: 0.5;
+    cursor: pointer;
+}
+
+.layer-eye.visible { opacity: 1.0; }
+.layer-eye:hover { opacity: 1.0; transform: scale(1.2); }

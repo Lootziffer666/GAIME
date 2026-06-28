@@ -9,13 +9,13 @@
 <body>
     <header>
         <h1>GAIME Map Builder</h1>
-        <p class="subtitle">Photo &rarr; Segmentation &rarr; Paint &rarr; TMX Export</p>
+        <p class="subtitle">Photo &rarr; Segmentation &rarr; Multi-Layer Paint &rarr; TMX Export</p>
     </header>
 
     <main>
         <!-- STEP 1: Upload -->
         <section id="upload-section" class="panel">
-            <h2>1. Upload Photo / Sketch</h2>
+            <h2>1. Upload Photo / Sketch (or start blank)</h2>
             <div class="upload-area" id="drop-zone">
                 <p>Drop an image here or click to browse</p>
                 <input type="file" id="file-input" accept="image/*" hidden>
@@ -23,24 +23,30 @@
             <div class="grid-size">
                 <label>Grid: <input type="number" id="grid-width" value="32" min="8" max="128"> x
                 <input type="number" id="grid-height" value="24" min="8" max="96"> tiles</label>
-                <button id="btn-segment" disabled>Segment</button>
+                <button id="btn-segment" disabled>Segment Photo</button>
+                <button id="btn-new">New Blank Map</button>
             </div>
         </section>
 
         <!-- STEP 2: Editor -->
         <section id="editor-section" class="panel" style="display:none;">
-            <h2>2. Paint / Correct</h2>
+            <h2>2. Paint Layers</h2>
+
+            <!-- Layer Tabs -->
+            <div class="layer-bar" id="layer-tabs">
+                <!-- Filled by JS -->
+            </div>
             
             <div class="toolbar">
                 <div class="palette" id="palette">
-                    <!-- Filled by JS -->
+                    <!-- Filled by JS per active layer -->
                 </div>
                 <div class="tools">
                     <button id="btn-brush" class="tool active" title="Brush (B)">Brush</button>
                     <button id="btn-fill" class="tool" title="Fill (F)">Fill</button>
                     <button id="btn-eraser" class="tool" title="Eraser (E)">Eraser</button>
                     <label class="ghost-toggle">
-                        <input type="checkbox" id="toggle-ghost" checked> Show photo
+                        <input type="checkbox" id="toggle-ghost" checked> Photo overlay
                     </label>
                 </div>
                 <div class="actions">
@@ -55,6 +61,7 @@
             <div class="status-bar">
                 <span id="status-pos">-</span>
                 <span id="status-label">-</span>
+                <span class="shortcuts">Keys: B=Brush F=Fill E=Eraser | 1-4=Layer</span>
             </div>
         </section>
     </main>

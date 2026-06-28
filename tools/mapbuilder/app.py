@@ -25,7 +25,7 @@ from flask import Flask, render_template, request, jsonify, send_file
 
 from segment import segment_image, grid_to_preview, TileLabel
 from wfc import apply_variants
-from export_tmx import export_tmx, LABEL_TO_TILE_ID
+from export_tmx import export_tmx, GROUND_TILE_IDS
 
 app = Flask(__name__,
             template_folder="editor/templates",
@@ -34,6 +34,7 @@ app = Flask(__name__,
 # Store current session state (single-user tool)
 SESSION = {
     "grid": None,
+    "layers": None,
     "original_image": None,
     "grid_width": 32,
     "grid_height": 24,
@@ -93,21 +94,28 @@ def upload_image():
 
 @app.route("/api/update_grid", methods=["POST"])
 def update_grid():
-    """Update the grid after user paints tiles."""
+    """Update all layer grids after user paints tiles."""
     data = request.get_json()
-    SESSION["grid"] = data["grid"]
+    # Multi-layer format: {ground: [...], weather: [...], exits: [...], decorative: [...]}
+    if "ground" in data:
+        SESSION["layers"] = data
+        SESSION["grid"] = data.get("ground")
+    elif "grid" in data:
+        # Legacy single-grid format
+        SESSION["grid"] = data["grid"]
+        SESSION["layers"] = {"ground": data["grid"]}
     return jsonify({"ok": True})
 
 
 @app.route("/api/export_tmx", methods=["POST"])
 def do_export_tmx():
-    """Export current grid as TMX file and return for download."""
-    grid = SESSION.get("grid")
-    if not grid:
+    """Export all layers as TMX file and return for download."""
+    layers = SESSION.get("layers") or {"ground": SESSION.get("grid")}
+    if not layers or not layers.get("ground"):
         return jsonify({"error": "No grid loaded"}), 400
     
     with tempfile.NamedTemporaryFile(suffix=".tmx", delete=False, mode="w") as tmp:
-        export_tmx(grid, tmp.name)
+        export_tmx(layers, tmp.name)
         tmp_path = tmp.name
     
     try:
@@ -118,7 +126,6 @@ def do_export_tmx():
             download_name="generated_map.tmx",
         )
     finally:
-        # Cleanup after send (small delay ok for temp files)
         pass
 
 
