@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.10" tiledversion="1.10.2" orientation="orthogonal" renderorder="right-down" width="10" height="6" tilewidth="16" tileheight="16" infinite="0">
+  <tileset firstgid="1" name="mapbuilder_tiles" tilewidth="16" tileheight="16" tilecount="64" columns="8">
+    <image source="tileset.png" width="128" height="128"/>
+  </tileset>
+  <layer id="1" name="Floor" width="10" height="6">
+    <data encoding="csv">
+0,0,0,0,0,0,0,0,0,0
+0,1,1,1,1,1,1,1,1,0
+0,1,1,1,0,0,0,0,1,0
+0,1,1,1,0,0,0,0,1,0
+0,1,1,1,1,1,1,1,1,0
+0,0,0,0,0,0,0,0,0,0
+</data>
+  </layer>
+  <layer id="2" name="Walls" width="10" height="6">
+    <data encoding="csv">
+2,2,2,2,2,2,2,2,2,2
+2,0,0,0,0,0,0,0,0,2
+2,0,0,0,0,0,0,0,0,2
+2,0,0,0,0,0,0,0,0,2
+2,0,0,0,0,0,0,0,0,2
+2,2,2,2,2,2,2,2,2,2
+</data>
+  </layer>
+  <layer id="3" name="Water" width="10" height="6">
+    <data encoding="csv">
+0,0,0,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0
+0,0,0,0,3,3,3,3,0,0
+0,0,0,0,3,3,3,3,0,0
+0,0,0,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0
+</data>
+  </layer>
+  <layer id="4" name="Weather_Zones" width="10" height="6">
+    <data encoding="csv">
+0,0,0,0,0,0,0,0,0,0
+0,20,20,20,20,20,20,20,20,0
+0,20,20,20,0,0,0,0,20,0
+0,21,21,21,0,0,0,0,21,0
+0,21,21,21,21,21,21,21,21,0
+0,0,0,0,0,0,0,0,0,0
+</data>
+  </layer>
+  <layer id="5" name="Exits" width="10" height="6">
+    <data encoding="csv">
+0,0,0,0,0,0,0,0,0,0
+0,0,0,0,30,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,33
+0,0,0,0,0,0,0,0,0,0
+</data>
+  </layer>
+  <layer id="6" name="Decorative" width="10" height="6">
+    <data encoding="csv">
+0,0,0,0,0,0,0,0,0,0
+0,43,0,0,0,0,0,0,43,0
+0,0,0,0,0,0,0,0,0,0
+0,0,0,0,0,0,0,0,0,0
+0,40,0,0,0,0,0,0,40,0
+0,0,0,0,0,0,0,0,0,0
+</data>
+  </layer>
+</map>
