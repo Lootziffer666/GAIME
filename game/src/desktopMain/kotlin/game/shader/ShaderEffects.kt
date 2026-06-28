@@ -25,6 +25,8 @@ class ShaderEffects {
     val lightingFilter = LightingFilter()
     val heatShimmerFilter = HeatShimmerFilter()
     val rainFilter = RainFilter()
+    val snowFilter = SnowFilter()
+    val bloodFilter = BloodFilter()
 
     private var time = 0f
 
@@ -40,6 +42,8 @@ class ShaderEffects {
             lightingFilter.time = time
             heatShimmerFilter.time = time
             rainFilter.time = time
+            snowFilter.time = time
+            bloodFilter.time = time
         }
     }
 
@@ -68,6 +72,16 @@ class ShaderEffects {
     /** Applies rain to [target]. */
     fun attachRain(target: Container) {
         target.filter = rainFilter
+    }
+
+    /** Applies snow to [target]. */
+    fun attachSnow(target: Container) {
+        target.filter = snowFilter
+    }
+
+    /** Applies blood splatter to [target]. */
+    fun attachBlood(target: Container) {
+        target.filter = bloodFilter
     }
 
     /** Removes all filters from [target]. */

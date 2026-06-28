@@ -57,6 +57,12 @@ fun main() {
     captureQuestbookReaction()
     captureWorldPressureHigh()
     captureBattleBossPhase2()
+    // Physics system captures
+    capturePhysicsSnow()
+    capturePhysicsFootprints()
+    capturePhysicsBlood()
+    capturePhysicsTorchlight()
+    capturePhysicsComplete()
 }
 
 private fun captureWorld(config: MapConfig, name: String, withDialog: Boolean) {
@@ -515,5 +521,210 @@ private fun captureBattleBossPhase2() {
         QuestbookOverlay(this, VW, VH).showMessage("The Accountant files objections!", QuestPressure.HIGH)
 
         save("battle_boss_phase2")
+    }
+}
+
+// =============================================================================
+// PHYSICS SYSTEM CAPTURES
+// =============================================================================
+
+/**
+ * Snow: Exterior map + SnowFilter at intensity 0.7, windAngle 0.3, time=2.5.
+ */
+private fun capturePhysicsSnow() {
+    val config = MapConfig.exterior()
+    korgeScreenshotTest(Size(VW, VH)) {
+        val tiledMap = TmxLoader.parse(resourcesVfs[config.tmxPath].readString())
+        val atlases = tiledMap.tilesets.map { TilesetAtlas.load(it, config.tmxDir) }
+        val mapView = TiledMapView(tiledMap, atlases)
+        mapView.scale = SCALE
+        addChild(mapView)
+
+        val player = CharacterSprite(mapView, tiledMap.tileWidth, tiledMap.tileHeight)
+        player.loadSwordsman()
+        player.gridX = config.spawnX; player.gridY = config.spawnY
+        player.play(SpriteAnimation.IDLE)
+
+        mapView.x = VW / 2.0 - player.visualGridX * tiledMap.tileWidth * SCALE
+        mapView.y = VH / 2.0 - player.visualGridY * tiledMap.tileHeight * SCALE
+
+        val snowFilter = game.shader.SnowFilter(intensity = 0.7f, windAngle = 0.3f, time = 2.5f)
+        mapView.filter = snowFilter
+
+        save("physics_snow")
+    }
+}
+
+/**
+ * Footprints: Exterior map + SnowFilter at intensity 0.8 + visible footprint trail
+ * rendered as dark semi-transparent rectangles on the map to simulate cleared snow.
+ */
+private fun capturePhysicsFootprints() {
+    val config = MapConfig.exterior()
+    korgeScreenshotTest(Size(VW, VH)) {
+        val tiledMap = TmxLoader.parse(resourcesVfs[config.tmxPath].readString())
+        val atlases = tiledMap.tilesets.map { TilesetAtlas.load(it, config.tmxDir) }
+        val mapView = TiledMapView(tiledMap, atlases)
+        mapView.scale = SCALE
+        addChild(mapView)
+
+        val player = CharacterSprite(mapView, tiledMap.tileWidth, tiledMap.tileHeight)
+        player.loadSwordsman()
+        player.gridX = config.spawnX; player.gridY = config.spawnY
+        player.play(SpriteAnimation.IDLE)
+
+        mapView.x = VW / 2.0 - player.visualGridX * tiledMap.tileWidth * SCALE
+        mapView.y = VH / 2.0 - player.visualGridY * tiledMap.tileHeight * SCALE
+
+        // Draw dark footprint indicators on map (simulating cleared snow)
+        val tileW = tiledMap.tileWidth * SCALE
+        val tileH = tiledMap.tileHeight * SCALE
+        val footprintColor = RGBA(0x22, 0x22, 0x22, 0x66)
+        // Footprint path: 4 tiles in a row
+        for (i in 0 until 4) {
+            solidRect(tileW, tileH, footprintColor).apply {
+                x = mapView.x + (config.spawnX + 1 + i) * tileW
+                y = mapView.y + config.spawnY * tileH
+            }
+        }
+
+        // Apply snow filter with high intensity (footprints are visible as gaps)
+        val snowFilter = game.shader.SnowFilter(intensity = 0.8f, windAngle = 0.2f, time = 1.8f)
+        mapView.filter = snowFilter
+
+        save("physics_footprints")
+    }
+}
+
+/**
+ * Blood: Exterior map + BloodFilter at intensity 0.6, splatterSeed 42.0, time=1.0.
+ */
+private fun capturePhysicsBlood() {
+    val config = MapConfig.exterior()
+    korgeScreenshotTest(Size(VW, VH)) {
+        val tiledMap = TmxLoader.parse(resourcesVfs[config.tmxPath].readString())
+        val atlases = tiledMap.tilesets.map { TilesetAtlas.load(it, config.tmxDir) }
+        val mapView = TiledMapView(tiledMap, atlases)
+        mapView.scale = SCALE
+        addChild(mapView)
+
+        val player = CharacterSprite(mapView, tiledMap.tileWidth, tiledMap.tileHeight)
+        player.loadSwordsman()
+        player.gridX = config.spawnX; player.gridY = config.spawnY
+        player.play(SpriteAnimation.IDLE)
+
+        mapView.x = VW / 2.0 - player.visualGridX * tiledMap.tileWidth * SCALE
+        mapView.y = VH / 2.0 - player.visualGridY * tiledMap.tileHeight * SCALE
+
+        val bloodFilter = game.shader.BloodFilter(intensity = 0.6f, splatterSeed = 42.0f, time = 1.0f)
+        mapView.filter = bloodFilter
+
+        save("physics_blood")
+    }
+}
+
+/**
+ * Torchlight: Exterior map + LightingFilter with 2 torches, ambient 0.1.
+ */
+private fun capturePhysicsTorchlight() {
+    val config = MapConfig.exterior()
+    korgeScreenshotTest(Size(VW, VH)) {
+        val tiledMap = TmxLoader.parse(resourcesVfs[config.tmxPath].readString())
+        val atlases = tiledMap.tilesets.map { TilesetAtlas.load(it, config.tmxDir) }
+        val mapView = TiledMapView(tiledMap, atlases)
+        mapView.scale = SCALE
+        addChild(mapView)
+
+        val player = CharacterSprite(mapView, tiledMap.tileWidth, tiledMap.tileHeight)
+        player.loadSwordsman()
+        player.gridX = config.spawnX; player.gridY = config.spawnY
+        player.play(SpriteAnimation.IDLE)
+
+        mapView.x = VW / 2.0 - player.visualGridX * tiledMap.tileWidth * SCALE
+        mapView.y = VH / 2.0 - player.visualGridY * tiledMap.tileHeight * SCALE
+
+        val tilePixelSize = (tiledMap.tileWidth * SCALE).toFloat()
+        val lightingFilter = game.shader.LightingFilter(
+            ambientDarkness = 0.1f,
+            time = 2.0f,
+        )
+        lightingFilter.tilePixelSize = tilePixelSize
+        lightingFilter.lights = listOf(
+            game.shader.LightSource(
+                tileX = -3, tileY = 9,
+                radius = 6f, r = 1.0f, g = 0.8f, b = 0.4f,
+                intensity = 0.9f, flickerSpeed = 3.0f, flickerAmount = 0.15f
+            ),
+            game.shader.LightSource(
+                tileX = 0, tileY = 10,
+                radius = 5f, r = 1.0f, g = 0.75f, b = 0.35f,
+                intensity = 0.85f, flickerSpeed = 3.5f, flickerAmount = 0.12f
+            ),
+        )
+        mapView.filter = lightingFilter
+
+        save("physics_torchlight")
+    }
+}
+
+/**
+ * Complete: Exterior map + ALL 5 effects together using nested containers.
+ * Outermost: BloodFilter, Middle: SnowFilter, Innermost (mapView): LightingFilter.
+ * Wind drives the SnowFilter drift direction. RainFilter windAngle also set.
+ */
+private fun capturePhysicsComplete() {
+    val config = MapConfig.exterior()
+    korgeScreenshotTest(Size(VW, VH)) {
+        val tiledMap = TmxLoader.parse(resourcesVfs[config.tmxPath].readString())
+        val atlases = tiledMap.tilesets.map { TilesetAtlas.load(it, config.tmxDir) }
+
+        val tilePixelSize = (tiledMap.tileWidth * SCALE).toFloat()
+        val windAngle = 0.3f
+
+        // Nested containers: outermost → BloodFilter, middle → SnowFilter, innermost → LightingFilter
+        val outerContainer = korlibs.korge.view.Container().also { addChild(it) }
+        val middleContainer = korlibs.korge.view.Container().also { outerContainer.addChild(it) }
+
+        val mapView = TiledMapView(tiledMap, atlases)
+        mapView.scale = SCALE
+        middleContainer.addChild(mapView)
+
+        val player = CharacterSprite(mapView, tiledMap.tileWidth, tiledMap.tileHeight)
+        player.loadSwordsman()
+        player.gridX = config.spawnX; player.gridY = config.spawnY
+        player.play(SpriteAnimation.IDLE)
+
+        mapView.x = VW / 2.0 - player.visualGridX * tiledMap.tileWidth * SCALE
+        mapView.y = VH / 2.0 - player.visualGridY * tiledMap.tileHeight * SCALE
+
+        // Innermost: LightingFilter on mapView (torches)
+        val lightingFilter = game.shader.LightingFilter(
+            ambientDarkness = 0.15f,
+            time = 2.0f,
+        )
+        lightingFilter.tilePixelSize = tilePixelSize
+        lightingFilter.lights = listOf(
+            game.shader.LightSource(
+                tileX = -3, tileY = 9,
+                radius = 6f, r = 1.0f, g = 0.8f, b = 0.4f,
+                intensity = 0.9f, flickerSpeed = 3.0f, flickerAmount = 0.15f
+            ),
+            game.shader.LightSource(
+                tileX = 0, tileY = 10,
+                radius = 5f, r = 1.0f, g = 0.75f, b = 0.35f,
+                intensity = 0.85f, flickerSpeed = 3.5f, flickerAmount = 0.12f
+            ),
+        )
+        mapView.filter = lightingFilter
+
+        // Middle: SnowFilter (wind-driven)
+        val snowFilter = game.shader.SnowFilter(intensity = 0.6f, windAngle = windAngle, time = 2.5f)
+        middleContainer.filter = snowFilter
+
+        // Outermost: BloodFilter
+        val bloodFilter = game.shader.BloodFilter(intensity = 0.5f, splatterSeed = 42.0f, time = 1.0f)
+        outerContainer.filter = bloodFilter
+
+        save("physics_complete")
     }
 }
