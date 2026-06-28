@@ -18,6 +18,7 @@ import rpg.questbook.RoomContext
 import rpg.tiled.CollisionGrid
 import rpg.tiled.TileType
 import rpg.tiled.TmxLoader
+import game.shader.ShaderEffects
 
 /**
  * Main world scene — replaces TiledMapScene as boot target.
@@ -88,6 +89,12 @@ class WorldScene : Scene() {
         val questbook = QuestbookOverlay(this, width, height)
         questbook.refresh(director.pressure, director.questMarkers + director.falseMarkers)
 
+        // 7c. Shader = State (Pressure → Poison-Shader on mapView)
+        val effects = ShaderEffects()
+        effects.startTimeUpdater(this)
+        val shaderBinder = ShaderStateBinder(effects, mapView)
+        shaderBinder.applyPressure(director.pressure)
+
         // 8. BGM
         audioManager.playMusic(config.bgmPath)
 
@@ -129,6 +136,7 @@ class WorldScene : Scene() {
                                     director.pressure,
                                     director.questMarkers + director.falseMarkers,
                                 )
+                                shaderBinder.applyPressure(director.pressure)
                             }
                         }
                     }
