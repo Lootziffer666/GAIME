@@ -276,11 +276,23 @@ data class MapConfig(
 }
 ```
 
-**Hinweis Exit-Koordinaten:**
-Die Koordinaten `(8, 1)` für Interior und `(8, 22)` für Exterior sind Schätzwerte basierend auf
-den bekannten Map-Dimensionen. Kiro soll die Exit-Kacheln anhand der CollisionGrid-Typen oder
-durch Inspektion der TMX-Dateien korrigieren, falls die Spawn-Koordinaten visuell falsch wirken.
+**Hinweis Exit-Koordinaten (PFLICHT-Prüfung):**
+Beide Maps sind `width="16" height="24"` (verifiziert in den TMX-Headern). Die Koordinaten
+`(8, 1)` für Interior und `(8, 22)` für Exterior sind **Schätzwerte** an den Kartenrändern und
+**könnten Wand-Tiles (BLOCKED) sein** — dann ist die Exit-Kachel nie erreichbar und der Übergang
+feuert nie. Kiro MUSS für jede konfigurierte Exit-Kachel prüfen, dass
+`collision[exit.tileX - offsetX, exit.tileY - offsetY]` den Typ `WALKABLE` (oder `TRIGGER`) hat.
+Falls BLOCKED: eine benachbarte begehbare Kachel als Exit wählen. Gleiches gilt für die
+Spawn-Koordinaten der Zielkarte — der Spieler darf nicht in einer Wand landen.
+
+Praktischer Weg: Im `WorldScene.sceneMain()` nach dem Bau von `collision` einmalig die
+konfigurierten Exits/Spawns gegen `collision[...]` validieren und bei BLOCKED auf eine begehbare
+Nachbarkachel ausweichen (oder im Result dokumentieren, welche Koordinaten korrigiert wurden).
 Die Architektur (MapExit + MapConfig.exits) erlaubt triviale Anpassung ohne Strukturänderung.
+
+**Verifiziert:** `Exterior.tmx` lädt mit dem aktuellen `TmxLoader` — gleiches Format wie das
+bereits funktionierende `Interior1.tmx` (16×24, `infinite="1"`, CSV, Multi-Tileset mit
+animierten Tiles). Beide teilen `tmxDir`, Tilesets korrekt referenziert.
 
 ---
 
@@ -324,23 +336,46 @@ fun startMove(toGridX: Int, toGridY: Int): Boolean {
 }
 ```
 
-In `advanceAnimation(dtMs: Float)`: vor der Frame-Logik `moveProgress` vorwärts ticken:
+In `advanceAnimation(dtMs: Float)` den `moveProgress`-Tick einfügen. **WICHTIG: Der Tick muss
+VOR dem `val frames = animations[currentAnim] ?: return` stehen** — sonst friert ein Sprite ohne
+geladene Animation mitten in der Bewegung ein. Der aktuelle Code (`CharacterSprite.kt:85-86`)
+beginnt mit:
 ```kotlin
-if (isMoving) {
-    moveProgress = (moveProgress + dtMs / stepDurationMs).coerceAtMost(1f)
-    updatePosition()
-}
+private fun advanceAnimation(dtMs: Float) {
+    val frames = animations[currentAnim] ?: return   // ← bestehender early-return
+    ...
+```
+Daraus wird:
+```kotlin
+private fun advanceAnimation(dtMs: Float) {
+    // Smooth movement zuerst — unabhängig davon ob Frames geladen sind
+    if (isMoving) {
+        moveProgress = (moveProgress + dtMs / stepDurationMs).coerceAtMost(1f)
+        updatePosition()
+    }
+    val frames = animations[currentAnim] ?: return   // ← bestehender early-return bleibt
+    ...
 ```
 
-`updatePosition()` nutzt `visualGridX/Y` statt `gridX/Y` für die visuelle Position:
+`updatePosition()` nutzt `visualGridX/Y` statt `gridX/Y` für die visuelle Position. **Der aktuelle
+`updatePosition()` (`CharacterSprite.kt:130-133`) hat KEINE Flip-Korrektur — nur die zwei
+Positions-Zeilen.** Nur diese zwei Zeilen auf `visualGridX/Y` umstellen:
 ```kotlin
 private fun updatePosition() {
     img.x = visualGridX * tileWidth + pixelOffsetX
     img.y = visualGridY * tileHeight + pixelOffsetY
-    // Flip für LEFT-Facing: Pivot-Korrektur anpassen wenn scaleX = -1
-    if (img.scaleX < 0) img.x += img.width  // korrigiert Flip-Origin
 }
 ```
+
+**Flip-Origin (OPTIONAL, kein Acceptance-Kriterium):** Bei LEFT-Facing setzt `updateFacing()`
+`img.scaleX = -1`, wodurch der Sprite sich um seinen Origin (oben-links) spiegelt und visuell um
+eine Sprite-Breite nach links rutscht. Das ist ein bereits im Step-5a-Code vorhandener, kleiner
+latenter Versatz. Falls Kiro ihn beheben will: **nicht** über `img.x += img.width` in
+`updatePosition()` (läuft jeden Frame, und `img.width` ist bei `scaleX = -1` nicht zuverlässig die
+Frame-Breite). Stattdessen sauberer Weg — `img.anchor(0.5, 0.5)` setzen und `pixelOffset`
+entsprechend um eine halbe Frame-Breite anpassen, oder die Korrektur explizit in `updateFacing()`
+(läuft nur bei Richtungswechsel, nicht pro Frame). **Im Zweifel: Versatz belassen** — er ist
+kosmetisch und blockiert nichts.
 
 **Wichtig:** `gridX`/`gridY` Property-Setter (`set(value) { field = value; updatePosition() }`)
 bleiben erhalten, aber `updatePosition()` liest jetzt `visualGridX/Y`. Da `startMove()` erst
@@ -421,7 +456,12 @@ class DialogOverlay(
     private val panelHeight = vh * 0.28       // 28 % der Bildschirmhöhe
     private val panelY = vh - panelHeight - 8.0
 
+    // ALLE Views sind direkte Kinder von `parent` und werden EINZELN per `.visible`
+    // gesteuert. KEIN addChild auf `panel` — SolidRect ist ein Leaf-View (kein
+    // Container), addChild existiert dort nicht (Compile-Fehler), und solidRect()
+    // hat das View ohnehin schon zu `parent` hinzugefügt. (Siehe Pitfall #6.)
     private val panel: SolidRect
+    private val border: SolidRect
     private val speakerLabel: Text
     private val bodyLabel: Text
     private val promptLabel: Text
@@ -436,10 +476,9 @@ class DialogOverlay(
         panel = parent.solidRect(vw - 16.0, panelHeight, RGBA(0x0a, 0x0a, 0x14, 0xdd))
             .apply { x = 8.0; y = panelY; visible = false }
 
-        // Rahmen (einfacher solidRect-Streifen oben)
-        parent.solidRect(vw - 16.0, 2.0, Colors["#886644"])
+        // Rahmen (einfacher solidRect-Streifen oben) — direktes Kind von parent
+        border = parent.solidRect(vw - 16.0, 2.0, Colors["#886644"])
             .apply { x = 8.0; y = panelY; visible = false }
-            .also { panel.addChild(it) /* bleibt unsichtbar wenn panel versteckt */ }
 
         speakerLabel = parent.text("", textSize = 14.0, color = Colors["#ffdd88"])
             .apply { x = 20.0; y = panelY + 10.0; visible = false }
@@ -474,24 +513,25 @@ class DialogOverlay(
         }
     }
 
-    private fun display(line: DialogLine) {
-        val hasPanel = true  // always show panel
-        panel.visible = hasPanel
-        speakerLabel.visible = hasPanel
-        bodyLabel.visible = hasPanel
-        promptLabel.visible = hasPanel
+    private fun setVisible(v: Boolean) {
+        panel.visible = v
+        border.visible = v
+        speakerLabel.visible = v
+        bodyLabel.visible = v
+        promptLabel.visible = v
+    }
 
+    private fun display(line: DialogLine) {
+        setVisible(true)
         speakerLabel.text = if (line.speaker.isNotEmpty()) line.speaker else ""
         bodyLabel.text = line.text
-        // Simple word-wrap: KorGE Text wraps automatically if width is set
-        // For now: plain multiline is sufficient (text may overflow on very long lines)
+        // Lange Zeilen in DialogLine.text manuell mit \n umbrechen (max ~60 Zeichen).
+        // KorGE's text() bricht NICHT automatisch um, auch nicht mit gesetzter width
+        // (siehe Pitfall #7). Word-Wrapping ist ein späteres Feature.
     }
 
     private fun hide() {
-        panel.visible = false
-        speakerLabel.visible = false
-        bodyLabel.visible = false
-        promptLabel.visible = false
+        setVisible(false)
         lines = emptyList()
         lineIndex = 0
     }
@@ -887,12 +927,25 @@ Kein GL-Fenster, kein Runtime-Test — reine Kompilierung genügt.
    sofort, bewegt sich dann.
 
 9. **NPC-Flip für LEFT-Facing**: `CharacterSprite.updateFacing()` setzt `img.scaleX = -1` für
-   LEFT. Der Pivot-Korrektur-Code in `updatePosition()` muss sicherstellen dass der Flip-Origin
-   korrekt ist (existiert bereits in Step-5a-Code, prüfen ob mit visualGridX konsistent).
+   LEFT. Der aktuelle Step-5a-Code hat **keine** Flip-Origin-Korrektur (nur ein Kommentar in
+   `updateFacing()` der eine verspricht, aber nichts tut) — der Sprite rutscht bei LEFT um eine
+   Sprite-Breite. Das ist ein kosmetischer, bereits existierender Versatz. Die Korrektur ist in
+   Schritt 4a als **optional** beschrieben; sie ist KEIN Acceptance-Kriterium. Falls behoben:
+   nicht per `img.x += img.width` im Per-Frame-`updatePosition()`, sondern via `anchor`/`pixelOffset`
+   oder in `updateFacing()` (läuft nur bei Richtungswechsel). Im Zweifel Versatz belassen.
 
 10. **MapConfig als companion-Default**: `WorldScene.pendingConfig` ist mit `MapConfig.interior()`
     initialisiert. Wenn `BattleScene` via Q zurück zu WorldScene geht, ohne pendingConfig zu
     ändern, landet der Spieler auf der Karte auf der er vorher war — das ist gewollt.
+
+11. **Exit-/Spawn-Kacheln gegen CollisionGrid validieren** (siehe Schritt-3-Hinweis): die
+    konfigurierten Rand-Koordinaten sind Schätzwerte und könnten BLOCKED sein. Vor Auslieferung
+    prüfen dass jede Exit- und Spawn-Kachel WALKABLE/TRIGGER ist, sonst ist der Übergang tot oder
+    der Spieler steckt in einer Wand.
+
+12. **`moveProgress`-Tick-Reihenfolge** (siehe Schritt 4a): der Tick muss VOR dem bestehenden
+    `val frames = animations[currentAnim] ?: return` in `advanceAnimation()` stehen, sonst friert
+    die Bewegung ein wenn keine Animation geladen ist.
 
 ### `:core`-APIs die in 5b direkt verwendet werden:
 
