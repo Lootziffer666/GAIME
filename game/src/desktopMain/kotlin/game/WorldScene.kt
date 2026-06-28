@@ -98,9 +98,71 @@ class WorldScene : Scene() {
         // 8. BGM
         audioManager.playMusic(config.bgmPath)
 
+        // 8b. Water simulation + wetness + lantern + drunk state
+        val waterGrid = rpg.weather.WaterGrid(
+            width = collision.cols, height = collision.rows,
+            offsetX = collision.offsetX, offsetY = collision.offsetY
+        )
+        val waterOverlay = WaterOverlay(mapView, tiledMap.tileWidth, tiledMap.tileHeight)
+        val playerWetness = rpg.weather.WetnessState()
+        var isRaining = (config.id == MapId.EXTERIOR) // rain in exterior
+        var lanternActive = false
+        var drunkLevel = 0f
+        val soberRate = 0.02f // per second
+        val drunkState = rpg.weather.DrunkState()
+
+        // Lantern light source (follows player)
+        val lanternLight = game.shader.LightSource(
+            tileX = player.gridX, tileY = player.gridY,
+            radius = 5f, r = 1.0f, g = 0.8f, b = 0.4f,
+            intensity = 0.9f, flickerSpeed = 3.0f
+        )
+
         // 9. Input loop
         addUpdater { dt ->
-            questbook.update(dt.seconds.toFloat())
+            val dtSec = dt.seconds.toFloat()
+            questbook.update(dtSec)
+
+            // Water sim tick
+            if (isRaining) waterGrid.addRain(0.005f * dtSec)
+            waterGrid.flowStep()
+            waterOverlay.update(waterGrid)
+
+            // Wetness: soak in rain or puddle, dry near lantern
+            if (isRaining) playerWetness.soak(0.01f * dtSec)
+            if (waterGrid.puddleAt(player.gridX - collision.offsetX, player.gridY - collision.offsetY)) {
+                playerWetness.soak(0.02f * dtSec)
+            }
+            if (lanternActive) playerWetness.dryNearHeat(0.03f * dtSec)
+
+            // Drunk sobering + DrunkState tick
+            if (drunkLevel > 0f) {
+                drunkLevel = (drunkLevel - soberRate * dtSec).coerceAtLeast(0f)
+                shaderBinder.applyDrunk(drunkLevel)
+            }
+            val soberDmg = drunkState.soberTick(dtSec)
+            if (soberDmg > 0) {
+                hero.takeDamage(soberDmg)
+                questbook.showMessage("Ow. What happened last night? (-$soberDmg HP)", director.pressure)
+            }
+
+            // Drunk idle → sleep → robbed
+            drunkState.tickIdle(dtSec)
+            if (drunkState.isAsleep) {
+                val stolen = drunkState.goldStolenWhileAsleep(inventory.gold)
+                if (stolen > 0) {
+                    // NOTE: Inventory.gold has private set — actual gold deduction needs
+                    // a :core API change (Inventory.loseGold()). For now: visual + bark only.
+                    drunkState.wakeUp()
+                    questbook.showMessage("You fell asleep. Someone took $stolen gold.\n(Where did I put that map?)", director.pressure)
+                }
+            }
+
+            // Rain shader (exterior only)
+            if (isRaining && drunkLevel <= 0.01f) {
+                effects.rainFilter.intensity = 0.6f
+            }
+
             val keys = views.input.keys
 
             // --- Dialog has priority ---
@@ -114,7 +176,32 @@ class WorldScene : Scene() {
             // --- SPACE → BattleScene ---
             if (keys.justPressed(Key.SPACE)) {
                 audioManager.stopMusic()
+                BattleScene.bossEncounter = false
                 launch { sceneContainer.changeTo<BattleScene>() }
+                return@addUpdater
+            }
+
+            // --- L → Toggle Lantern ---
+            if (keys.justPressed(Key.L)) {
+                lanternActive = !lanternActive
+                if (lanternActive) {
+                    effects.lightingFilter.ambientDarkness = 0.1f
+                    effects.lightingFilter.tilePixelSize = (tiledMap.tileWidth * mapScale).toFloat()
+                    effects.lightingFilter.lights = listOf(lanternLight.copy(tileX = player.gridX, tileY = player.gridY))
+                    effects.attachLighting(mapView, effects.lightingFilter.lights, effects.lightingFilter.tilePixelSize)
+                } else {
+                    effects.detach(mapView)
+                    shaderBinder.applyPressure(director.pressure) // restore pressure shader if any
+                }
+            }
+
+            // --- J → Open Questbook ---
+            if (keys.justPressed(Key.J)) {
+                QuestbookScreen.entries = director.questbook.log
+                QuestbookScreen.markers = director.questMarkers + director.falseMarkers
+                QuestbookScreen.partyName = director.partyName
+                QuestbookScreen.pressure = director.pressure
+                launch { sceneContainer.changeTo<QuestbookScreen>() }
                 return@addUpdater
             }
 
@@ -138,6 +225,27 @@ class WorldScene : Scene() {
                                 )
                                 shaderBinder.applyPressure(director.pressure)
                             }
+                        }
+                    }
+                    // Beer Goggles: Barkeep increases drunkLevel
+                    if (npc.first.barkEvent == rpg.bark.BarkEvent.BARKEEP_SPEND_SOME_COIN) {
+                        drunkLevel = (drunkLevel + 0.34f).coerceAtMost(1f)
+                        drunkState.drink(0.34f)
+                        shaderBinder.applyDrunk(drunkLevel)
+                    }
+                    // Beer Goggles combat trigger: drunk Brugg mistakes NPCs for dates
+                    if (drunkLevel > 0.6f && npc.first.barkEvent == null) {
+                        dialog.show(listOf(
+                            DialogLine("Brugg", "Well hello there, beautiful..."),
+                            DialogLine("???", "..."),
+                            DialogLine("Brugg", "Can I buy you an ale?"),
+                            DialogLine("???", "*swings fist*"),
+                        ))
+                        BattleScene.bossEncounter = false
+                        launch {
+                            kotlinx.coroutines.delay(2000)
+                            audioManager.stopMusic()
+                            sceneContainer.changeTo<BattleScene>()
                         }
                     }
                     return@addUpdater
@@ -165,6 +273,22 @@ class WorldScene : Scene() {
                     }
                     if (!npcBlocking && player.startMove(nx, ny)) {
                         player.play(SpriteAnimation.WALK)
+                        drunkState.resetIdle()
+
+                        // Torkeln: drunk stumble — L-shaped drift like a chess knight.
+                        // Player moves to target, then drifts perpendicular (1 step sideways).
+                        // Deterministic: stumble on every move when heavily drunk, alternate sides.
+                        if (drunkState.stumbleChance > 0.3f) {
+                            // Perpendicular drift: if moving N/S → drift E or W; if E/W → drift N or S
+                            val perpDx = if (dx != 0) 0 else if ((nx + ny) % 2 == 0) 1 else -1
+                            val perpDy = if (dy != 0) 0 else if ((nx + ny) % 2 == 0) 1 else -1
+                            val sx = nx + perpDx; val sy = ny + perpDy
+                            val scx = sx - collision.offsetX; val scy = sy - collision.offsetY
+                            if (collision[scx, scy] == TileType.WALKABLE) {
+                                // Knight-move: end up one tile perpendicular to intended direction
+                                player.gridX = sx; player.gridY = sy
+                            }
+                        }
 
                         // Exit check after successful move
                         val exit = config.exits.firstOrNull { it.tileX == nx && it.tileY == ny }
