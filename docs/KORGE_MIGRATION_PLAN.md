@@ -4,8 +4,9 @@
 Step 3 done (2.5D HD-2D stage ported & compiling against KorGE 6.0.0).
 Step 3b done (Android target für `:game`). Step 4 done (Tiled tilemap loader +
 tile-derived collision in `:core`). Step 4b done (TiledMap renderer + PlayerSprite
-in `:game`). Step 5a done (real sprites, BattleScene, audio). Step 5 (retire
-Compose engine) not started. This document is the agreed, recorded plan for a
+in `:game`). Step 5a done (real sprites, BattleScene, audio). Step 5b done (world layer: smooth
+movement, NPCs, dialog, HUD, map transitions). Step 5 (retire Compose engine) not
+started. This document is the agreed, recorded plan for a
 larger, multi-step effort and is committed *before* the heavy work begins.
 
 It extends `.kiro/steering/rendering-engine.md` (the locked KorGE 2.5D decision)
@@ -157,6 +158,21 @@ BattleScene wired to `:core`'s `CombatEngine`, and introduces background music
   `CombatEngine.tick()`, Attack/Heal/Flee controls, VICTORY/DEFEAT state.
 - **`TiledMapScene.kt`** — upgraded: uses `CharacterSprite`, plays BGM, SPACE
   triggers `BattleScene`.
+**Acceptance met:** all 3 compile checks green.
+
+### Step 5b — World Layer: Smooth Movement, NPCs, Dialog, HUD, Map Transitions — ✅ done
+Full gameplay world layer replacing TiledMapScene as boot target:
+- **`DialogLine.kt`** + **`NpcDefinition.kt`** — data models for dialog + NPCs.
+- **`MapConfig.kt`** — location configs (Interior + Exterior) with NPCs, exits, BGM.
+- **`DialogOverlay.kt`** — screen-fixed dialog box, line-by-line advance, pauses world.
+- **`HudOverlay.kt`** — HP bar, gold counter, location name (screen-fixed).
+- **`WorldScene.kt`** — orchestrates everything: TMX load, NPCs, smooth movement,
+  dialog interaction (E key), collision + NPC blocking, map transitions via exit tiles,
+  battle trigger (SPACE), camera follow with interpolation.
+- **`CharacterSprite.kt`** extended: smooth 160ms tile-to-tile interpolation
+  (`startMove`/`isMoving`/`visualGridX/Y`), generic `loadFromSheet()` for NPCs,
+  `Facing.dx/dy` extensions.
+- `Main.kt` → `WorldScene`, `BattleScene` Q → `WorldScene`.
 **Acceptance met:** all 3 compile checks green.
 
 ### Step 5 — Retire the Compose gameplay engine

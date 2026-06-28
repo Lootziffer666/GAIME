@@ -9,7 +9,17 @@ Format: `[ID] Kurzbeschreibung — gefunden von, Datum, betroffene Datei(en), St
 
 ## Offen
 
-*(noch keine Einträge)*
+- **B004 — Infinite-TMX-Maps haben NEGATIVE Chunk-Offsets; deklarierte `width`/`height` sind irreführend.**
+  Gefunden: Claude, 2026-06-28. Betrifft: `MapConfig.kt`, jede `:game`-Szene die Tile-Koordinaten
+  hartkodiert. Status: für heroes-home Interior1/Exterior **behoben** (echte Koordinaten verifiziert),
+  als Klasse aber offen für alle künftigen Maps.
+  Interior1.tmx deklariert `width="16" height="24"`, aber als `infinite="1"`-Map liegen die echten
+  Tile-Daten bei `tileX -17..8 / tileY -10..11` (begehbarer Raum nur `tileX -7..2 / tileY -2..4`).
+  Step 5a's Spawn `(8,12)` und alle Step-5b-Koordinaten aus dem Brief waren BLOCKED/out-of-bounds —
+  der Spieler stand im Nichts. Compile-only-Acceptance fängt das NICHT.
+  **Regel:** Vor dem Hartkodieren von Tile-Koordinaten für eine Map immer `CollisionGrid.from(map)`
+  laden und das Grid dumpen (offsetX/Y + WALKABLE-Bereich), Koordinaten gegen `grid[x-offX, y-offY]`
+  prüfen. `offsetX/Y` sind bei Infinite-Maps fast immer negativ.
 
 ---
 
@@ -83,3 +93,16 @@ zukünftige Parser-Erweiterungen (z. B. Object-Layers, Properties) relevant sind
 | **KorGE Audio hat kein Backend in headless/CI** | `readMusic()`/`readSound()` werfen zur Laufzeit Exceptions wenn kein Audio-Output existiert (Sandbox, CI-Container). Compile gelingt, Runtime crasht. | try/catch in `AudioManager` mit graceful no-op — Audio ist optional. |
 | **`SpriteLoader.buildFallbackBitmap()` Visibility** | `CharacterSprite` muss den Fallback-Bitmap-Builder aufrufen; als `private` deklariert war er nicht erreichbar. | `internal` Visibility auf der Methode. |
 | **`justPressed` vs. `pressing` für Einmal-Aktionen** | `pressing(Key.X)` feuert **jeden Frame** solange die Taste gehalten wird — für Angriffs-Befehle fatal (5+ Angriffe pro Tastendruck). | `justPressed(Key.X)` — true nur im ersten Frame nach dem Key-Down-Event. |
+
+---
+
+## KorGE-6.0-Pitfalls: World Layer (Step 5b, Kiro 2026-06-28)
+
+| Pitfall | Erklärung | Fix |
+|---|---|---|
+| **Enum Redeclaration** | `Facing` war sowohl in `PlayerSprite.kt` (DO_NOT_TOUCH) als auch in `CharacterSprite.kt` deklariert → Compiler-Fehler. | `Facing`-Deklaration nur einmal behalten (in `PlayerSprite.kt`); `CharacterSprite.kt` nutzt sie aus demselben Package. |
+| **SolidRect ist kein Container** | `solidRect().addChild(text(...))` kompiliert nicht — `SolidRect` ist ein Leaf-View. | Alle Overlay-Views als direkte Kinder des `parent`-Containers hinzufügen, `.visible` einzeln steuern. |
+| **Text-Wrapping** | `text().width = 200.0` begrenzt den Render-Bereich nicht automatisch. Lange Zeilen überlaufen. | Manuelles `\n` in `DialogLine.text` (max ~60 Zeichen/Zeile). Word-Wrap → späteres Feature. |
+| **`moveProgress`-Tick vor Animation-Check** | Wenn `advanceAnimation()` mit `val frames = ... ?: return` beginnt und keine Animation geladen ist, friert `moveProgress` ein → Sprite bleibt mitten im Schritt stehen. | Move-Tick **vor** dem `frames`-early-return platzieren. |
+| **Property-Setter in `startMove()`** | `gridX = toGridX` ruft `updatePosition()` auf, das `visualGridX` liest. Bei `moveProgress=0` ergibt `visualGridX = fromGridX` (korrekt). `moveProgress` muss vor `gridX/Y` auf 0 gesetzt werden. | `moveProgress = 0f` zuerst, dann `gridX/Y` setzen. |
+| **`companion object var pendingConfig`** | Scene-Wechsel in KorGE ist async (suspend). Parameter-Übergabe an die neue Scene geht nicht über Konstruktor-Argumente. Workaround: `companion object var` das vor `changeTo` gesetzt wird. | Akzeptabel für aktuelle Architektur; spätere Alternative: DI/Inject-System. |
