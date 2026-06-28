@@ -127,9 +127,7 @@ class BattleScene : Scene() {
                     acted = true
 
                     // Hit SFX for the enemy taking damage
-                    if (vampire.isAlive || !vampire.isAlive) {
-                        launch { audioManager.playSfx(sfxHit) }
-                    }
+                    launch { audioManager.playSfx(sfxHit) }
                 }
             } else if (keys.justPressed(Key.E)) {
                 heroHpBefore = hero.hp
