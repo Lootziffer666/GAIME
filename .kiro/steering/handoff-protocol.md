@@ -94,7 +94,7 @@ Thread unbrauchbar.
 **Stattdessen:** Nur Metadaten abfragen. Das korrekte Format:
 
 ```json
-{"message":"Image: /projects/sandbox/GAIME/assets/HD/ui/file.png\nFormat: png\nSize: 63618 bytes\nMediaType: image/png"}
+{"message":"Image: /projects/sandbox/GAIME/assets/HD/ui/file.png\nFormat: png\nSize: <n> bytes\nMediaType: image/png"}
 ```
 
 Für Asset-Entscheidungen (welches Sprite passt?) → Pfad und Dateiname lesen,
