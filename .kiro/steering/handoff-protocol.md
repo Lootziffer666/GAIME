@@ -11,7 +11,9 @@ Diese Dateien **vor jedem Auftrag** lesen:
 | `.kiro/steering/handoff-protocol.md` (diese Datei) | Bindende Handoff-Regeln |
 | `.kiro/steering/rendering-engine.md` | KorGE 2.5D — locked, nicht diskutieren |
 | `docs/KORGE_MIGRATION_PLAN.md` | Migrationsstufen, Modularchitektur, was Throwaway ist |
+| `docs/KNOWN_BUGS.md` | Bekannte Bugs und Pitfalls — vor Arbeit lesen, nach Fund ergänzen |
 | `docs/STORY_EXPANSION.md` | Dialogslots, offene Szenen — relevant für Content-Aufträge |
+| `briefs/<datum>-<name>.md` | Der aktuelle Auftrag — maßgeblich für Scope und Ziel |
 
 ---
 
@@ -74,16 +76,58 @@ und was der Blocker ist.** Nie still fehlschlagen.
 
 ---
 
+## Dokumentation aktualisieren (Pflicht, nicht optional)
+
+Vor dem Push folgende Dateien prüfen und bei Bedarf aktualisieren:
+
+- **`README.md`** — immer wenn sich etwas Nutzersichtbares ändert (neue Features,
+  neue Szenen, neue Befehle, geänderte Architektur). Zweifel → aktualisieren.
+- **`docs/KORGE_MIGRATION_PLAN.md`** — Step-Status anpassen falls ein Schritt
+  abgeschlossen oder blockiert wurde.
+- **`docs/KNOWN_BUGS.md`** — jeden neu entdeckten Bug oder Pitfall eintragen,
+  auch wenn er außerhalb des eigenen Scopes liegt. Format:
+  `| B<nnn> | Beschreibung | Kiro, YYYY-MM-DD | Datei(en) | OPEN |`
+- Weitere `docs/`-Dateien die inhaltlich vom Auftrag berührt werden.
+
+Diese Updates gehören zum gleichen Commit/Branch wie der Feature-Code.
+
+## Result-Report erstellen (Pflicht)
+
+Nach Abschluss der Arbeit, vor dem Push, `briefs/YYYY-MM-DD-<name>-result.md` schreiben:
+
+```markdown
+# Result: <Titel des Briefs>
+
+**Brief:** briefs/YYYY-MM-DD-<name>.md
+**Branch:** kiro/<name>
+**Datum:** YYYY-MM-DD
+
+## Was wurde umgesetzt
+<Kurze Zusammenfassung, Datei für Datei>
+
+## Testergebnis
+<Anzahl Tests, 0 Failures — oder: Blocker + Begründung>
+
+## Abweichungen vom Brief
+<Liste der Abweichungen und Begründung — oder: "Keine">
+
+## Neu entdeckte Bugs / Pitfalls
+<Was ist aufgefallen — oder: "Keine">
+
+## Was nicht angefasst wurde
+<Explizit bestätigen dass DO_NOT_TOUCH eingehalten wurde>
+```
+
+Der Result-Report wird mit dem Branch gepusht und erscheint im PR-Diff.
+Claude Code vergleicht Brief und Result beim Review.
+
 ## PR erstellen
 
 - **Ein PR pro Auftrag** — keine Sammel-PRs.
 - Branch-Name: genau wie im Auftrag angegeben (`BRANCH_NAME`).
 - PR-Base: immer `main`.
-- PR-Body muss enthalten:
-  - Kurze Zusammenfassung was geändert wurde
-  - Test-Ergebnis (Anzahl Tests, 0 Failures)
-  - Was **nicht** geändert wurde (explizit)
-  - Abweichungen vom Auftrag und Begründung (oder "keine")
+- PR-Body verlinkt: den Brief (`briefs/...md`) und den Result-Report (`briefs/...-result.md`).
+- PR-Body enthält außerdem: Test-Ergebnis, Abweichungen, was NICHT geändert wurde.
 
 ---
 

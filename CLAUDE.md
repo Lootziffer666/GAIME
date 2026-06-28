@@ -10,6 +10,7 @@ Folgende Dateien **immer lesen** bevor Code geschrieben oder Kiro beauftragt wir
 | `.kiro/steering/handoff-protocol.md` | Bindende Regeln für Kiro-Aufträge |
 | `.kiro/steering/rendering-engine.md` | Architekturentscheidung KorGE 2.5D (locked) |
 | `docs/KORGE_MIGRATION_PLAN.md` | Stufenplan KorGE-Migration (aktueller Stand) |
+| `docs/KNOWN_BUGS.md` | Bekannte Bugs und Pitfalls — vor Arbeit lesen, nach Fund ergänzen |
 | `docs/STORY_EXPANSION.md` | Offene Dialogslots, unbelegte Szenen, Vorlage für neue Quests |
 
 ---
@@ -40,6 +41,44 @@ Dann via GitHub MCP: offene PRs prüfen (`mcp__github__list_pull_requests`).
 ## Kiro-Aufträge schreiben
 
 **Niemals Kiro beauftragen solange Branches existieren, die nicht in main sind.**
+
+### Brief-Workflow
+
+1. Brief als `briefs/YYYY-MM-DD-<name>.md` schreiben (Template unten)
+2. Brief in `main` committen **bevor** Kiro startet — so ist der Plan versioniert
+3. Kiro verlinkt den Brief im PR und schreibt nach Abschluss `briefs/YYYY-MM-DD-<name>-result.md`
+4. Result-File kommt mit dem PR-Merge in main — Plan vs. Realität dauerhaft vergleichbar
+5. Entdeckte Bugs → `docs/KNOWN_BUGS.md` ergänzen (Kiro im Result-File, Claude beim Review)
+
+### Brief-Template (`briefs/YYYY-MM-DD-<name>.md`)
+
+```markdown
+# Brief: <Titel>
+
+**Datum:** YYYY-MM-DD
+**Branch:** kiro/<name>
+**BASE_SHA:** <aktueller main-SHA>
+
+## Aufgabe
+<Was soll erreicht werden, und warum>
+
+## SCOPE
+modify:
+  - <bestehende Datei>
+create:
+  - <neue Datei oder verzeichnis/*>
+
+## DO_NOT_TOUCH
+  - <explizit verbotene Dateien>
+
+## ACCEPTANCE
+  - ./gradlew :core:desktopTest → grün
+  - ./gradlew :game:compileKotlinDesktop → grün   # falls :game berührt
+  - README.md und betroffene docs/ aktualisiert
+
+## Kontext
+<Hinweise, Hintergründe, Querverweise zu anderen Docs>
+```
 
 Ein Kiro-Auftrag muss folgende Felder enthalten:
 
