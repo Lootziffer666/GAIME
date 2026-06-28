@@ -7,13 +7,22 @@ import korlibs.korge.view.filter.ShaderFilter
 import korlibs.math.*
 
 /**
- * Snow particle shader — renders falling snow flakes over the scene.
+ * Snow particle shader -- renders falling snow flakes over the scene.
  * White overlay proportional to [intensity] (overall snow depth), with
  * procedural falling snow particles that drift with [windAngle].
  *
- * [intensity] 0.0 = no snow, 1.0 = full blizzard.
- * [windAngle] radians offset from vertical (0 = straight down, positive = wind from left).
- * [time] drives animation (seconds elapsed).
+ * **Prototype limitation:** Uses an averaged scalar [intensity] for the entire viewport.
+ * Per-tile grid data from [rpg.weather.SnowGrid] is not yet packed into uniforms or a
+ * texture. A future iteration would pass the 2D grid as a uniform array (8x8 floats
+ * packed into vec4) or an R-channel texture to enable spatial variation in the shader.
+ *
+ * @property intensity 0.0 = no snow, 1.0 = full blizzard.
+ * @property windAngle Linear shear factor applied to the snow particle UV coordinates.
+ *   Despite the name, this is NOT an angle in radians -- it is used as a horizontal
+ *   displacement coefficient (higher value = more sideways drift). Named `windAngle`
+ *   for consistency with [game.shader.RainFilter.windAngle] which uses the same
+ *   convention. Typical range: -1.0 to 1.0.
+ * @property time Animation time in seconds (drives particle fall position).
  */
 class SnowFilter(
     var intensity: Float = 0f,

@@ -26,7 +26,11 @@ class SnowGrid(val width: Int, val height: Int) {
 
     /**
      * Adds snow uniformly across the grid at [rate] * [dt], clamped to 1.0.
-     * [windDx] and [windDy] are currently available for future directional bias.
+     *
+     * [windDx] and [windDy] are accepted for API consistency with [WeatherState.tick],
+     * but accumulation is intentionally uniform in this prototype. The wind parameters
+     * drive the visual shader drift effect (SnowFilter) rather than spatial distribution.
+     * TODO: Future iteration could bias accumulation toward leeward tiles using windDx/windDy.
      */
     fun accumulate(dt: Float, rate: Float, windDx: Float = 0f, windDy: Float = 0f) {
         val amount = rate * dt
@@ -54,18 +58,22 @@ class SnowGrid(val width: Int, val height: Int) {
     }
 
     /**
-     * Gradually restores stamped cells (cells at 0) toward the average of surrounding cells
-     * or a base accumulation level, at the given [rate] per second.
+     * Gradually restores stamped cells (cells below their surrounding average)
+     * toward that average, at the given [rate] per second.
+     *
+     * Uses a snapshot (double-buffer) so that all cells read from the same
+     * pre-refill state, avoiding iteration-order-dependent results.
      */
     fun refill(dt: Float, rate: Float) {
         val amount = rate * dt
+        // Snapshot the current state so neighbor reads are order-independent.
+        val snapshot = data.copyOf()
         for (y in 0 until height) {
             for (x in 0 until width) {
                 val idx = y * width + x
-                val current = data[idx]
+                val current = snapshot[idx]
                 if (current < 1f) {
-                    // Calculate surrounding average
-                    val avg = surroundingAverage(x, y)
+                    val avg = surroundingAverage(x, y, snapshot)
                     if (current < avg) {
                         data[idx] = (current + amount).coerceAtMost(avg)
                     }
@@ -74,7 +82,7 @@ class SnowGrid(val width: Int, val height: Int) {
         }
     }
 
-    private fun surroundingAverage(x: Int, y: Int): Float {
+    private fun surroundingAverage(x: Int, y: Int, source: FloatArray): Float {
         var sum = 0f
         var count = 0
         for (dy in -1..1) {
@@ -83,7 +91,7 @@ class SnowGrid(val width: Int, val height: Int) {
                 val nx = x + dx
                 val ny = y + dy
                 if (nx in 0 until width && ny in 0 until height) {
-                    sum += data[ny * width + nx]
+                    sum += source[ny * width + nx]
                     count++
                 }
             }

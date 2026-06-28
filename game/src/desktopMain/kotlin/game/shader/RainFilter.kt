@@ -7,16 +7,20 @@ import korlibs.korge.view.filter.ShaderFilter
 import korlibs.math.*
 
 /**
- * Rain particle shader — renders falling rain streaks over the scene.
+ * Rain particle shader -- renders falling rain streaks over the scene.
  * Wind direction, density, and speed are parametric.
- *
- * [intensity] 0.0 = no rain, 1.0 = downpour.
- * [windAngle] radians offset from vertical (0 = straight down, 0.3 = slight wind).
- * [time] drives animation (seconds elapsed).
  *
  * The rain is rendered as semi-transparent white/blue streaks using a
  * procedural pattern (no sprite sheet needed). Applied as a filter on the
- * map container — rain appears above tiles but below HUD.
+ * map container -- rain appears above tiles but below HUD.
+ *
+ * @property intensity 0.0 = no rain, 1.0 = downpour.
+ * @property windAngle Linear shear factor applied to rain streak UV coordinates.
+ *   Despite the name, this is NOT an angle in radians -- it is used as a horizontal
+ *   displacement coefficient (higher value = more diagonal rain). Named `windAngle`
+ *   for consistency across weather shaders ([SnowFilter] uses the same convention).
+ *   Typical range: -1.0 to 1.0.
+ * @property time Animation time in seconds (drives rain fall position).
  */
 class RainFilter(
     var intensity: Float = 0f,

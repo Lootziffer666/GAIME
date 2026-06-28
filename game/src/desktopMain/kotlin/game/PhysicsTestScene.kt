@@ -13,7 +13,6 @@ import game.shader.LightSource
 import game.shader.LightingFilter
 import game.shader.SnowFilter
 import game.shader.BloodFilter
-import game.shader.RainFilter
 
 /**
  * Standalone physics test scene demonstrating all 5 world physics systems:
@@ -139,14 +138,7 @@ class PhysicsTestScene : Scene() {
         }
 
         // Also show rain driven by wind (demonstrates wind driving both rain + snow)
-        val rainFilter = RainFilter(
-            intensity = 0.4f,
-            windAngle = weatherState.wind.direction,
-            time = 3.0f
-        )
-        // Rain applied to outermost - but we already have blood there.
-        // For this demo, the rain angle is set on the SnowFilter wind param instead.
-        // The wind-driven angle is visible in both snow drift and could apply to rain
-        // in a real scene with separate overlay containers.
+        // NOTE: In a real scene, rain would occupy a separate overlay container.
+        // For this prototype demo, wind drives the SnowFilter drift direction only.
     }
 }

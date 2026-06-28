@@ -7,12 +7,18 @@ import korlibs.korge.view.filter.ShaderFilter
 import korlibs.math.*
 
 /**
- * Blood splatter overlay shader — renders dark red-black splatters over the scene.
+ * Blood splatter overlay shader -- renders dark red-black splatters over the scene.
  * Uses a procedural noise-like pattern for organic splatter edges.
  *
- * [intensity] 0.0 = no blood, 1.0 = heavily splattered.
- * [splatterSeed] determines the pattern variation (deterministic for screenshots).
- * [time] drives subtle pulsing animation (seconds elapsed).
+ * **Prototype limitation:** Uses a single scalar [intensity] for the entire viewport.
+ * Per-tile grid data from [rpg.weather.BloodGrid] (which tracks precise splatter
+ * positions) is not yet packed into uniforms or a texture. A future iteration would
+ * pass the 2D blood grid as a uniform array (8x8 floats packed into vec4) or an
+ * R-channel texture so that splatters appear only where [BloodGrid.splatter] was called.
+ *
+ * @property intensity 0.0 = no blood, 1.0 = heavily splattered.
+ * @property splatterSeed Determines the pattern variation (deterministic for screenshots).
+ * @property time Drives subtle pulsing animation (seconds elapsed).
  */
 class BloodFilter(
     var intensity: Float = 0f,
