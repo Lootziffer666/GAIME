@@ -12,19 +12,29 @@ import korlibs.math.geom.RectangleInt
 /**
  * Loads CraftPix sprite sheets and slices them into individual frames.
  *
- * CraftPix convention: all frames horizontal, square (frameWidth = height),
- * frame count = bitmap.width / bitmap.height, no padding between frames.
+ * CraftPix convention (verified against the actual swordsman/vampire assets):
+ * these sheets are GRIDS of square [DEFAULT_FRAME_SIZE]×[DEFAULT_FRAME_SIZE]
+ * frames. The sheet height is N rows (the 4 rows are facing directions); each
+ * row's columns are the animation frames for that direction. We use ROW 0 (the
+ * front-facing animation): frame count = bitmap.width / frameSize.
+ *
+ * NOTE: the earlier assumption "frames are height-sized squares in a single row"
+ * was wrong (an idle sheet is 768×256 = a 12×4 grid of 64px frames, not 3×256).
+ * See KNOWN_BUGS B005.
  */
 object SpriteLoader {
+
+    /** Frame edge length for the CraftPix HD character sheets used in this game. */
+    const val DEFAULT_FRAME_SIZE = 64
 
     /**
      * Load a sprite sheet from [assetPath] via resourcesVfs and slice into frames.
      * Falls back to a single procedural placeholder frame if loading fails.
      */
-    suspend fun load(assetPath: String): List<BmpSlice> {
+    suspend fun load(assetPath: String, frameSize: Int = DEFAULT_FRAME_SIZE): List<BmpSlice> {
         return try {
             val bitmap = resourcesVfs[assetPath].readBitmap()
-            sliceFrames(bitmap)
+            sliceFrames(bitmap, frameSize)
         } catch (_: Exception) {
             // Fallback: single procedural frame (compile-safe, no asset needed)
             listOf(buildFallbackBitmap().slice())
@@ -32,14 +42,16 @@ object SpriteLoader {
     }
 
     /**
-     * Slice a horizontally-arranged sprite sheet into square frames.
+     * Slice ROW 0 of a grid sprite sheet into square [frameSize] frames.
+     * If the bitmap is smaller than [frameSize] (e.g. the procedural fallback),
+     * the whole bitmap height is used as the frame size so it yields one frame.
      */
-    fun sliceFrames(bitmap: Bitmap): List<BmpSlice> {
-        val frameSize = bitmap.height
-        if (frameSize <= 0) return listOf(bitmap.slice())
-        val frameCount = (bitmap.width / frameSize).coerceAtLeast(1)
+    fun sliceFrames(bitmap: Bitmap, frameSize: Int = DEFAULT_FRAME_SIZE): List<BmpSlice> {
+        if (bitmap.height <= 0 || bitmap.width <= 0) return listOf(bitmap.slice())
+        val fs = if (frameSize <= 0 || frameSize > bitmap.height) bitmap.height else frameSize
+        val frameCount = (bitmap.width / fs).coerceAtLeast(1)
         return List(frameCount) { i ->
-            bitmap.slice(RectangleInt(i * frameSize, 0, frameSize, frameSize))
+            bitmap.slice(RectangleInt(i * fs, 0, fs, fs))
         }
     }
 

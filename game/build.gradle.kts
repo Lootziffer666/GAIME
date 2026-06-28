@@ -44,3 +44,28 @@ kotlin {
         val androidMain by getting { /* KorGE inherited from commonMain */ }
     }
 }
+
+// Desktop runtime classpath helper. resourcesVfs resolves via the classpath, so
+// the repo root is added (assets/ live there, referenced as "assets/...").
+fun JavaExec.desktopRuntime() {
+    val c = kotlin.targets.getByName("desktop").compilations.getByName("main")
+    dependsOn(c.compileTaskProvider)
+    classpath = files(c.output.allOutputs) + c.runtimeDependencyFiles + files(rootProject.projectDir)
+    workingDir = rootProject.projectDir
+}
+
+// Render the real game scenes to PNGs under build/screenshots/ via KorGE's
+// headless offscreen GL renderer (mesa EGL surfaceless — no window needed).
+// Requires: libegl1 libegl-mesa0 libgl1-mesa-dri (see .devcontainer / scripts/setup-gl.sh).
+tasks.register<JavaExec>("screenshot") {
+    desktopRuntime()
+    mainClass.set("game.ScreenshotHarnessKt")
+    environment("EGL_PLATFORM", "surfaceless")
+    environment("LIBGL_ALWAYS_SOFTWARE", "1")
+}
+
+// Launch the actual game window (manual/local; needs a real or virtual display).
+tasks.register<JavaExec>("run") {
+    desktopRuntime()
+    mainClass.set("game.MainKt")
+}
