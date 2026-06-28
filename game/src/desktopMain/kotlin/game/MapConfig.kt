@@ -1,5 +1,7 @@
 package game
 
+import rpg.bark.BarkEvent
+
 /**
  * Identifies one of the two available TMX locations.
  */
@@ -72,7 +74,8 @@ data class MapConfig(
                         DialogLine("Barkeep", "You've been officially registered as a Hero Party.\nDon't ask how."),
                         DialogLine("Nib", "...by who?"),
                         DialogLine("Barkeep", "The Questbook. It fell on the desk and opened\nto the right page. Fate, probably."),
-                    )
+                    ),
+                    barkEvent = BarkEvent.BARKEEP_SPEND_SOME_COIN,
                 ),
                 NpcDefinition(
                     tileX = -3,
@@ -82,7 +85,8 @@ data class MapConfig(
                     dialog = listOf(
                         DialogLine("Patron", "He sure is slow for a four-armed bartender."),
                         DialogLine("Patron", "I hear the king likes to wear evening gowns."),
-                    )
+                    ),
+                    barkEvent = BarkEvent.PATRON_HE_SURE_IS_SLOW,
                 ),
             ),
             exits = listOf(
@@ -112,7 +116,8 @@ data class MapConfig(
                         DialogLine("Guard", "The forest trail east of here has been\noverrun by wolves."),
                         DialogLine("Guard", "If you're looking for trouble, you'll find it there."),
                         DialogLine("Nib", "Just keep to the trail."),
-                    )
+                    ),
+                    barkEvent = BarkEvent.GUARD_BACK_ALREADY,
                 ),
                 NpcDefinition(
                     tileX = 0,
@@ -122,7 +127,8 @@ data class MapConfig(
                     dialog = listOf(
                         DialogLine("Traveler", "Where's the nearest inn?"),
                         DialogLine("Traveler", "I've been walking since sunrise."),
-                    )
+                    ),
+                    barkEvent = null,
                 ),
             ),
             exits = listOf(

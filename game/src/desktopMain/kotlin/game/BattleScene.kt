@@ -10,6 +10,9 @@ import korlibs.korge.view.addUpdater
 import korlibs.korge.view.solidRect
 import korlibs.korge.view.text
 import kotlinx.coroutines.launch
+import rpg.SliceDirector
+import rpg.bark.BarkEvent
+import rpg.bark.audio.BarkAudioPlayer
 import rpg.combat.CombatAction
 import rpg.combat.CombatEngine
 import rpg.combat.CombatResult
@@ -50,6 +53,11 @@ class BattleScene : Scene() {
             id = "vampire_1", name = "Vampire", maxHp = 60, side = Side.ENEMY, attackPower = 8
         )
         val engine = CombatEngine(party = listOf(hero), enemies = listOf(vampire))
+
+        // SliceDirector for combat barks
+        val director = SliceDirector { System.currentTimeMillis() }
+        director.barkAudioPlayer = BarkAudioPlayer(GameAudioPlayer(this@BattleScene))
+        director.startCombat(engine)
 
         // --- Sprites ---
         val heroSprite = CharacterSprite(this, 48, 48)
@@ -94,6 +102,7 @@ class BattleScene : Scene() {
         // --- Input + Combat Logic ---
         var battleOver = false
         var heroHpBefore = hero.hp
+        var lastTurnResult: CombatResult = CombatResult.ONGOING
 
         addUpdater {
             val keys = views.input.keys
@@ -123,7 +132,10 @@ class BattleScene : Scene() {
                     launch { audioManager.playSfx(sfxAttack) }
 
                     // Tick the engine (hero attacks, then enemy retaliates)
-                    engine.tick(CombatAction.Attack(target.id))
+                    // Attack via SliceDirector (routes combat barks through Questbook)
+                    launch { director.fireBark(BarkEvent.BRUGG_ATTACK) }
+                    val turn = director.combatAction(CombatAction.Attack(target.id))
+                    lastTurnResult = turn.result
                     acted = true
 
                     // Hit SFX for the enemy taking damage
@@ -131,7 +143,8 @@ class BattleScene : Scene() {
                 }
             } else if (keys.justPressed(Key.E)) {
                 heroHpBefore = hero.hp
-                engine.tick(CombatAction.Heal)
+                val turn = director.combatAction(CombatAction.Heal)
+                lastTurnResult = turn.result
                 acted = true
             }
 
@@ -164,7 +177,7 @@ class BattleScene : Scene() {
                 }
 
                 // --- Check result ---
-                when (engine.result) {
+                when (lastTurnResult) {
                     CombatResult.VICTORY -> {
                         resultText.text = "VICTORY!"
                         battleOver = true
