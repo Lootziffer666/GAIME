@@ -5,8 +5,8 @@ Step 3 done (2.5D HD-2D stage ported & compiling against KorGE 6.0.0).
 Step 3b done (Android target für `:game`). Step 4 done (Tiled tilemap loader +
 tile-derived collision in `:core`). Step 4b done (TiledMap renderer + PlayerSprite
 in `:game`). Step 5a done (real sprites, BattleScene, audio). Step 5b done (world layer: smooth
-movement, NPCs, dialog, HUD, map transitions). Step 5 (retire Compose engine) not
-started. This document is the agreed, recorded plan for a
+movement, NPCs, dialog, HUD, map transitions). Step 5 done (Compose gameplay
+engine retired; `:composeApp` = Waitroom-only). This document is the agreed, recorded plan for a
 larger, multi-step effort and is committed *before* the heavy work begins.
 
 It extends `.kiro/steering/rendering-engine.md` (the locked KorGE 2.5D decision)
@@ -175,9 +175,17 @@ Full gameplay world layer replacing TiledMapScene as boot target:
 - `Main.kt` → `WorldScene`, `BattleScene` Q → `WorldScene`.
 **Acceptance met:** all 3 compile checks green.
 
-### Step 5 — Retire the Compose gameplay engine
-Once `:game` reaches parity, remove the Compose-Canvas gameplay engine; keep
-`:composeApp` only for non-gameplay UI if still useful.
+### Step 5 — Retire the Compose gameplay engine — ✅ done
+`:composeApp` reduced to Waitroom-only:
+- **Moved to `:core`:** `SliceDirector.kt` (incl. `BarkOutcome`, `CombatTurn`),
+  `AudioPlayer.kt`, `BarkAudioPlayer.kt`, + 4 pipeline tests.
+- **Removed:** 6 Compose-gameplay-UI files (`SliceScreen`, `RpgDemoScreen`,
+  `RpgWorldScreen`, `WorldScene`, `SceneAtmosphere`, `DialogueLine`) +
+  `NpcDialogueTest` (tested deleted UI).
+- **Kept:** `engine/` package (Waitroom uses it), `GameCanvas.kt` (Waitroom uses it),
+  `PlatformAudioPlayer` expect/actual, gamepad code (in-doubt-keep rule).
+- `App.kt` reduced to render only `WaitroomScreen`.
+**Acceptance met:** all modules compile, all tests green (incl. moved tests in `:core`).
 
 ---
 
