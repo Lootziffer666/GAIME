@@ -21,6 +21,24 @@ Format: `[ID] Kurzbeschreibung — gefunden von, Datum, betroffene Datei(en), St
   laden und das Grid dumpen (offsetX/Y + WALKABLE-Bereich), Koordinaten gegen `grid[x-offX, y-offY]`
   prüfen. `offsetX/Y` sind bei Infinite-Maps fast immer negativ.
 
+- **B005 — CraftPix-Charakter-Sheets sind 64×64-RASTER, kein height-großer Einzelstreifen.**
+  Gefunden: Claude, 2026-06-28 (per Offscreen-Screenshot). Betrifft: `SpriteLoader.kt`. **Behoben.**
+  Der Step-5a-Brief behauptete „alle Frames quadratisch, Framebreite = Sheet-Höhe". Falsch: das
+  Swordsman-Idle-Sheet ist 768×256 = **12×4-Raster aus 64×64-Frames** (4 Reihen = Richtungen,
+  Spalten = Animationsframes). Die alte `sliceFrames` (frameSize = 256) schnitt 3 Riesen-Slices à
+  256², jeder mit mehreren Charakteren → ein Sprite rendert als Duplikat-Reihe. Fix: `sliceFrames`
+  nimmt `frameSize = 64` und liefert Reihe 0 (Front-Animation). Visuell per `:game:screenshot`
+  verifiziert (interior/exterior/battle). **Offen als Enhancement:** Richtungs-Reihen (oben/unten/
+  links/rechts) statt nur scaleX-Flip nutzen.
+
+- **B006 — `resourcesVfs` löst über den Classpath auf, nicht über das Dateisystem.**
+  Gefunden: Claude, 2026-06-28. Betrifft: jeden Asset-Load (`resourcesVfs["assets/..."]`).
+  `assets/` liegt im Repo-Root, NICHT im Classpath → zur Laufzeit `InvalidOperationException:
+  Can't find 'assets/...'`. So wie der Code steht, lädt das echte Spiel **keine** Assets.
+  Compile-only-Acceptance fängt das NICHT (erneut: grün ≠ läuft). **Behoben für die Run-/Screenshot-
+  Tasks:** `game/build.gradle.kts` legt via `desktopRuntime()` das Repo-Root auf den Classpath, dann
+  wird `assets/...` als Classpath-Ressource gefunden. Jeder neue Launcher muss das ebenso tun.
+
 ---
 
 ## Behoben
