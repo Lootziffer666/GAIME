@@ -122,7 +122,11 @@ Die Shader sind nicht nur visuell — sie sind **Bark-Trigger**. Die Welt erzäh
 ```
 Virtual: 640×360 (fest, alle Gameplay-Logik + Shader arbeiten damit)
 Upscale: Integer-Scale → 1440p (4×) oder 1080p (3×)
-Kein Runtime-Upscaler (Anime4K etc.) — die Shader SIND der Stil
+Render-Gerüst (Step 11): Hi-res gemalte Hintergründe (KI-generiert, 2560x1440 nativ) +
+    Charakter-Layer durch DoodleLineFilter (Anime4K-inspirierter Linien-Shader, neu
+    implementiert aus dem Konzept, kein Fremdcode). Ziel: 1440p-Ausgabe, Cartoon-Figuren
+    vor scharfem gemaltem Hintergrund. Anime4K HQ A+B CNN-Kette ist als späterer
+    Austausch der Shader-Kette vorgesehen (gleiches Gerüst, stärkerer Shader).
 Mobile (Android): gleiche Pipeline, gleiche Shader, ES 3.2 kompatibel
 ```
 
