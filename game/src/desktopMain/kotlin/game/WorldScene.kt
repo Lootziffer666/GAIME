@@ -124,6 +124,7 @@ class WorldScene : Scene() {
 
         // 8c. Atmosphere system (SNOW weather — Frozen Approach)
         val isSnow = config.atmosphere.weather == Weather.SNOW
+        val isSeason = config.atmosphere.season in listOf("spring", "summer", "autumn")
         val snowGrid: SnowGrid?
         val bloodGrid: BloodGrid?
         val footprintGrid: FootprintGrid?
@@ -135,7 +136,65 @@ class WorldScene : Scene() {
         val fogState: FogState?
         val windState: WindState?
 
-        if (isSnow) {
+        // Season-specific overlays
+        val seasonalGrid: SeasonalGrid?
+        val springOverlay: SpringOverlay?
+        val summerOverlay: SummerOverlay?
+        val autumnOverlay: AutumnOverlay?
+        var seasonElapsedTime = 0f
+        var seasonDropTimer = 0
+
+        if (isSeason) {
+            seasonalGrid = SeasonalGrid(
+                width = collision.cols, height = collision.rows,
+                offsetX = collision.offsetX, offsetY = collision.offsetY
+            )
+            dayNightClock = DayNightClock(config.atmosphere.timeOfDay)
+            windState = WindState()
+            fogState = if (config.atmosphere.fog > 0f) FogState().apply { setDensity(config.atmosphere.fog) } else null
+
+            when (config.atmosphere.season) {
+                "spring" -> {
+                    seasonalGrid.initFlowers(0.7f)
+                    springOverlay = SpringOverlay(mapView, tiledMap.tileWidth, tiledMap.tileHeight)
+                    summerOverlay = null
+                    autumnOverlay = null
+                }
+                "summer" -> {
+                    springOverlay = null
+                    summerOverlay = SummerOverlay(mapView, tiledMap.tileWidth, tiledMap.tileHeight)
+                    autumnOverlay = null
+                }
+                "autumn" -> {
+                    // Start with some leaves already fallen
+                    seasonalGrid.dropLeaves(0.4f, timeStep = 0)
+                    springOverlay = null
+                    summerOverlay = null
+                    autumnOverlay = AutumnOverlay(mapView, tiledMap.tileWidth, tiledMap.tileHeight)
+                }
+                else -> {
+                    springOverlay = null; summerOverlay = null; autumnOverlay = null
+                }
+            }
+
+            // Disable rain for spring/summer (only autumn uses it)
+            if (config.atmosphere.season != "autumn") isRaining = false
+
+            // Apply fog shader if fog is active
+            if (fogState != null) {
+                effects.fogFilter.density = fogState.density
+                effects.attachFog(mapView)
+            }
+
+            // Apply season-appropriate lighting
+            effects.lightingFilter.ambientDarkness = dayNightClock.darkness().coerceAtLeast(0.05f)
+            effects.lightingFilter.tilePixelSize = (tiledMap.tileWidth * mapScale).toFloat()
+
+            // Snow-related grids are not used for non-winter seasons
+            snowGrid = null; bloodGrid = null; footprintGrid = null
+            snowOverlay = null; bloodOverlay = null; footprintOverlay = null
+            temperatureField = null
+        } else if (isSnow) {
             snowGrid = SnowGrid(
                 width = collision.cols, height = collision.rows,
                 offsetX = collision.offsetX, offsetY = collision.offsetY
@@ -171,6 +230,12 @@ class WorldScene : Scene() {
             // Apply night lighting
             effects.lightingFilter.ambientDarkness = dayNightClock.darkness().coerceAtLeast(0.1f)
             effects.lightingFilter.tilePixelSize = (tiledMap.tileWidth * mapScale).toFloat()
+
+            // Season overlays not used for winter/snow
+            seasonalGrid = null
+            springOverlay = null
+            summerOverlay = null
+            autumnOverlay = null
         } else {
             snowGrid = null
             bloodGrid = null
@@ -182,6 +247,10 @@ class WorldScene : Scene() {
             temperatureField = null
             fogState = null
             windState = null
+            seasonalGrid = null
+            springOverlay = null
+            summerOverlay = null
+            autumnOverlay = null
         }
 
         // 8d. Visible breath effect (cold polish)
@@ -283,6 +352,45 @@ class WorldScene : Scene() {
                         lanternLight.copy(tileX = player.gridX, tileY = player.gridY)
                     )
                     effects.attachLighting(mapView, effects.lightingFilter.lights, effects.lightingFilter.tilePixelSize)
+                }
+            }
+
+            // Atmosphere tick (Season: spring/summer/autumn)
+            if (isSeason && seasonalGrid != null) {
+                seasonElapsedTime += dtSec
+
+                // Day/night cycle
+                dayNightClock!!.advance(dtSec)
+                val darkness = dayNightClock.darkness()
+                if (!lanternActive) {
+                    effects.lightingFilter.ambientDarkness = darkness.coerceAtLeast(0.05f)
+                }
+
+                // Wind
+                windState!!.tick(dtSec, time = seasonElapsedTime)
+
+                // Fog drift
+                if (fogState != null) {
+                    fogState.drift(dtSec, windState)
+                    effects.fogFilter.driftX = fogState.driftX
+                    effects.fogFilter.driftY = fogState.driftY
+                    effects.fogFilter.density = fogState.density
+                }
+
+                when (config.atmosphere.season) {
+                    "spring" -> {
+                        seasonalGrid.regrowFlowers(0.002f * dtSec)
+                        springOverlay!!.update(seasonalGrid)
+                    }
+                    "summer" -> {
+                        seasonalGrid.unbendGrass(0.5f * dtSec)
+                        summerOverlay!!.update(seasonalGrid, windState, seasonElapsedTime)
+                    }
+                    "autumn" -> {
+                        seasonDropTimer++
+                        seasonalGrid.dropLeaves(0.001f * dtSec, timeStep = seasonDropTimer)
+                        autumnOverlay!!.update(seasonalGrid)
+                    }
                 }
             }
 
@@ -429,6 +537,15 @@ class WorldScene : Scene() {
                         if (isSnow) {
                             footprintGrid!!.stamp(nx, ny)
                             snowGrid!!.clearAt(nx, ny, 0.3f)
+                        }
+
+                        // Season interactions on movement
+                        if (isSeason && seasonalGrid != null) {
+                            when (config.atmosphere.season) {
+                                "spring" -> seasonalGrid.trampleFlower(nx, ny)
+                                "summer" -> seasonalGrid.bendGrass(nx, ny)
+                                "autumn" -> seasonalGrid.kickLeaves(nx, ny)
+                            }
                         }
 
                         // Torkeln: drunk stumble — L-shaped drift like a chess knight.

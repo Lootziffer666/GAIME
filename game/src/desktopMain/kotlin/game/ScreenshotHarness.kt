@@ -25,7 +25,9 @@ import rpg.questbook.QuestbookReaction
 import rpg.questbook.RoomContext
 import rpg.weather.BloodGrid
 import rpg.weather.FootprintGrid
+import rpg.weather.SeasonalGrid
 import rpg.weather.SnowGrid
+import rpg.weather.WindState
 
 /**
  * Offscreen GL screenshot harness — renders the real game scenes (interior,
@@ -70,6 +72,10 @@ fun main() {
     captureFrozenFootprints()
     captureFrozenBlood()
     captureQuestbookGlory()
+    captureSpringApproach()
+    captureSummerApproach()
+    captureAutumnApproach()
+    captureWinterApproach()
 }
 
 private fun captureWorld(config: MapConfig, name: String, withDialog: Boolean) {
@@ -1011,5 +1017,250 @@ private fun captureQuestbookGlory() {
             .apply { x = contentRightX; y = contentRightY + 170.0 }
 
         save("questbook_glory")
+    }
+}
+
+// =============================================================================
+// 4-SEASONS SHOWCASE CAPTURES
+// =============================================================================
+
+/**
+ * Spring Approach: Bright morning with flowers blooming.
+ * Pink and yellow flowers visible on tiles, some trampled near the player.
+ */
+private fun captureSpringApproach() {
+    val config = MapConfig.springApproach()
+    korgeScreenshotTest(Size(VW, VH)) {
+        val tiledMap = TmxLoader.parse(resourcesVfs[config.tmxPath].readString())
+        val atlases = tiledMap.tilesets.map { TilesetAtlas.load(it, config.tmxDir) }
+        val mapView = TiledMapView(tiledMap, atlases)
+        mapView.scale = SCALE
+        addChild(mapView)
+
+        val player = CharacterSprite(mapView, tiledMap.tileWidth, tiledMap.tileHeight)
+        player.loadSwordsman()
+        player.gridX = config.spawnX; player.gridY = config.spawnY
+        player.play(SpriteAnimation.IDLE)
+
+        mapView.x = VW / 2.0 - player.visualGridX * tiledMap.tileWidth * SCALE
+        mapView.y = VH / 2.0 - player.visualGridY * tiledMap.tileHeight * SCALE
+
+        // Spring flowers: grid offset (-10,-5), player = index (5,14)
+        val grid = SeasonalGrid(20, 20, offsetX = -10, offsetY = -5)
+        grid.initFlowers(0.7f)
+
+        // Trample some flowers near the player to show the effect
+        grid.trampleFlower(-5, 9, 0.5f)
+        grid.trampleFlower(-4, 9, 0.3f)
+        grid.trampleFlower(-5, 10, 0.4f)
+
+        val springOverlay = SpringOverlay(mapView, tiledMap.tileWidth, tiledMap.tileHeight)
+        springOverlay.update(grid)
+
+        // Bright spring lighting (morning light, mild)
+        val tilePx = (tiledMap.tileWidth * SCALE).toFloat()
+        val effects = game.shader.ShaderEffects()
+        effects.lightingFilter.ambientDarkness = 0.15f
+        effects.lightingFilter.tilePixelSize = tilePx
+        effects.lightingFilter.time = 1.5f
+        effects.lightingFilter.lights = listOf(
+            game.shader.LightSource(
+                tileX = config.spawnX, tileY = config.spawnY,
+                radius = 8f, r = 1.0f, g = 0.95f, b = 0.8f,
+                intensity = 0.7f, flickerSpeed = 0f, flickerAmount = 0f
+            )
+        )
+        effects.attachLighting(mapView, effects.lightingFilter.lights, tilePx)
+
+        val hero = Combatant(id = "nib", name = "Nib", maxHp = 80, side = Side.PLAYER, attackPower = 12)
+        HudOverlay(this, hero, Inventory(initialGold = 50), "The Spring Approach")
+
+        save("spring_approach")
+    }
+}
+
+/**
+ * Summer Approach: Long day, lush grass bending in wind.
+ * Green grass tufts at tile bottoms, some bent where player walked.
+ */
+private fun captureSummerApproach() {
+    val config = MapConfig.summerApproach()
+    korgeScreenshotTest(Size(VW, VH)) {
+        val tiledMap = TmxLoader.parse(resourcesVfs[config.tmxPath].readString())
+        val atlases = tiledMap.tilesets.map { TilesetAtlas.load(it, config.tmxDir) }
+        val mapView = TiledMapView(tiledMap, atlases)
+        mapView.scale = SCALE
+        addChild(mapView)
+
+        val player = CharacterSprite(mapView, tiledMap.tileWidth, tiledMap.tileHeight)
+        player.loadSwordsman()
+        player.gridX = config.spawnX; player.gridY = config.spawnY
+        player.play(SpriteAnimation.IDLE)
+
+        mapView.x = VW / 2.0 - player.visualGridX * tiledMap.tileWidth * SCALE
+        mapView.y = VH / 2.0 - player.visualGridY * tiledMap.tileHeight * SCALE
+
+        // Summer grass: grid offset (-10,-5), player = index (5,14)
+        val grid = SeasonalGrid(20, 20, offsetX = -10, offsetY = -5)
+
+        // Bend grass where player walked (recent trail)
+        grid.bendGrass(-5, 10)
+        grid.bendGrass(-5, 9)
+        grid.bendGrass(-4, 9)
+
+        val windState = WindState().apply { dx = 0.4f; strength = 0.3f }
+        val summerOverlay = SummerOverlay(mapView, tiledMap.tileWidth, tiledMap.tileHeight)
+        summerOverlay.update(grid, windState, elapsedTime = 2.5f)
+
+        // Warm summer light (long day, bright)
+        val tilePx = (tiledMap.tileWidth * SCALE).toFloat()
+        val effects = game.shader.ShaderEffects()
+        effects.lightingFilter.ambientDarkness = 0.05f
+        effects.lightingFilter.tilePixelSize = tilePx
+        effects.lightingFilter.time = 1.5f
+        effects.lightingFilter.lights = listOf(
+            game.shader.LightSource(
+                tileX = config.spawnX, tileY = config.spawnY,
+                radius = 10f, r = 1.0f, g = 0.98f, b = 0.9f,
+                intensity = 0.5f, flickerSpeed = 0f, flickerAmount = 0f
+            )
+        )
+        effects.attachLighting(mapView, effects.lightingFilter.lights, tilePx)
+
+        val hero = Combatant(id = "nib", name = "Nib", maxHp = 80, side = Side.PLAYER, attackPower = 12)
+        HudOverlay(this, hero, Inventory(initialGold = 50), "The Summer Approach")
+
+        save("summer_approach")
+    }
+}
+
+/**
+ * Autumn Approach: Overcast, rain, fallen leaves on the ground.
+ * Orange/brown/red leaves scattered, darker sky, rain shader.
+ */
+private fun captureAutumnApproach() {
+    val config = MapConfig.autumnApproach()
+    korgeScreenshotTest(Size(VW, VH)) {
+        val tiledMap = TmxLoader.parse(resourcesVfs[config.tmxPath].readString())
+        val atlases = tiledMap.tilesets.map { TilesetAtlas.load(it, config.tmxDir) }
+        val mapView = TiledMapView(tiledMap, atlases)
+        mapView.scale = SCALE
+        addChild(mapView)
+
+        val player = CharacterSprite(mapView, tiledMap.tileWidth, tiledMap.tileHeight)
+        player.loadSwordsman()
+        player.gridX = config.spawnX; player.gridY = config.spawnY
+        player.play(SpriteAnimation.IDLE)
+
+        mapView.x = VW / 2.0 - player.visualGridX * tiledMap.tileWidth * SCALE
+        mapView.y = VH / 2.0 - player.visualGridY * tiledMap.tileHeight * SCALE
+
+        // Autumn leaves: grid offset (-10,-5), player = index (5,14)
+        val grid = SeasonalGrid(20, 20, offsetX = -10, offsetY = -5)
+        // Fill leaves around player position for visibility
+        grid.dropLeaves(0.5f, timeStep = 0)
+        grid.dropLeaves(0.3f, timeStep = 1)
+
+        // Player kicked leaves at current position
+        grid.kickLeaves(-5, 9)
+
+        val autumnOverlay = AutumnOverlay(mapView, tiledMap.tileWidth, tiledMap.tileHeight)
+        autumnOverlay.update(grid)
+
+        // Dark overcast lighting + rain
+        val tilePx = (tiledMap.tileWidth * SCALE).toFloat()
+        val effects = game.shader.ShaderEffects()
+        effects.lightingFilter.ambientDarkness = 0.35f
+        effects.lightingFilter.tilePixelSize = tilePx
+        effects.lightingFilter.time = 1.5f
+        effects.lightingFilter.lights = listOf(
+            game.shader.LightSource(
+                tileX = config.spawnX, tileY = config.spawnY,
+                radius = 5f, r = 0.9f, g = 0.85f, b = 0.7f,
+                intensity = 0.6f, flickerSpeed = 0f, flickerAmount = 0f
+            )
+        )
+        effects.attachLighting(mapView, effects.lightingFilter.lights, tilePx)
+
+        // Rain shader for autumn weather
+        effects.rainFilter.intensity = 0.6f
+        effects.rainFilter.time = 3.0f
+        effects.rainFilter.windAngle = 0.3f
+        effects.attachRain(mapView)
+
+        // Fog for atmosphere
+        effects.fogFilter.density = 0.2f
+        effects.fogFilter.time = 2.0f
+        effects.attachFog(mapView)
+
+        val hero = Combatant(id = "nib", name = "Nib", maxHp = 80, side = Side.PLAYER, attackPower = 12)
+        HudOverlay(this, hero, Inventory(initialGold = 50), "The Autumn Approach")
+
+        save("autumn_approach")
+    }
+}
+
+/**
+ * Winter Approach: Reuses the existing frozen_approach scene as the winter
+ * entry in the 4-seasons showcase. Cold night, snow, fog, torch light.
+ */
+private fun captureWinterApproach() {
+    val config = MapConfig.frozenApproach()
+    korgeScreenshotTest(Size(VW, VH)) {
+        val tiledMap = TmxLoader.parse(resourcesVfs[config.tmxPath].readString())
+        val atlases = tiledMap.tilesets.map { TilesetAtlas.load(it, config.tmxDir) }
+        val mapView = TiledMapView(tiledMap, atlases)
+        mapView.scale = SCALE
+        addChild(mapView)
+
+        val player = CharacterSprite(mapView, tiledMap.tileWidth, tiledMap.tileHeight)
+        player.loadSwordsman()
+        player.gridX = config.spawnX; player.gridY = config.spawnY
+        player.play(SpriteAnimation.IDLE)
+
+        mapView.x = VW / 2.0 - player.visualGridX * tiledMap.tileWidth * SCALE
+        mapView.y = VH / 2.0 - player.visualGridY * tiledMap.tileHeight * SCALE
+
+        // Snow grid around player
+        val snowGrid = SnowGrid(20, 20, offsetX = -10, offsetY = -5)
+        val footprintGrid = FootprintGrid(20, 20, offsetX = -10, offsetY = -5)
+        for (x in -8..-2) for (y in 7..11) snowGrid[x, y] = 0.75f
+        for (x in -6..-4) for (y in 8..10) snowGrid[x, y] = 0.85f
+
+        // Footprints approaching from south
+        footprintGrid.stamp(-5, 11)
+        footprintGrid.stamp(-5, 10)
+        footprintGrid.stamp(-5, 9)
+
+        val snowOverlay = SnowOverlay(mapView, tiledMap.tileWidth, tiledMap.tileHeight)
+        snowOverlay.update(snowGrid, footprintGrid)
+
+        val footprintOverlay = FootprintOverlay(mapView, tiledMap.tileWidth, tiledMap.tileHeight)
+        footprintOverlay.update(footprintGrid)
+
+        // Night lighting with torch
+        val tilePx = (tiledMap.tileWidth * SCALE).toFloat()
+        val effects = game.shader.ShaderEffects()
+        effects.lightingFilter.ambientDarkness = 0.08f
+        effects.lightingFilter.tilePixelSize = tilePx
+        effects.lightingFilter.time = 1.5f
+        effects.lightingFilter.lights = listOf(
+            game.shader.LightSource(
+                tileX = config.spawnX, tileY = config.spawnY,
+                radius = 6f, r = 1.0f, g = 0.8f, b = 0.4f,
+                intensity = 0.9f, flickerSpeed = 3f, flickerAmount = 0.15f
+            )
+        )
+        effects.attachLighting(mapView, effects.lightingFilter.lights, tilePx)
+
+        // Fog
+        effects.fogFilter.density = 0.35f
+        effects.fogFilter.time = 2.0f
+        effects.attachFog(mapView)
+
+        val hero = Combatant(id = "nib", name = "Nib", maxHp = 80, side = Side.PLAYER, attackPower = 12)
+        HudOverlay(this, hero, Inventory(initialGold = 50), "The Winter Approach")
+
+        save("winter_approach")
     }
 }
