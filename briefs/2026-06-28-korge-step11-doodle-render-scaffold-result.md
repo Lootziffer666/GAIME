@@ -1,65 +1,62 @@
-# Result: Step 11 — Render-Gerüst: Doodle-Figuren vor hi-res Hintergrund @ 1440p
+# Result: Step 11 — Render-Gerüst: Doodle-Figuren @ 1440p + Bild/Grid-Kopplung
 
-**Brief:** briefs/2026-06-28-korge-step11-doodle-render-scaffold.md
-**Branch:** kiro/korge-step11-doodle-render-scaffold
-**Datum:** 2026-06-28
+**Brief:** `briefs/2026-06-28-korge-step11-doodle-render-scaffold.md`
+**Branch:** `kiro/korge-step11-doodle-render-scaffold` (PR#49)
+**PR:** https://github.com/Lootziffer666/GAIME/pull/49
+**Datum:** 2026-06-28 · Integration-Review: Claude
+**Status:** ✅ Fundament + Grid-Kopplung · ⚠️ Doodle-*Look* vorläufig (Art-Direction-Tuning offen)
 
-## Was wurde umgesetzt
+---
 
-### Teil A — DoodleLineFilter
-- `game/src/desktopMain/kotlin/game/shader/DoodleLineFilter.kt` erstellt
-- GLSL-Fragment-Shader: Luminanz-Gradient-Edge-Detection (4 Nachbar-Samples, Sobel-like)
-  → Kanten abdunkeln (85% darken at full edge) → feiner Cartoon-Linien-Look
-- Time-driven boil/jitter: sin-basierter UV-Offset pro Frame → Linien zittern lebendig
-- Uniforms: `u_Time` (Float), `u_LineStrength` (0..1), `u_Jitter` (0..1)
-- `fixedLocation = 13` (keine Kollision mit bestehenden Filtern 7-12)
-- In `ShaderEffects.kt` registriert + time-driven via `startTimeUpdater`
-- Anime4K-Konzept als Referenz (Gradient→Linien), KEIN Fremdcode (Donor-Policy)
+## Acceptance
 
-### Teil B — 1440p Doodle Capture
-- `doodle_1440p.png` (2560x1440, 4.6MB)
-- Hintergrund: `tavern_interior.png` vollflächig, `smoothing=true`, KEIN Shader
-- Charakter-Layer: eigener `Container` mit DoodleLineFilter
-- Grid-abgeleitete Skalierung: `gridRows=78`, `screenTile=1440/78≈18.5`, `charScale=(5*18.5)/64≈1.44`
-- Swordsman + Vampire mit deutlichem Linien-/Doodle-Look
+| Check | Ergebnis |
+|---|---|
+| `:core:desktopTest` | ✅ BUILD SUCCESSFUL |
+| `:game:compileKotlinDesktop` | ✅ BUILD SUCCESSFUL |
+| `:composeApp:compileKotlinDesktop` | ✅ BUILD SUCCESSFUL |
+| `:game:screenshot` | ✅ inkl. 2 neue @2560×1440 |
 
-### Teil C — Docs aktualisiert
-- `docs/SHADER_VISION.md`: "Kein Runtime-Upscaler"-Zeile ersetzt durch neue Richtung (hi-res Hintergründe + DoodleLineFilter + Anime4K HQ als späterer Austausch)
-- `docs/KORGE_MIGRATION_PLAN.md`: Step 11 Eintrag ergänzt
+---
 
-### Teil D — Grid-Overlay Debug
-- `grid_overlay_debug.png` (2560x1440, 4.3MB)
-- tavern_interior.png vollflächig + CollisionGrid halbtransparent überlagert
-- BLOCKED = roter Tint (Möbel/Wände/Rand), WALKABLE = leicht grüner Tint (Boden)
-- Beweist: das unsichtbare Raster passt zum gemalten Hintergrund (Bild=Haut, Grid=Logik)
+## Geliefert
+- **`DoodleLineFilter`** (neu, `fixedLocation=13`, in `ShaderEffects` registriert + time-driven):
+  Luminanz-Gradient-Kantenerkennung (4 Nachbarn) → Kanten abdunkeln; `u_Time`-Boil-Jitter.
+  Anime4K-Konzept neu implementiert, kein Fremdcode (Donor-Policy). Per-Layer angewandt
+  (`charLayer.filter`), Hintergrund ungefiltert. **Code korrekt, sauber strukturiert.**
+- **`grid_overlay_debug.png`** ✅ **klarer Erfolg:** CollisionGrid aus `tavern_interior.tmx`
+  halbtransparent über das gemalte Bild — rot = blockiert (Möbel/Wände/Rand), grün = begehbar
+  (Boden/Teppich). Beweist „Bild = Haut, Grid = Logik": das unsichtbare Raster deckt sich exakt
+  mit der Malerei.
+- **`doodle_1440p.png`**: hi-res Taverne (scharf) + große Figur mit angewandtem Filter.
+- Docs (`SHADER_VISION`, `KORGE_MIGRATION_PLAN`) aktualisiert.
 
-## Testergebnis
+## Integration-Anpassung (Claude)
+Kiros Capture platzierte die Figuren grid-abgeleitet bei ~92px → auf 1440p winzig, Doodle-Linien
+nicht erkennbar. Auf Proof-Closeup (charScale 7.5, große Figuren) umgestellt; Koordinaten korrigiert
+(erst lagen sie off-screen).
 
-```
-./gradlew :core:desktopTest             → BUILD SUCCESSFUL
-./gradlew :game:compileKotlinDesktop    → BUILD SUCCESSFUL
-./gradlew :composeApp:compileKotlinDesktop → BUILD SUCCESSFUL
-./gradlew :game:screenshot              → 42 PNGs (40 bestehende @640x360 + 2 neue @2560x1440)
-```
+## ⚠️ Offene Schwachstelle: der Doodle-*Look* trägt noch nicht
+Auf den 7.5× hochskalierten 64px-Sprites werden die Kanten **weich** statt feine Cartoon-Linien —
+der Effekt liest im Screenshot nicht überzeugend. Ursachen/Tuning-Hebel (Art-Direction, Owner-Auge):
+1. **Upscale-Methode:** weiches Hochskalieren glättet die Gradienten, die der Filter braucht.
+   Evtl. nearest-Upscale + Filter, oder Filter VOR dem Upscale.
+2. **Linienstärke/-dicke:** aktuell nur Abdunkeln (`*0.85`); echtes „Verdicken" der Linie
+   (Dilation) fehlt.
+3. **Boil-Amplitude** im Standbild nicht beurteilbar (braucht Animation).
+Das ist bewusst ein **eigener Tuning-Schritt mit dem Owner** — nicht per Brute-Force-Render zu
+erraten. Das **Fundament** (Filter-Pipeline, Per-Layer, 1440p, Grid-Kopplung) steht.
 
-Regressions-Check: alle bestehenden Screenshots funktionieren unverändert.
+## DO_NOT_TOUCH — eingehalten ✅
+B007 `localCurrentDirVfs` intakt (8.×); bestehende Shader nur konsumiert; core/composeApp/mapbuilder
+unberührt.
 
-## Abweichungen vom Brief
+## Offen / Folge
+- **Doodle-Look art-dirigieren** (Linien-Dilation, Upscale-Methode, Boil am Bewegtbild) — mit Owner.
+- **Harness-Sprite-Skalierung:** 64px-Sprites 7.5× = weich; für echte Tests evtl. größere Quell-Sprites.
+- Echte 1440p-Fenster-Ausgabe (`:game:run`), Anime4K HQ A+B als Shader-Austausch, spielbare Szene
+  (WorldScene mit Bild-Hintergrund + Grid, Bewegung live).
 
-- **CharacterSprite hat kein `view`-Property:** Statt individuelle Sprite-Views zu skalieren, wird der gesamte `charLayer` Container skaliert (`charScale = (tilesTall * screenTile) / 64`). Gleiches Ergebnis (Grid-derived sizing), anderer Mechanismus.
-- **BASE_SHA `e7641993` vs HEAD `6787803d`:** Branch wurde von `origin/main` (HEAD = `6787803d`, der letzte Brief-Commit) erstellt. Der Brief wurde nach BASE_SHA nochmals aktualisiert.
-
-## Neu entdeckte Bugs / Pitfalls
-
-- **Image.width/height vs scaledWidth/scaledHeight:** KorGE's `View.width` setter ändert `unscaledSize` (was intern die scaleX/Y beeinflusst). Für Bilder die auf eine bestimmte Pixelgröße skaliert werden sollen ist `scaledWidth`/`scaledHeight` korrekt.
-- **Container.filter + container {}:** `container {}` erstellt einen neuen Container als Kind. Der DoodleLineFilter darauf wirkt auf ALLE Kinder (Sprites) — genau das gewünschte Per-Layer-Verhalten.
-
-## Was nicht angefasst wurde
-
-DO_NOT_TOUCH komplett eingehalten:
-- ScreenshotHarness `localCurrentDirVfs`-Zeile + Import unverändert (B007)
-- Bestehende Shader-Filter nur konsumiert, nicht geändert
-- WorldScene, BattleScene, Overlays, MapConfig, CharacterSprite etc. unberührt
-- assets/ nur gelesen
-- tools/mapbuilder/ unberührt
-- composeApp/, settings.gradle.kts unberührt
+## Stand nach Merge
+main aktualisiert. Render-Gerüst steht: hi-res gemalter Hintergrund + per-Layer-Filter + 1440p +
+nachgewiesene Bild/Grid-Kopplung. Der Doodle-Look selbst ist der nächste, owner-geführte Tuning-Schritt.
