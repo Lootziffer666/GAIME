@@ -9,8 +9,8 @@ import korlibs.time.milliseconds
 
 /**
  * A character sprite with real CraftPix sheets (Idle/Walk/Attack/Hurt/Death),
- * grid-based positioning with smooth interpolated movement, and facing flip.
- * Falls back to procedural bitmaps if asset loading fails.
+ * grid-based positioning with smooth interpolated movement, and directional
+ * sprite rows (4 rows per sheet). Falls back to procedural bitmaps if loading fails.
  */
 enum class SpriteAnimation { IDLE, WALK, ATTACK, HURT, DEATH }
 
@@ -36,35 +36,28 @@ class CharacterSprite(
     // --- Smooth movement ---
     private var fromGridX: Int = 0
     private var fromGridY: Int = 0
-    private var moveProgress: Float = 1f  // 1f = idle/arrived
+    private var moveProgress: Float = 1f
     private val stepDurationMs: Float = 160f
 
-    /** True while the sprite is mid-step between tiles. */
     val isMoving: Boolean get() = moveProgress < 1f
 
-    /** Interpolated X position in tile units (for camera follow). */
     val visualGridX: Double
         get() = fromGridX + (gridX - fromGridX) * moveProgress.toDouble()
-
-    /** Interpolated Y position in tile units (for camera follow). */
     val visualGridY: Double
         get() = fromGridY + (gridY - fromGridY) * moveProgress.toDouble()
 
-    /**
-     * Requests a move to (toGridX, toGridY). Returns false if mid-step.
-     * On success: records from-position, sets gridX/Y, resets moveProgress to 0.
-     */
     fun startMove(toGridX: Int, toGridY: Int): Boolean {
         if (isMoving) return false
         fromGridX = gridX
         fromGridY = gridY
-        moveProgress = 0f  // Set BEFORE gridX/Y so updatePosition reads visualGrid = fromGrid
+        moveProgress = 0f
         gridX = toGridX
         gridY = toGridY
         return true
     }
 
-    private val animations = mutableMapOf<SpriteAnimation, List<BmpSlice>>()
+    // --- Directional animations: Map<Animation, List<Rows>> where each Row = List<BmpSlice> ---
+    private val animations = mutableMapOf<SpriteAnimation, List<List<BmpSlice>>>()
     private var currentAnim: SpriteAnimation = SpriteAnimation.IDLE
     private var frameIndex = 0
     private var elapsedMs = 0f
@@ -84,25 +77,44 @@ class CharacterSprite(
         }
     }
 
+    // --- Facing → row index (CraftPix convention, verified per B005) ---
+    private fun Facing.rowIndex(): Int = when (this) {
+        Facing.DOWN -> 0
+        Facing.LEFT -> 1
+        Facing.UP -> 2
+        Facing.RIGHT -> 3
+    }
+
+    /** Get frames for current facing + animation, with row fallback. */
+    private fun framesForCurrent(): List<BmpSlice>? {
+        val rows = animations[currentAnim] ?: return null
+        if (rows.isEmpty()) return null
+        return when {
+            rows.size > facing.rowIndex() -> rows[facing.rowIndex()]
+            rows.size == 1 -> rows[0]  // Single-row sheet → scaleX flip handles facing
+            else -> rows[0]
+        }
+    }
+
     // --- Asset loading (suspend) ---
 
     suspend fun loadSwordsman() {
         val base = "assets/HD/characters/swordsman/PNG/Swordsman_lvl1/Without_shadow"
-        animations[SpriteAnimation.IDLE] = SpriteLoader.load("$base/Swordsman_lvl1_Idle_without_shadow.png")
-        animations[SpriteAnimation.WALK] = SpriteLoader.load("$base/Swordsman_lvl1_Walk_without_shadow.png")
-        animations[SpriteAnimation.ATTACK] = SpriteLoader.load("$base/Swordsman_lvl1_attack_without_shadow.png")
-        animations[SpriteAnimation.HURT] = SpriteLoader.load("$base/Swordsman_lvl1_Hurt_without_shadow.png")
-        animations[SpriteAnimation.DEATH] = SpriteLoader.load("$base/Swordsman_lvl1_Death_without_shadow.png")
+        animations[SpriteAnimation.IDLE] = SpriteLoader.loadAllRows("$base/Swordsman_lvl1_Idle_without_shadow.png")
+        animations[SpriteAnimation.WALK] = SpriteLoader.loadAllRows("$base/Swordsman_lvl1_Walk_without_shadow.png")
+        animations[SpriteAnimation.ATTACK] = SpriteLoader.loadAllRows("$base/Swordsman_lvl1_attack_without_shadow.png")
+        animations[SpriteAnimation.HURT] = SpriteLoader.loadAllRows("$base/Swordsman_lvl1_Hurt_without_shadow.png")
+        animations[SpriteAnimation.DEATH] = SpriteLoader.loadAllRows("$base/Swordsman_lvl1_Death_without_shadow.png")
         applyFirstFrame()
     }
 
     suspend fun loadVampire() {
         val base = "assets/HD/characters/vampire/PNG/Vampires1/Without_shadow"
-        animations[SpriteAnimation.IDLE] = SpriteLoader.load("$base/Vampires1_Idle_without_shadow.png")
-        animations[SpriteAnimation.WALK] = SpriteLoader.load("$base/Vampires1_Walk_without_shadow.png")
-        animations[SpriteAnimation.ATTACK] = SpriteLoader.load("$base/Vampires1_Attack_without_shadow.png")
-        animations[SpriteAnimation.HURT] = SpriteLoader.load("$base/Vampires1_Hurt_without_shadow.png")
-        animations[SpriteAnimation.DEATH] = SpriteLoader.load("$base/Vampires1_Death_without_shadow.png")
+        animations[SpriteAnimation.IDLE] = SpriteLoader.loadAllRows("$base/Vampires1_Idle_without_shadow.png")
+        animations[SpriteAnimation.WALK] = SpriteLoader.loadAllRows("$base/Vampires1_Walk_without_shadow.png")
+        animations[SpriteAnimation.ATTACK] = SpriteLoader.loadAllRows("$base/Vampires1_Attack_without_shadow.png")
+        animations[SpriteAnimation.HURT] = SpriteLoader.loadAllRows("$base/Vampires1_Hurt_without_shadow.png")
+        animations[SpriteAnimation.DEATH] = SpriteLoader.loadAllRows("$base/Vampires1_Death_without_shadow.png")
         applyFirstFrame()
     }
 
@@ -111,17 +123,16 @@ class CharacterSprite(
      * Falls back to procedural bitmaps on error.
      */
     suspend fun loadFromSheet(idleSheetPath: String?, walkSheetPath: String? = null) {
-        val idleFrames = if (idleSheetPath != null) {
-            SpriteLoader.load(idleSheetPath)
+        val idleRows = if (idleSheetPath != null) {
+            SpriteLoader.loadAllRows(idleSheetPath)
         } else {
-            SpriteLoader.sliceFrames(SpriteLoader.buildFallbackBitmap())
+            listOf(SpriteLoader.sliceFrames(SpriteLoader.buildFallbackBitmap()))
         }
-        animations[SpriteAnimation.IDLE] = idleFrames
-        animations[SpriteAnimation.WALK] = if (walkSheetPath != null) SpriteLoader.load(walkSheetPath) else idleFrames
-        // Fallback for other anims so play() never crashes
-        animations[SpriteAnimation.ATTACK] = idleFrames
-        animations[SpriteAnimation.HURT] = idleFrames
-        animations[SpriteAnimation.DEATH] = idleFrames
+        animations[SpriteAnimation.IDLE] = idleRows
+        animations[SpriteAnimation.WALK] = if (walkSheetPath != null) SpriteLoader.loadAllRows(walkSheetPath) else idleRows
+        animations[SpriteAnimation.ATTACK] = idleRows
+        animations[SpriteAnimation.HURT] = idleRows
+        animations[SpriteAnimation.DEATH] = idleRows
         applyFirstFrame()
     }
 
@@ -146,7 +157,7 @@ class CharacterSprite(
             updatePosition()
         }
 
-        val frames = animations[currentAnim] ?: return
+        val frames = framesForCurrent() ?: return
         if (frames.isEmpty()) return
 
         val frameDuration = when (currentAnim) {
@@ -172,14 +183,14 @@ class CharacterSprite(
     }
 
     private fun applyCurrentFrame() {
-        val frames = animations[currentAnim] ?: return
+        val frames = framesForCurrent() ?: return
         if (frames.isEmpty()) return
         val idx = frameIndex.coerceIn(0, frames.size - 1)
         img.bitmap = frames[idx]
     }
 
     private fun applyFirstFrame() {
-        val frames = animations[SpriteAnimation.IDLE]
+        val frames = framesForCurrent()
         if (!frames.isNullOrEmpty()) {
             img.bitmap = frames[0]
         }
@@ -198,7 +209,13 @@ class CharacterSprite(
     }
 
     private fun updateFacing() {
-        img.scaleX = if (facing == Facing.LEFT) -1.0 else 1.0
+        // Multi-row sheets: no scaleX flip needed (row handles facing).
+        // Single-row sheets: LEFT = scaleX -1, others = 1.
+        val rows = animations[currentAnim]
+        val isMultiRow = rows != null && rows.size > 1
+        img.scaleX = if (!isMultiRow && facing == Facing.LEFT) -1.0 else 1.0
+        // When facing changes, reset frame to show correct row
+        applyCurrentFrame()
         updatePosition()
     }
 }

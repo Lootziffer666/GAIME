@@ -16,4 +16,5 @@ data class NpcDefinition(
     val idleSheetPath: String?,
     val facing: Facing = Facing.DOWN,
     val dialog: List<DialogLine>,
+    val barkEvent: rpg.bark.BarkEvent? = null,
 )
