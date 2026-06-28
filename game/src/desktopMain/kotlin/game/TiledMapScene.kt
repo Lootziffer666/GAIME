@@ -3,21 +3,26 @@ package game
 import korlibs.event.Key
 import korlibs.io.file.std.resourcesVfs
 import korlibs.korge.scene.Scene
+import korlibs.korge.scene.sceneContainer
 import korlibs.korge.view.SContainer
 import korlibs.korge.view.addUpdater
+import kotlinx.coroutines.launch
 import rpg.tiled.CollisionGrid
 import rpg.tiled.TileType
 import rpg.tiled.TmxLoader
 
 /**
  * Main gameplay scene: loads a Tiled TMX map, renders it with [TiledMapView],
- * places the [PlayerSprite], and handles grid-based movement with collision.
- *
+ * places the [CharacterSprite], and handles grid-based movement with collision.
  * Camera follows the player by offsetting the map container.
+ *
+ * SPACE triggers transition to [BattleScene].
  */
 class TiledMapScene : Scene() {
 
-    override suspend fun SContainer.sceneInit() {
+    private val audioManager = AudioManager()
+
+    override suspend fun SContainer.sceneMain() {
         val tmxDir = "assets/HD/locations/heroes-home/Tiled_files"
         val tmxPath = "$tmxDir/Interior1.tmx"
 
@@ -33,18 +38,30 @@ class TiledMapScene : Scene() {
         val mapView = TiledMapView(tiledMap, atlases)
         val mapScale = 3.0 // 16px tiles * 3 = 48px on screen
         mapView.scale = mapScale
-        this.addChild(mapView)
+        addChild(mapView)
 
-        // 4. Player sprite inside mapView so it scales and scrolls with the map
-        val player = PlayerSprite(mapView, tiledMap.tileWidth, tiledMap.tileHeight)
+        // 4. Player sprite INSIDE mapView so it scales/scrolls with the map
+        val player = CharacterSprite(mapView, tiledMap.tileWidth, tiledMap.tileHeight)
+        player.loadSwordsman()
         player.gridX = 8
         player.gridY = 12
+        player.play(SpriteAnimation.IDLE)
 
-        // 5. Keyboard input + collision checking
+        // 5. Background music
+        audioManager.playMusic("assets/audio/music/Quest_Accepted_Unfortunately_.mp3")
+
+        // 6. Keyboard input + collision + battle trigger
         addUpdater {
             val keys = views.input.keys
-            var dx = 0
-            var dy = 0
+
+            // SPACE → Battle
+            if (keys.justPressed(Key.SPACE)) {
+                audioManager.stopMusic()
+                launch { sceneContainer.changeTo<BattleScene>() }
+                return@addUpdater
+            }
+
+            var dx = 0; var dy = 0
             if (keys.pressing(Key.LEFT) || keys.pressing(Key.A)) { dx = -1; player.facing = Facing.LEFT }
             if (keys.pressing(Key.RIGHT) || keys.pressing(Key.D)) { dx = 1; player.facing = Facing.RIGHT }
             if (keys.pressing(Key.UP) || keys.pressing(Key.W)) { dy = -1; player.facing = Facing.UP }
@@ -59,19 +76,23 @@ class TiledMapScene : Scene() {
                 if (cellType == TileType.WALKABLE || cellType == TileType.TRIGGER) {
                     player.gridX = nx
                     player.gridY = ny
-                    player.setWalking()
+                    player.play(SpriteAnimation.WALK)
                 }
             } else {
-                player.setIdle()
+                player.play(SpriteAnimation.IDLE)
             }
         }
 
-        // 6. Camera follow: offset mapView so the player stays centered
+        // 7. Camera follow
         addUpdater {
             val px = player.gridX * tiledMap.tileWidth * mapScale
             val py = player.gridY * tiledMap.tileHeight * mapScale
             mapView.x = views.virtualWidth / 2.0 - px
             mapView.y = views.virtualHeight / 2.0 - py
         }
+    }
+
+    override suspend fun sceneAfterDestroy() {
+        audioManager.stopMusic()
     }
 }

@@ -71,3 +71,15 @@ zukünftige Parser-Erweiterungen (z. B. Object-Layers, Properties) relevant sind
 | **Layer-Width bei finite Maps nötig** | Finite Maps (`infinite="0"`) haben kein `<chunk>`; der CSV-Block hängt direkt in `<data>`. Die Zeilenpositionen leiten sich vom `width`-Attribut des `<layer>` ab. | `<layer width="...">` mitlesen + als `currentLayerWidth` an `parseCsvCells` übergeben. |
 | **Negative Chunk-Koordinaten (infinite Maps)** | `<chunk x="-16" y="-16" ...>` ist normal. Der Kollisionsraster muss erst die Bounding-Box aller Zellen berechnen und dann ins 0-basierte Grid normalisieren. | `CollisionGrid.offsetX/Y` speichert das Offset; Grid-Zugriff über normalisierte Indizes. |
 | **Kein Android SDK in der Sandbox** | `:game:compileDebugKotlinAndroid` kann in der Kiro-Sandbox nicht verifiziert werden (identisch mit `:composeApp` Android-Target). Build-Config ist korrekt; lokaler Build/CI mit SDK bestätigt Funktionstüchtigkeit. | Result-Report dokumentiert es als Sandbox-Limitation, nicht als Bug. |
+
+---
+
+## KorGE-6.0-Pitfalls: Scenes + Audio (Step 5a, Kiro 2026-06-28)
+
+| Pitfall | Erklärung | Fix |
+|---|---|---|
+| **`changeTo<>()` ist suspend** | `addUpdater {}`-Lambda ist *nicht* suspend (es wird synchron im Frame-Loop aufgerufen). `sceneContainer.changeTo<>()` direkt aufrufen ergibt „Suspension functions can only be called within coroutine body". | `launch { sceneContainer.changeTo<T>() }` — `Scene` erbt `CoroutineScope`, daher ist `launch` verfügbar. |
+| **`sceneContainer` (Property) vs. `sceneContainer()` (Factory)** | Innerhalb einer `Scene` ist `sceneContainer` eine Property, die den aktuell aktiven Container liefert. `sceneContainer()` (mit Klammern) ist der *inline Builder* der einen neuen anlegt — darf in einer bestehenden Scene **nicht** aufgerufen werden. | Property ohne Klammern verwenden: `sceneContainer.changeTo<>()`. |
+| **KorGE Audio hat kein Backend in headless/CI** | `readMusic()`/`readSound()` werfen zur Laufzeit Exceptions wenn kein Audio-Output existiert (Sandbox, CI-Container). Compile gelingt, Runtime crasht. | try/catch in `AudioManager` mit graceful no-op — Audio ist optional. |
+| **`SpriteLoader.buildFallbackBitmap()` Visibility** | `CharacterSprite` muss den Fallback-Bitmap-Builder aufrufen; als `private` deklariert war er nicht erreichbar. | `internal` Visibility auf der Methode. |
+| **`justPressed` vs. `pressing` für Einmal-Aktionen** | `pressing(Key.X)` feuert **jeden Frame** solange die Taste gehalten wird — für Angriffs-Befehle fatal (5+ Angriffe pro Tastendruck). | `justPressed(Key.X)` — true nur im ersten Frame nach dem Key-Down-Event. |
