@@ -54,3 +54,4 @@ Thumbs.db
 # Extracted audio archives (temporary)
 .extracted/
 tools/mapbuilder/__pycache__/
+graphify-out/
