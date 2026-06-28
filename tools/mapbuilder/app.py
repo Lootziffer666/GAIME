@@ -28,6 +28,9 @@ from wfc import apply_variants
 from export_tmx import export_tmx, GROUND_TILE_IDS
 from learn import MapLearner, MapGenerator
 
+# Repository root (for loading project TMX files)
+REPO_ROOT = Path(__file__).parent.parent.parent
+
 app = Flask(__name__,
             template_folder="editor/templates",
             static_folder="editor/static")
@@ -136,8 +139,58 @@ def do_export_tmx():
         pass
 
 
-@app.route("/api/labels")
-def get_labels():
+@app.route("/api/load_tmx", methods=["POST"])
+def load_tmx():
+    """
+    Load an existing TMX map into the editor.
+    Parses the TMX, extracts layers, and returns them for editing.
+    Supports both uploaded TMX files and project-internal TMX paths.
+    """
+    # Option 1: uploaded file
+    if "tmx_file" in request.files:
+        content = request.files["tmx_file"].read().decode("utf-8")
+    # Option 2: path to a project TMX (relative to repo root)
+    elif request.is_json and "path" in request.get_json():
+        tmx_path = request.get_json()["path"]
+        full_path = REPO_ROOT / tmx_path
+        if not full_path.exists():
+            return jsonify({"error": f"TMX not found: {tmx_path}"}), 404
+        content = full_path.read_text()
+    else:
+        return jsonify({"error": "No TMX file provided"}), 400
+    
+    try:
+        from tmx_loader import parse_tmx_to_layers
+        layers, width, height = parse_tmx_to_layers(content)
+    except Exception as e:
+        return jsonify({"error": f"Parse failed: {str(e)}"}), 400
+    
+    SESSION["layers"] = layers
+    SESSION["grid"] = layers.get("ground")
+    SESSION["grid_width"] = width
+    SESSION["grid_height"] = height
+    
+    return jsonify({
+        "layers": layers,
+        "width": width,
+        "height": height,
+    })
+
+
+@app.route("/api/project_maps")
+def list_project_maps():
+    """List all TMX maps available in the GAIME project."""
+    maps = []
+    locations_dir = REPO_ROOT / "assets" / "HD" / "locations"
+    if locations_dir.exists():
+        for loc in sorted(locations_dir.iterdir()):
+            if not loc.is_dir():
+                continue
+            for tmx in sorted(loc.rglob("*.tmx")):
+                rel_path = str(tmx.relative_to(REPO_ROOT))
+                name = f"{loc.name}/{tmx.name}"
+                maps.append({"name": name, "path": rel_path})
+    return jsonify(maps)
     """Return available tile labels for the painter palette."""
     labels = [
         {"id": TileLabel.FLOOR, "name": "Floor", "color": "#c8b48c"},

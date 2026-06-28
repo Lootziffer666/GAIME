@@ -80,6 +80,42 @@ main {
 
 .grid-size label { color: #aaa; font-size: 0.9rem; }
 
+/* Load options */
+.load-options {
+    display: flex;
+    gap: 2rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+}
+
+.load-project, .load-tmx {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.load-project label, .load-tmx label {
+    font-size: 0.85rem;
+    color: #aaa;
+}
+
+.load-project select {
+    padding: 0.4rem;
+    background: #1a1a2e;
+    border: 1px solid #0f3460;
+    color: #e0e0e0;
+    border-radius: 4px;
+    max-width: 280px;
+}
+
+.divider {
+    border: none;
+    border-top: 1px solid #0f3460;
+    margin: 1rem 0;
+}
+
+h3 { font-size: 0.95rem; color: #888; margin-bottom: 0.75rem; }
+
 /* Buttons */
 button {
     padding: 0.5rem 1rem;

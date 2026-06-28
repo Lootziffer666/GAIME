@@ -120,6 +120,21 @@ function init() {
     buildLayerTabs();
     buildPalette();
     setupEvents();
+    loadProjectMapList();
+}
+
+async function loadProjectMapList() {
+    try {
+        const res = await fetch("/api/project_maps");
+        const maps = await res.json();
+        const select = document.getElementById("project-maps");
+        maps.forEach(m => {
+            const opt = document.createElement("option");
+            opt.value = m.path;
+            opt.textContent = m.name;
+            select.appendChild(opt);
+        });
+    } catch (e) { /* ignore */ }
 }
 
 function buildLayerTabs() {
@@ -206,6 +221,11 @@ function setupEvents() {
     document.getElementById("btn-new").onclick = doNewBlank;
     document.getElementById("btn-teach").onclick = doTeachAI;
     document.getElementById("btn-generate").onclick = doGenerate;
+    document.getElementById("btn-load-project").onclick = doLoadProjectMap;
+    document.getElementById("btn-load-tmx").onclick = doLoadTmxFile;
+    
+    const tmxInput = document.getElementById("tmx-input");
+    tmxInput.onchange = () => { document.getElementById("btn-load-tmx").disabled = !tmxInput.files.length; };
 
     // Tools
     document.getElementById("btn-brush").onclick = () => setTool("brush");
@@ -549,6 +569,60 @@ async function doGenerate() {
     
     for (const [key, layerData] of Object.entries(data.layers)) {
         if (LAYERS[key]) LAYERS[key].data = layerData;
+    }
+    
+    ghostImage = null;
+    document.getElementById("editor-section").style.display = "block";
+    canvas.width = gridWidth * CELL_SIZE;
+    canvas.height = gridHeight * CELL_SIZE;
+    render();
+}
+
+// --- Load existing maps ---
+
+async function doLoadProjectMap() {
+    const select = document.getElementById("project-maps");
+    const path = select.value;
+    if (!path) { alert("Select a map first"); return; }
+    
+    const res = await fetch("/api/load_tmx", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ path }),
+    });
+    const data = await res.json();
+    if (data.error) { alert(data.error); return; }
+    
+    loadLayersIntoEditor(data);
+}
+
+async function doLoadTmxFile() {
+    const input = document.getElementById("tmx-input");
+    if (!input.files.length) return;
+    
+    const formData = new FormData();
+    formData.append("tmx_file", input.files[0]);
+    
+    const res = await fetch("/api/load_tmx", { method: "POST", body: formData });
+    const data = await res.json();
+    if (data.error) { alert(data.error); return; }
+    
+    loadLayersIntoEditor(data);
+}
+
+function loadLayersIntoEditor(data) {
+    gridWidth = data.width;
+    gridHeight = data.height;
+    
+    for (const [key, layerData] of Object.entries(data.layers)) {
+        if (LAYERS[key]) LAYERS[key].data = layerData;
+    }
+    
+    // Ensure all layers exist
+    for (const key of Object.keys(LAYERS)) {
+        if (!LAYERS[key].data) {
+            LAYERS[key].data = Array.from({ length: gridHeight }, () => Array(gridWidth).fill("none"));
+        }
     }
     
     ghostImage = null;
