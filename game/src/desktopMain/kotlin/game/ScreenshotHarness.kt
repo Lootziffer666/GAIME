@@ -21,7 +21,11 @@ import rpg.BarkOutcome
 import rpg.SliceDirector
 import rpg.bark.BarkEvent
 import rpg.questbook.QuestPressure
+import rpg.questbook.QuestbookReaction
 import rpg.questbook.RoomContext
+import rpg.weather.BloodGrid
+import rpg.weather.FootprintGrid
+import rpg.weather.SnowGrid
 
 /**
  * Offscreen GL screenshot harness — renders the real game scenes (interior,
@@ -62,6 +66,10 @@ fun main() {
     captureWorldLantern()
     captureWorldDrunk()
     captureQuestbookOpen()
+    captureFrozenApproach()
+    captureFrozenFootprints()
+    captureFrozenBlood()
+    captureQuestbookGlory()
 }
 
 private fun captureWorld(config: MapConfig, name: String, withDialog: Boolean) {
@@ -684,5 +692,324 @@ private fun captureQuestbookOpen() {
         text("PRESSURE: ${director.pressure.name}", textSize = 10.0, color = Colors["#22cc22"]).apply { x = rightX; y = bookY + bookH - 30.0 }
 
         save("questbook_open")
+    }
+}
+
+// =============================================================================
+// STEP 8: FROZEN APPROACH CAPTURES
+// =============================================================================
+
+/**
+ * The Frozen Approach: Winter night scene with snow, torch lighting, and fog.
+ * Uses Exterior.tmx in frozenApproach() configuration.
+ */
+private fun captureFrozenApproach() {
+    val config = MapConfig.frozenApproach()
+    korgeScreenshotTest(Size(VW, VH)) {
+        val tiledMap = TmxLoader.parse(resourcesVfs[config.tmxPath].readString())
+        val atlases = tiledMap.tilesets.map { TilesetAtlas.load(it, config.tmxDir) }
+        val mapView = TiledMapView(tiledMap, atlases)
+        mapView.scale = SCALE
+        addChild(mapView)
+
+        val player = CharacterSprite(mapView, tiledMap.tileWidth, tiledMap.tileHeight)
+        player.loadSwordsman()
+        player.gridX = config.spawnX; player.gridY = config.spawnY
+        player.play(SpriteAnimation.IDLE)
+
+        // Camera centered on player
+        mapView.x = VW / 2.0 - player.visualGridX * tiledMap.tileWidth * SCALE
+        mapView.y = VH / 2.0 - player.visualGridY * tiledMap.tileHeight * SCALE
+
+        // Snow: fill around player spawn (-5,9). Grid offsets (-10,-5) so player = index (5,14).
+        val snowGrid = SnowGrid(20, 20, offsetX = -10, offsetY = -5)
+        val footprintGrid = FootprintGrid(20, 20, offsetX = -10, offsetY = -5)
+        for (x in -8..-2) for (y in 7..11) snowGrid[x, y] = 0.7f
+        // Extra depth around player
+        for (x in -6..-4) for (y in 8..10) snowGrid[x, y] = 0.8f
+
+        val snowOverlay = SnowOverlay(mapView, tiledMap.tileWidth, tiledMap.tileHeight)
+        snowOverlay.update(snowGrid, footprintGrid)
+
+        // Lighting: ambient dark night with one warm torch at player position
+        val tilePx = (tiledMap.tileWidth * SCALE).toFloat()
+        val effects = game.shader.ShaderEffects()
+        effects.lightingFilter.ambientDarkness = 0.08f
+        effects.lightingFilter.tilePixelSize = tilePx
+        effects.lightingFilter.time = 1.5f
+        effects.lightingFilter.lights = listOf(
+            game.shader.LightSource(
+                tileX = config.spawnX, tileY = config.spawnY,
+                radius = 6f, r = 1.0f, g = 0.8f, b = 0.4f,
+                intensity = 0.9f, flickerSpeed = 3f, flickerAmount = 0.15f
+            )
+        )
+        effects.attachLighting(mapView, effects.lightingFilter.lights, tilePx)
+
+        // Fog: density 0.3 for atmosphere
+        effects.fogFilter.density = 0.3f
+        effects.fogFilter.time = 2.0f
+        effects.attachFog(mapView)
+
+        val hero = Combatant(id = "nib", name = "Nib", maxHp = 80, side = Side.PLAYER, attackPower = 12)
+        HudOverlay(this, hero, Inventory(initialGold = 50), "The Frozen Approach")
+
+        save("frozen_approach")
+    }
+}
+
+/**
+ * Frozen Approach with footprints: A trail of boot prints in the snow
+ * coming from the south toward the player position.
+ */
+private fun captureFrozenFootprints() {
+    val config = MapConfig.frozenApproach()
+    korgeScreenshotTest(Size(VW, VH)) {
+        val tiledMap = TmxLoader.parse(resourcesVfs[config.tmxPath].readString())
+        val atlases = tiledMap.tilesets.map { TilesetAtlas.load(it, config.tmxDir) }
+        val mapView = TiledMapView(tiledMap, atlases)
+        mapView.scale = SCALE
+        addChild(mapView)
+
+        val player = CharacterSprite(mapView, tiledMap.tileWidth, tiledMap.tileHeight)
+        player.loadSwordsman()
+        player.gridX = config.spawnX; player.gridY = config.spawnY
+        player.play(SpriteAnimation.IDLE)
+
+        mapView.x = VW / 2.0 - player.visualGridX * tiledMap.tileWidth * SCALE
+        mapView.y = VH / 2.0 - player.visualGridY * tiledMap.tileHeight * SCALE
+
+        // Snow grid around player
+        val snowGrid = SnowGrid(20, 20, offsetX = -10, offsetY = -5)
+        for (x in -8..-2) for (y in 7..11) snowGrid[x, y] = 0.7f
+        for (x in -6..-4) for (y in 8..10) snowGrid[x, y] = 0.8f
+
+        // Footprints: trail from south (y=11) toward player (y=9), at x=-5
+        val footprintGrid = FootprintGrid(20, 20, offsetX = -10, offsetY = -5)
+        // 7 stamps in a line approaching from the south
+        footprintGrid.stamp(-5, 11)
+        footprintGrid.stamp(-5, 10)
+        footprintGrid.stamp(-4, 10)
+        footprintGrid.stamp(-4, 9)
+        footprintGrid.stamp(-5, 9)
+        footprintGrid.stamp(-6, 9)
+        footprintGrid.stamp(-6, 8)
+
+        val snowOverlay = SnowOverlay(mapView, tiledMap.tileWidth, tiledMap.tileHeight)
+        snowOverlay.update(snowGrid, footprintGrid)
+
+        val footprintOverlay = FootprintOverlay(mapView, tiledMap.tileWidth, tiledMap.tileHeight)
+        footprintOverlay.update(footprintGrid)
+
+        val hero = Combatant(id = "nib", name = "Nib", maxHp = 80, side = Side.PLAYER, attackPower = 12)
+        HudOverlay(this, hero, Inventory(initialGold = 50), "The Frozen Approach (FOOTPRINTS)")
+
+        save("frozen_footprints")
+    }
+}
+
+/**
+ * Frozen Approach with blood: Fresh and old blood spills on snow.
+ * Blood on white snow creates high-contrast horror atmosphere.
+ */
+private fun captureFrozenBlood() {
+    val config = MapConfig.frozenApproach()
+    korgeScreenshotTest(Size(VW, VH)) {
+        val tiledMap = TmxLoader.parse(resourcesVfs[config.tmxPath].readString())
+        val atlases = tiledMap.tilesets.map { TilesetAtlas.load(it, config.tmxDir) }
+        val mapView = TiledMapView(tiledMap, atlases)
+        mapView.scale = SCALE
+        addChild(mapView)
+
+        val player = CharacterSprite(mapView, tiledMap.tileWidth, tiledMap.tileHeight)
+        player.loadSwordsman()
+        player.gridX = config.spawnX; player.gridY = config.spawnY
+        player.play(SpriteAnimation.IDLE)
+
+        mapView.x = VW / 2.0 - player.visualGridX * tiledMap.tileWidth * SCALE
+        mapView.y = VH / 2.0 - player.visualGridY * tiledMap.tileHeight * SCALE
+
+        // Snow grid
+        val snowGrid = SnowGrid(20, 20, offsetX = -10, offsetY = -5)
+        for (x in -8..-2) for (y in 7..11) snowGrid[x, y] = 0.75f
+
+        // Blood grid: fresh spills close to player, old spills further out
+        val bloodGrid = BloodGrid(20, 20, offsetX = -10, offsetY = -5)
+        // Fresh blood (close to player at -5,9)
+        bloodGrid.spill(-5, 9, 0.9f)   // right at player feet
+        bloodGrid.spill(-4, 9, 0.7f)   // nearby
+        bloodGrid.spill(-5, 8, 0.6f)   // nearby
+
+        // Old blood (further away) -- age after spilling
+        bloodGrid.spill(-7, 10, 0.8f)
+        bloodGrid.spill(-3, 11, 0.5f)
+        bloodGrid.spill(-6, 7, 0.6f)
+        // Age only the old ones: we age all then re-spill fresh ones
+        bloodGrid.age(0.8f)
+        // Re-spill fresh to overwrite the aged freshness at player
+        bloodGrid.spill(-5, 9, 0.9f)
+        bloodGrid.spill(-4, 9, 0.7f)
+        bloodGrid.spill(-5, 8, 0.6f)
+
+        val footprintGrid = FootprintGrid(20, 20, offsetX = -10, offsetY = -5)
+        val snowOverlay = SnowOverlay(mapView, tiledMap.tileWidth, tiledMap.tileHeight)
+        snowOverlay.update(snowGrid, footprintGrid)
+
+        val bloodOverlay = BloodOverlay(mapView, tiledMap.tileWidth, tiledMap.tileHeight)
+        bloodOverlay.update(bloodGrid, snowGrid)
+
+        val hero = Combatant(id = "nib", name = "Nib", maxHp = 80, side = Side.PLAYER, attackPower = 12)
+        HudOverlay(this, hero, Inventory(initialGold = 50), "The Frozen Approach (BLOOD)")
+
+        save("frozen_blood")
+    }
+}
+
+/**
+ * Questbook in its full glory: decorated parchment book at final open state.
+ * Renders the same visual treatment as QuestbookScreen but frozen at scaleX=1, scaleY=1.
+ */
+private fun captureQuestbookGlory() {
+    korgeScreenshotTest(Size(VW, VH)) {
+        // Real pipeline data
+        val director = SliceDirector { 0L }
+        director.enterRoom(rpg.questbook.RoomContext(mapId = "tavern", roomId = rpg.questbook.RoomContext.ROOM_TAVERN, hasInteractableTarget = true))
+        director.fireBark(BarkEvent.NIB_SMELL_TREASURE)
+        director.fireBark(BarkEvent.BRUGG_ATTACK)
+        director.fireBark(BarkEvent.GUARD_BACK_ALREADY)
+
+        // Dark background
+        solidRect(VW, VH, RGBA(0x12, 0x0c, 0x06, 0xff))
+
+        val bookW = VW * 0.85
+        val bookH = VH * 0.8
+        val bookX = (VW - bookW) / 2.0
+        val bookY = (VH - bookH) / 2.0
+
+        // --- Parchment gradient (aged paper look) ---
+        val parchmentColors = listOf(
+            RGBA(0xf8, 0xf0, 0xd8, 0xff),
+            RGBA(0xf2, 0xe4, 0xc4, 0xff),
+            RGBA(0xe8, 0xd8, 0xb0, 0xff),
+            RGBA(0xde, 0xcc, 0x9c, 0xff),
+        )
+        // Outer shadow
+        solidRect(bookW + 8.0, bookH + 8.0, RGBA(0x2a, 0x1a, 0x0a, 0xcc))
+            .apply { x = bookX - 4.0; y = bookY - 4.0 }
+
+        // Gradient layers
+        for ((i, color) in parchmentColors.reversed().withIndex()) {
+            val inset = i * 3.0
+            solidRect(bookW - inset * 2, bookH - inset * 2, color)
+                .apply { x = bookX + inset; y = bookY + inset }
+        }
+
+        // Worn edge stains
+        solidRect(bookW, 6.0, RGBA(0xc8, 0xb0, 0x88, 0x44))
+            .apply { x = bookX; y = bookY }
+        solidRect(bookW, 6.0, RGBA(0xc8, 0xb0, 0x88, 0x44))
+            .apply { x = bookX; y = bookY + bookH - 6.0 }
+        solidRect(6.0, bookH, RGBA(0xc8, 0xb0, 0x88, 0x44))
+            .apply { x = bookX; y = bookY }
+        solidRect(6.0, bookH, RGBA(0xc8, 0xb0, 0x88, 0x44))
+            .apply { x = bookX + bookW - 6.0; y = bookY }
+
+        // --- Binding / Spine ---
+        val spineX = bookX + bookW / 2.0
+        solidRect(2.0, bookH, RGBA(0x2a, 0x18, 0x08, 0xff)).apply { x = spineX - 5.0; y = bookY }
+        solidRect(3.0, bookH, RGBA(0x3a, 0x24, 0x10, 0xff)).apply { x = spineX - 3.0; y = bookY }
+        solidRect(6.0, bookH, RGBA(0x4a, 0x30, 0x18, 0xff)).apply { x = spineX - 3.0; y = bookY }
+        solidRect(3.0, bookH, RGBA(0x3a, 0x24, 0x10, 0xff)).apply { x = spineX + 3.0; y = bookY }
+        solidRect(2.0, bookH, RGBA(0x2a, 0x18, 0x08, 0xff)).apply { x = spineX + 5.0; y = bookY }
+        solidRect(1.0, bookH, RGBA(0x6a, 0x50, 0x30, 0xff)).apply { x = spineX; y = bookY }
+
+        // --- Framed pages ---
+        val frameInset = 10.0
+        val pageW = bookW / 2.0 - 20.0
+        val pageH = bookH - frameInset * 2
+
+        // Left page
+        val leftPageX = bookX + frameInset
+        val leftPageY = bookY + frameInset
+        solidRect(pageW + 4.0, pageH + 4.0, RGBA(0x8a, 0x6a, 0x44, 0xff))
+            .apply { x = leftPageX - 2.0; y = leftPageY - 2.0 }
+        solidRect(pageW, pageH, RGBA(0xf5, 0xe8, 0xcc, 0xff))
+            .apply { x = leftPageX; y = leftPageY }
+        // Inner ornamental borders
+        solidRect(pageW - 8.0, 1.0, RGBA(0xaa, 0x88, 0x55, 0x88))
+            .apply { x = leftPageX + 4.0; y = leftPageY + 4.0 }
+        solidRect(pageW - 8.0, 1.0, RGBA(0xaa, 0x88, 0x55, 0x88))
+            .apply { x = leftPageX + 4.0; y = leftPageY + pageH - 5.0 }
+        solidRect(1.0, pageH - 8.0, RGBA(0xaa, 0x88, 0x55, 0x88))
+            .apply { x = leftPageX + 4.0; y = leftPageY + 4.0 }
+        solidRect(1.0, pageH - 8.0, RGBA(0xaa, 0x88, 0x55, 0x88))
+            .apply { x = leftPageX + pageW - 5.0; y = leftPageY + 4.0 }
+
+        // Right page
+        val rightPageX = bookX + bookW / 2.0 + 10.0
+        val rightPageY = bookY + frameInset
+        solidRect(pageW + 4.0, pageH + 4.0, RGBA(0x8a, 0x6a, 0x44, 0xff))
+            .apply { x = rightPageX - 2.0; y = rightPageY - 2.0 }
+        solidRect(pageW, pageH, RGBA(0xf5, 0xe8, 0xcc, 0xff))
+            .apply { x = rightPageX; y = rightPageY }
+        solidRect(pageW - 8.0, 1.0, RGBA(0xaa, 0x88, 0x55, 0x88))
+            .apply { x = rightPageX + 4.0; y = rightPageY + 4.0 }
+        solidRect(pageW - 8.0, 1.0, RGBA(0xaa, 0x88, 0x55, 0x88))
+            .apply { x = rightPageX + 4.0; y = rightPageY + pageH - 5.0 }
+        solidRect(1.0, pageH - 8.0, RGBA(0xaa, 0x88, 0x55, 0x88))
+            .apply { x = rightPageX + 4.0; y = rightPageY + 4.0 }
+        solidRect(1.0, pageH - 8.0, RGBA(0xaa, 0x88, 0x55, 0x88))
+            .apply { x = rightPageX + pageW - 5.0; y = rightPageY + 4.0 }
+
+        // Page shadows at spine
+        solidRect(3.0, pageH, RGBA(0x44, 0x33, 0x22, 0x44))
+            .apply { x = leftPageX + pageW; y = leftPageY }
+        solidRect(3.0, pageH, RGBA(0x44, 0x33, 0x22, 0x44))
+            .apply { x = rightPageX - 3.0; y = rightPageY }
+
+        // Dog-ear (top-right)
+        val dogEarSize = 14.0
+        solidRect(dogEarSize, dogEarSize, RGBA(0xd8, 0xc4, 0xa0, 0xff))
+            .apply { x = rightPageX + pageW - dogEarSize; y = rightPageY }
+        solidRect(dogEarSize, 2.0, RGBA(0x66, 0x50, 0x33, 0x88))
+            .apply { x = rightPageX + pageW - dogEarSize; y = rightPageY + dogEarSize }
+        solidRect(2.0, dogEarSize, RGBA(0x66, 0x50, 0x33, 0x88))
+            .apply { x = rightPageX + pageW - dogEarSize - 2.0; y = rightPageY }
+        solidRect(dogEarSize * 0.7, dogEarSize * 0.7, RGBA(0xc0, 0xaa, 0x80, 0xff))
+            .apply { x = rightPageX + pageW - dogEarSize * 0.7; y = rightPageY }
+
+        // --- Content from SliceDirector ---
+        val contentLeftX = leftPageX + 14.0
+        val contentLeftY = leftPageY + 14.0
+        val contentRightX = rightPageX + 14.0
+        val contentRightY = rightPageY + 14.0
+
+        // Left page: quest log entries
+        text("OFFICIAL QUEST LOG", textSize = 12.0, color = RGBA(0x5c, 0x3a, 0x1e, 0xff))
+            .apply { x = contentLeftX; y = contentLeftY }
+        for ((i, entry) in director.questbook.log.withIndex()) {
+            val t = if (entry.questbookText.length > 42)
+                entry.questbookText.take(42) + "..." else entry.questbookText
+            text("\u2022 $t", textSize = 10.0, color = RGBA(0x3a, 0x2a, 0x1a, 0xff))
+                .apply { x = contentLeftX; y = contentLeftY + 22.0 + i * 16.0 }
+        }
+
+        // Right page: assignments + pressure
+        text("ACTIVE ASSIGNMENTS", textSize = 12.0, color = RGBA(0x5c, 0x3a, 0x1e, 0xff))
+            .apply { x = contentRightX; y = contentRightY }
+        val allMarkers = director.questMarkers + director.falseMarkers
+        for ((i, m) in allMarkers.withIndex()) {
+            val markerText = if (m.length > 38) m.take(38) + "..." else m
+            text("\u25B6 $markerText", textSize = 10.0, color = RGBA(0x3a, 0x2a, 0x1a, 0xff))
+                .apply { x = contentRightX; y = contentRightY + 22.0 + i * 16.0 }
+        }
+        text("REGISTERED PARTY:", textSize = 10.0, color = RGBA(0x5c, 0x3a, 0x1e, 0xff))
+            .apply { x = contentRightX; y = contentRightY + 130.0 }
+        text("Nib & Company", textSize = 11.0, color = RGBA(0x3a, 0x2a, 0x1a, 0xff))
+            .apply { x = contentRightX; y = contentRightY + 144.0 }
+        text("BUREAUCRATIC PRESSURE: ${director.pressure.name}", textSize = 10.0, color = RGBA(0x22, 0xcc, 0x22, 0xff))
+            .apply { x = contentRightX; y = contentRightY + 170.0 }
+
+        save("questbook_glory")
     }
 }

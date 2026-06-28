@@ -2,7 +2,7 @@
   "id": "FEAT-004",
   "type": "feat",
   "description": "Part E + F: Screenshot harness (4 new captures) + result brief. CRITICAL: DO NOT change the localCurrentDirVfs line or its import (B007).",
-  "status": "pending",
+  "status": "in_progress",
   "steps": [
     "Modify game/src/desktopMain/kotlin/game/ScreenshotHarness.kt: Add 4 new capture functions and register them in main(). CRITICAL: The line 'private val OUT = localCurrentDirVfs[\"build/screenshots\"]' and its import 'import korlibs.io.file.std.localCurrentDirVfs' must NOT be changed (B007).",
     "Add captureFrozenApproach(): Load Exterior.tmx via MapConfig.frozenApproach(). Create SnowGrid (fill all cells around player spawn with depth 0.6-0.8). Apply LightingFilter (ambientDarkness=0.08, one warm LightSource at player pos = torch). Apply FogFilter (density=0.4). Apply night color tint. Add SnowOverlay. Camera centered on player. Save as 'frozen_approach.png'.",
