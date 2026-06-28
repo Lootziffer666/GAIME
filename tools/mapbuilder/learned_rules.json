@@ -1,0 +1,393 @@
+{
+  "adjacency": {
+    "ground": {
+      "water": {
+        "S": {
+          "water": 1514,
+          "floor": 518,
+          "empty": 34
+        },
+        "E": {
+          "water": 1588,
+          "floor": 461,
+          "empty": 18
+        },
+        "W": {
+          "water": 1588,
+          "floor": 461,
+          "empty": 1
+        },
+        "N": {
+          "water": 1514,
+          "floor": 504,
+          "empty": 4
+        }
+      },
+      "floor": {
+        "N": {
+          "water": 518,
+          "floor": 6803,
+          "empty": 76,
+          "wall": 133,
+          "stone": 2
+        },
+        "S": {
+          "floor": 6803,
+          "water": 504,
+          "empty": 30,
+          "wall": 107
+        },
+        "E": {
+          "floor": 6944,
+          "water": 461,
+          "empty": 35,
+          "wall": 75
+        },
+        "W": {
+          "water": 461,
+          "floor": 6944,
+          "wall": 75,
+          "empty": 30
+        }
+      },
+      "empty": {
+        "N": {
+          "water": 34,
+          "empty": 2973,
+          "floor": 30,
+          "stone": 226
+        },
+        "S": {
+          "empty": 2973,
+          "floor": 76,
+          "stone": 170,
+          "water": 4
+        },
+        "E": {
+          "empty": 3030,
+          "stone": 165,
+          "floor": 30,
+          "water": 1
+        },
+        "W": {
+          "water": 18,
+          "empty": 3030,
+          "floor": 35,
+          "stone": 224
+        }
+      },
+      "stone": {
+        "S": {
+          "stone": 1648,
+          "empty": 226,
+          "floor": 2
+        },
+        "E": {
+          "stone": 1672,
+          "empty": 224
+        },
+        "W": {
+          "stone": 1672,
+          "empty": 165
+        },
+        "N": {
+          "stone": 1648,
+          "empty": 170
+        }
+      },
+      "wall": {
+        "S": {
+          "wall": 650,
+          "floor": 133
+        },
+        "E": {
+          "wall": 727,
+          "floor": 75
+        },
+        "W": {
+          "wall": 727,
+          "floor": 75
+        },
+        "N": {
+          "wall": 650,
+          "floor": 107
+        }
+      }
+    },
+    "weather": {
+      "none": {
+        "S": {
+          "none": 7525,
+          "drain": 519,
+          "exposed": 148,
+          "puddle_zone": 52,
+          "sheltered": 31
+        },
+        "E": {
+          "none": 7737,
+          "drain": 461,
+          "sheltered": 26,
+          "puddle_zone": 30,
+          "exposed": 62
+        },
+        "W": {
+          "none": 7737,
+          "drain": 463,
+          "exposed": 69,
+          "sheltered": 28,
+          "puddle_zone": 25
+        },
+        "N": {
+          "none": 7525,
+          "drain": 504,
+          "exposed": 82,
+          "sheltered": 29,
+          "puddle_zone": 43
+        }
+      },
+      "drain": {
+        "N": {
+          "none": 519,
+          "drain": 668,
+          "exposed": 283,
+          "puddle_zone": 120
+        },
+        "S": {
+          "drain": 668,
+          "exposed": 292,
+          "puddle_zone": 124,
+          "none": 504
+        },
+        "E": {
+          "drain": 793,
+          "none": 463,
+          "exposed": 243,
+          "puddle_zone": 89
+        },
+        "W": {
+          "none": 461,
+          "drain": 793,
+          "exposed": 242,
+          "puddle_zone": 93
+        }
+      },
+      "exposed": {
+        "N": {
+          "drain": 292,
+          "exposed": 2542,
+          "puddle_zone": 992,
+          "none": 148,
+          "sheltered": 1
+        },
+        "S": {
+          "puddle_zone": 1013,
+          "exposed": 2542,
+          "drain": 283,
+          "none": 82
+        },
+        "E": {
+          "exposed": 2575,
+          "puddle_zone": 1071,
+          "drain": 242,
+          "none": 69,
+          "sheltered": 2
+        },
+        "W": {
+          "drain": 243,
+          "exposed": 2575,
+          "puddle_zone": 1078,
+          "none": 62,
+          "sheltered": 2
+        }
+      },
+      "puddle_zone": {
+        "N": {
+          "drain": 124,
+          "exposed": 1013,
+          "puddle_zone": 423,
+          "none": 52,
+          "sheltered": 1
+        },
+        "S": {
+          "puddle_zone": 423,
+          "exposed": 992,
+          "drain": 120,
+          "none": 43
+        },
+        "E": {
+          "exposed": 1078,
+          "drain": 93,
+          "puddle_zone": 414,
+          "none": 25,
+          "sheltered": 2
+        },
+        "W": {
+          "exposed": 1071,
+          "drain": 89,
+          "puddle_zone": 414,
+          "none": 30
+        }
+      },
+      "sheltered": {
+        "N": {
+          "none": 31
+        },
+        "S": {
+          "none": 29,
+          "exposed": 1,
+          "puddle_zone": 1
+        },
+        "E": {
+          "none": 28,
+          "exposed": 2,
+          "sheltered": 1
+        },
+        "W": {
+          "none": 26,
+          "exposed": 2,
+          "puddle_zone": 2,
+          "sheltered": 1
+        }
+      }
+    },
+    "exits": {
+      "none": {
+        "S": {
+          "none": 15392
+        },
+        "E": {
+          "none": 15506
+        },
+        "W": {
+          "none": 15506
+        },
+        "N": {
+          "none": 15392
+        }
+      }
+    },
+    "npc_routes": {
+      "none": {
+        "S": {
+          "none": 15392
+        },
+        "E": {
+          "none": 15506
+        },
+        "W": {
+          "none": 15506
+        },
+        "N": {
+          "none": 15392
+        }
+      }
+    },
+    "interactable": {
+      "none": {
+        "S": {
+          "none": 15392
+        },
+        "E": {
+          "none": 15506
+        },
+        "W": {
+          "none": 15506
+        },
+        "N": {
+          "none": 15392
+        }
+      }
+    },
+    "decorative": {
+      "none": {
+        "S": {
+          "none": 15007,
+          "tree": 82
+        },
+        "E": {
+          "none": 15152,
+          "tree": 53
+        },
+        "W": {
+          "none": 15152,
+          "tree": 62
+        },
+        "N": {
+          "none": 15007,
+          "tree": 79
+        }
+      },
+      "tree": {
+        "N": {
+          "none": 82,
+          "tree": 224
+        },
+        "S": {
+          "tree": 224,
+          "none": 79
+        },
+        "E": {
+          "tree": 239,
+          "none": 62
+        },
+        "W": {
+          "none": 53,
+          "tree": 239
+        }
+      }
+    }
+  },
+  "frequency": {
+    "ground": {
+      "water": 2121,
+      "floor": 7606,
+      "empty": 3365,
+      "stone": 1911,
+      "wall": 891
+    },
+    "weather": {
+      "none": 8615,
+      "drain": 1590,
+      "exposed": 4028,
+      "puddle_zone": 1630,
+      "sheltered": 31
+    },
+    "exits": {
+      "none": 15894
+    },
+    "npc_routes": {
+      "none": 15894
+    },
+    "interactable": {
+      "none": 15894
+    },
+    "decorative": {
+      "none": 15588,
+      "tree": 306
+    }
+  },
+  "cross_layer": {
+    "weather|drain": {
+      "floor": 1590
+    },
+    "weather|exposed": {
+      "floor": 4028
+    },
+    "weather|puddle_zone": {
+      "floor": 1630
+    },
+    "decorative|tree": {
+      "floor": 292,
+      "water": 14
+    },
+    "weather|sheltered": {
+      "floor": 31
+    }
+  },
+  "dimensions": {
+    "min_width": 9,
+    "max_width": 85,
+    "min_height": 9,
+    "max_height": 69
+  }
+}

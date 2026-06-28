@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GAIME Map Builder</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <header>
+        <h1>GAIME Map Builder</h1>
+        <p class="subtitle">Photo &rarr; Segmentation &rarr; Multi-Layer Paint &rarr; TMX Export</p>
+    </header>
+
+    <main>
+        <!-- STEP 1: Upload or Load -->
+        <section id="upload-section" class="panel">
+            <h2>1. Load Map (existing TMX or new from photo)</h2>
+            
+            <div class="load-options">
+                <!-- Load existing project map -->
+                <div class="load-project">
+                    <label>Load project map:</label>
+                    <select id="project-maps"><option value="">-- select --</option></select>
+                    <button id="btn-load-project">Load</button>
+                </div>
+                
+                <!-- Or upload TMX directly -->
+                <div class="load-tmx">
+                    <label>Or upload TMX:</label>
+                    <input type="file" id="tmx-input" accept=".tmx">
+                    <button id="btn-load-tmx" disabled>Load TMX</button>
+                </div>
+            </div>
+            
+            <hr class="divider">
+            
+            <h3>...or create from image/blank</h3>
+            <div class="upload-area" id="drop-zone">
+                <p>Drop an image here or click to browse</p>
+                <input type="file" id="file-input" accept="image/*" hidden>
+            </div>
+            <div class="grid-size">
+                <label>Grid: <input type="number" id="grid-width" value="32" min="8" max="128"> x
+                <input type="number" id="grid-height" value="24" min="8" max="96"> tiles</label>
+                <button id="btn-segment" disabled>Segment Photo</button>
+                <button id="btn-new">New Blank Map</button>
+            </div>
+        </section>
+
+        <!-- STEP 2: Editor -->
+        <section id="editor-section" class="panel" style="display:none;">
+            <h2>2. Paint Layers</h2>
+
+            <!-- Layer Tabs -->
+            <div class="layer-bar" id="layer-tabs">
+                <!-- Filled by JS -->
+            </div>
+            
+            <div class="toolbar">
+                <div class="palette" id="palette">
+                    <!-- Filled by JS per active layer -->
+                </div>
+                <div class="tools">
+                    <button id="btn-brush" class="tool active" title="Brush (B)">Brush</button>
+                    <button id="btn-fill" class="tool" title="Fill (F)">Fill</button>
+                    <button id="btn-eraser" class="tool" title="Eraser (E)">Eraser</button>
+                    <label class="ghost-toggle">
+                        <input type="checkbox" id="toggle-ghost" checked> Photo overlay
+                    </label>
+                </div>
+                <div class="actions">
+                    <button id="btn-auto" class="accent" title="Full auto: Vision annotates → Teach AI → done. You just watch.">Full Auto</button>
+                    <button id="btn-teach" class="secondary" title="Feed this map to the AI">Teach AI</button>
+                    <button id="btn-generate" class="secondary" title="Generate new map from learned rules">Generate</button>
+                    <button id="btn-vision" class="secondary" title="Let Vision-AI annotate hydrology/exits/NPCs">Vision Annotate</button>
+                    <button id="btn-export" class="primary">Export TMX</button>
+                </div>
+            </div>
+
+            <div class="canvas-container">
+                <canvas id="map-canvas"></canvas>
+            </div>
+
+            <div class="status-bar">
+                <span id="status-pos">-</span>
+                <span id="status-label">-</span>
+                <span class="shortcuts">Keys: B=Brush F=Fill E=Eraser | 1-4=Layer</span>
+            </div>
+        </section>
+    </main>
+
+    <script src="/static/painter.js"></script>
+</body>
+</html>

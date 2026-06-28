@@ -231,13 +231,16 @@ yet surfaced. Combat depth (BossPhase/Adds visualization) is a parallel follow-u
 | KorGE API shift 5.x→6.0 (`korlibs.*` paths) | Resolve imports against 6.0 during Steps 2–3; keep the entry minimal first. |
 | Scope creep | This doc fixes the steps; each is independently buildable and reviewable. |
 
-## 5. Explicitly out of scope (separate efforts)
+## 5. Scope notes
 
-- **"Photo/sketch → Location Recipe" AI pipeline.** A separate, standalone tool
-  (own project), not part of GAIME. Even its downstream (recipe → tilemap +
-  collision + scatter) is largely covered by tile-based authoring (Tiled/LDtk
-  auto-layers), so it is deferred and not a prerequisite for anything above.
-- True 3D. The HD-2D look is achieved by 2.5D layering (per the locked decision).
+- **"Photo/sketch → Location Recipe" AI pipeline — NOW IN-REPO (Step 10, 2026-06-28).**
+  Originally deferred as a separate standalone project. The owner has since built it
+  directly in this repo at **`tools/mapbuilder/`** (Flask web tool: OpenCV segmentation
+  → WFC tile assignment → TMX export, with a canvas paint editor). It is **Python tooling
+  only** — it does not participate in the Gradle/Kotlin build and cannot affect
+  `:core`/`:game`/`:composeApp` or their tests. Output TMX uses GAIME-compatible layer
+  names (`Floor`→WALKABLE, `Walls`→SOLID) loadable by `:core`'s `TmxLoader`.
+- True 3D remains out of scope. The HD-2D look is achieved by 2.5D layering (locked decision).
 
 ---
 

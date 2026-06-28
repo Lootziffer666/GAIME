@@ -101,4 +101,33 @@ class CollisionGridTest {
         assertEquals(TileType.WALKABLE, grid[0, 0]) // normalized from (-16,-16)
         assertEquals(TileType.WALKABLE, grid[1, 0]) // normalized from (-15,-16)
     }
+
+    // --- Step 10 fixes: bridge surfaces walkable, trees non-blocking ---
+
+    @Test
+    fun `bridges layer is walkable (crossed on, not blocked)`() {
+        // Bridges.tmx has only Water + Bridges layers; the bridge surface must be WALKABLE.
+        val map = mapWith(
+            "Water" to listOf(cell(0, 0), cell(1, 0), cell(2, 0)),
+            "Bridges" to listOf(cell(1, 0))
+        )
+        val grid = CollisionGrid.from(map)
+        assertEquals(TileType.WATER, grid[0, 0])
+        assertEquals(TileType.WALKABLE, grid[1, 0]) // bridge spans the water
+        assertEquals(TileType.WATER, grid[2, 0])
+    }
+
+    @Test
+    fun `trees layers do not block the floor underneath`() {
+        // ruined-temple names its foliage trees1..trees6; these are decorative canopy
+        // over walkable ground and must NOT blanket the map as SOLID.
+        val map = mapWith(
+            "ground" to listOf(cell(0, 0), cell(1, 0)),
+            "trees1" to listOf(cell(0, 0)),
+            "trees4" to listOf(cell(1, 0))
+        )
+        val grid = CollisionGrid.from(map)
+        assertEquals(TileType.WALKABLE, grid[0, 0])
+        assertEquals(TileType.WALKABLE, grid[1, 0])
+    }
 }
