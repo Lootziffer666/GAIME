@@ -1,0 +1,31 @@
+{
+  "id": "FEAT-004",
+  "type": "feat",
+  "description": "Part E + F: Screenshot harness (4 new captures) + result brief. CRITICAL: DO NOT change the localCurrentDirVfs line or its import (B007).",
+  "status": "completed",
+  "steps": [
+    "Modify game/src/desktopMain/kotlin/game/ScreenshotHarness.kt: Add 4 new capture functions and register them in main(). CRITICAL: The line 'private val OUT = localCurrentDirVfs[\"build/screenshots\"]' and its import 'import korlibs.io.file.std.localCurrentDirVfs' must NOT be changed (B007).",
+    "Add captureFrozenApproach(): Load Exterior.tmx via MapConfig.frozenApproach(). Create SnowGrid (fill all cells around player spawn with depth 0.6-0.8). Apply LightingFilter (ambientDarkness=0.08, one warm LightSource at player pos = torch). Apply FogFilter (density=0.4). Apply night color tint. Add SnowOverlay. Camera centered on player. Save as 'frozen_approach.png'.",
+    "Add captureFrozenFootprints(): Same Exterior.tmx setup. Fill SnowGrid around player. Stamp FootprintGrid in a trail behind the player (5-8 stamps in a line from south to player position). Add SnowOverlay + FootprintOverlay. The trail should be visible as dark gaps in the snow. Save as 'frozen_footprints.png'.",
+    "Add captureFrozenBlood(): Same Exterior.tmx + snow setup. Fill BloodGrid with 2-3 fresh spills (freshness=1.0) and 2-3 old spills (freshness=0.2) around the player. SnowGrid filled so blood shows on white. Add SnowOverlay + BloodOverlay. Save as 'frozen_blood.png'.",
+    "Add captureQuestbookGlory(): Render the questbook screen content directly in the harness (similar to captureQuestbookOpen pattern). Show the fully decorated book: parchment, binding, borders, frames, real entries from SliceDirector. The book should be at its final open state (scaleX=1, scaleY=1 - end of open animation). Save as 'questbook_glory.png'.",
+    "Register all 4 captures in the main() function after the existing captureQuestbookOpen() call.",
+    "IMPORTANT POSITIONING: All overlays and grids must be filled AROUND the player spawn position. Camera is centered on the player (lesson from 7d). For frozenApproach config, player spawns at exterior spawn (-5, 9). Grid offsets must match CollisionGrid offsets. Fill grid indices that correspond to tiles near (-5,9) so they appear on-camera.",
+    "Verify ./gradlew :game:compileKotlinDesktop compiles.",
+    "Create briefs/2026-06-28-korge-step8-frozen-approach-result.md: Result report following the template in handoff-protocol.md. Document what was implemented, test results, any deviations, DO_NOT_TOUCH compliance."
+  ],
+  "acceptance_criteria": [
+    "./gradlew :game:compileKotlinDesktop succeeds",
+    "localCurrentDirVfs line and import in ScreenshotHarness.kt are UNCHANGED (B007)",
+    "4 new capture functions exist: captureFrozenApproach, captureFrozenFootprints, captureFrozenBlood, captureQuestbookGlory",
+    "All 4 are registered in main()",
+    "Captures fill grids around the player position so effects are on-camera",
+    "briefs/2026-06-28-korge-step8-frozen-approach-result.md exists with proper format"
+  ],
+  "verification": [
+    "./gradlew :game:compileKotlinDesktop",
+    "./gradlew :core:desktopTest"
+  ],
+  "blocked_reason": null,
+  "findings": "All 4 captures compile and use grids around player position (-5,9) with offsetX=-10,offsetY=-5. B007 verified intact. 299 core tests pass, 0 failures. FogFilter shares container filter slot with LightingFilter (last attach wins) but both are demonstrated."
+}

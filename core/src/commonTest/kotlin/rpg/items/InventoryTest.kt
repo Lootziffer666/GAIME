@@ -130,4 +130,51 @@ class InventoryTest {
     fun getReturnsNullForUnknownId() {
         assertNull(ItemCatalog.get("nonexistent"))
     }
+
+    // ─── Gold API: spend / steal ──────────────────────────────────────────
+
+    @Test
+    fun spendWithSufficientGoldReturnsTrueAndDeducts() {
+        val inv = Inventory(initialGold = 100)
+        assertTrue(inv.spend(30))
+        assertEquals(70, inv.gold)
+    }
+
+    @Test
+    fun spendWithExactGoldReturnsTrueAndZeroesOut() {
+        val inv = Inventory(initialGold = 50)
+        assertTrue(inv.spend(50))
+        assertEquals(0, inv.gold)
+    }
+
+    @Test
+    fun spendWithInsufficientGoldReturnsFalseAndNoChange() {
+        val inv = Inventory(initialGold = 20)
+        assertFalse(inv.spend(50))
+        assertEquals(20, inv.gold)
+    }
+
+    @Test
+    fun stealTakesRequestedAmountWhenAvailable() {
+        val inv = Inventory(initialGold = 100)
+        val stolen = inv.steal(30)
+        assertEquals(30, stolen)
+        assertEquals(70, inv.gold)
+    }
+
+    @Test
+    fun stealIsCappedAtCurrentGold() {
+        val inv = Inventory(initialGold = 10)
+        val stolen = inv.steal(50)
+        assertEquals(10, stolen)
+        assertEquals(0, inv.gold)
+    }
+
+    @Test
+    fun stealFromEmptyInventoryReturnsZero() {
+        val inv = Inventory(initialGold = 0)
+        val stolen = inv.steal(10)
+        assertEquals(0, stolen)
+        assertEquals(0, inv.gold)
+    }
 }

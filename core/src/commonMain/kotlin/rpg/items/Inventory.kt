@@ -64,4 +64,24 @@ class Inventory(initialGold: Int = 50) {
 
     fun hasPotions(): Boolean =
         ItemCatalog.ALL.any { it.type == ItemType.POTION && count(it.id) > 0 }
+
+    /**
+     * Spend gold. Returns true if the player had enough gold and the amount
+     * was deducted; false if insufficient (gold unchanged).
+     */
+    fun spend(amount: Int): Boolean {
+        if (gold < amount) return false
+        gold -= amount
+        return true
+    }
+
+    /**
+     * Steal gold from this inventory. Deducts up to [amount] (capped at current gold).
+     * Returns the actual amount stolen.
+     */
+    fun steal(amount: Int): Int {
+        val stolen = minOf(amount, gold)
+        gold -= stolen
+        return stolen
+    }
 }
