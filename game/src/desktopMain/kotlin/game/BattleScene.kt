@@ -101,7 +101,7 @@ class BattleScene : Scene() {
             // Q → flee / return to map
             if (keys.justPressed(Key.Q)) {
                 audioManager.stopMusic()
-                launch { sceneContainer.changeTo<TiledMapScene>() }
+                launch { sceneContainer.changeTo<WorldScene>() }
                 return@addUpdater
             }
 

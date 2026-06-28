@@ -9,10 +9,15 @@ import korlibs.time.milliseconds
 
 /**
  * A character sprite with real CraftPix sheets (Idle/Walk/Attack/Hurt/Death),
- * grid-based positioning, and facing flip. Falls back to procedural bitmaps if
- * asset loading fails.
+ * grid-based positioning with smooth interpolated movement, and facing flip.
+ * Falls back to procedural bitmaps if asset loading fails.
  */
 enum class SpriteAnimation { IDLE, WALK, ATTACK, HURT, DEATH }
+
+// Facing enum lives in PlayerSprite.kt (DO_NOT_TOUCH) — reused here.
+// Extension properties for direction deltas:
+val Facing.dx: Int get() = when (this) { Facing.LEFT -> -1; Facing.RIGHT -> 1; else -> 0 }
+val Facing.dy: Int get() = when (this) { Facing.UP -> -1; Facing.DOWN -> 1; else -> 0 }
 
 class CharacterSprite(
     private val parent: Container,
@@ -28,6 +33,37 @@ class CharacterSprite(
     var pixelOffsetX: Double = 0.0
     var pixelOffsetY: Double = 0.0
 
+    // --- Smooth movement ---
+    private var fromGridX: Int = 0
+    private var fromGridY: Int = 0
+    private var moveProgress: Float = 1f  // 1f = idle/arrived
+    private val stepDurationMs: Float = 160f
+
+    /** True while the sprite is mid-step between tiles. */
+    val isMoving: Boolean get() = moveProgress < 1f
+
+    /** Interpolated X position in tile units (for camera follow). */
+    val visualGridX: Double
+        get() = fromGridX + (gridX - fromGridX) * moveProgress.toDouble()
+
+    /** Interpolated Y position in tile units (for camera follow). */
+    val visualGridY: Double
+        get() = fromGridY + (gridY - fromGridY) * moveProgress.toDouble()
+
+    /**
+     * Requests a move to (toGridX, toGridY). Returns false if mid-step.
+     * On success: records from-position, sets gridX/Y, resets moveProgress to 0.
+     */
+    fun startMove(toGridX: Int, toGridY: Int): Boolean {
+        if (isMoving) return false
+        fromGridX = gridX
+        fromGridY = gridY
+        moveProgress = 0f  // Set BEFORE gridX/Y so updatePosition reads visualGrid = fromGrid
+        gridX = toGridX
+        gridY = toGridY
+        return true
+    }
+
     private val animations = mutableMapOf<SpriteAnimation, List<BmpSlice>>()
     private var currentAnim: SpriteAnimation = SpriteAnimation.IDLE
     private var frameIndex = 0
@@ -38,6 +74,8 @@ class CharacterSprite(
     private val img: Image
 
     init {
+        fromGridX = 0
+        fromGridY = 0
         img = parent.image(SpriteLoader.sliceFrames(SpriteLoader.buildFallbackBitmap())[0]) {
             smoothing = false
         }
@@ -68,6 +106,25 @@ class CharacterSprite(
         applyFirstFrame()
     }
 
+    /**
+     * Loads a single idle sheet (and optionally walk). Used for NPC sprites.
+     * Falls back to procedural bitmaps on error.
+     */
+    suspend fun loadFromSheet(idleSheetPath: String?, walkSheetPath: String? = null) {
+        val idleFrames = if (idleSheetPath != null) {
+            SpriteLoader.load(idleSheetPath)
+        } else {
+            SpriteLoader.sliceFrames(SpriteLoader.buildFallbackBitmap())
+        }
+        animations[SpriteAnimation.IDLE] = idleFrames
+        animations[SpriteAnimation.WALK] = if (walkSheetPath != null) SpriteLoader.load(walkSheetPath) else idleFrames
+        // Fallback for other anims so play() never crashes
+        animations[SpriteAnimation.ATTACK] = idleFrames
+        animations[SpriteAnimation.HURT] = idleFrames
+        animations[SpriteAnimation.DEATH] = idleFrames
+        applyFirstFrame()
+    }
+
     // --- Animation control ---
 
     fun play(animation: SpriteAnimation, loop: Boolean = true, onDone: (() -> Unit)? = null) {
@@ -83,6 +140,12 @@ class CharacterSprite(
     // --- Internals ---
 
     private fun advanceAnimation(dtMs: Float) {
+        // Smooth movement tick FIRST — independent of animation frames
+        if (isMoving) {
+            moveProgress = (moveProgress + dtMs / stepDurationMs).coerceAtMost(1f)
+            updatePosition()
+        }
+
         val frames = animations[currentAnim] ?: return
         if (frames.isEmpty()) return
 
@@ -120,26 +183,22 @@ class CharacterSprite(
         if (!frames.isNullOrEmpty()) {
             img.bitmap = frames[0]
         }
-        // Calculate pixel offset: center sprite on tile
         val frameSize = img.bitmap.width
         pixelOffsetX = -(frameSize - tileWidth) / 2.0
         pixelOffsetY = -(frameSize - tileHeight) / 2.0
+        fromGridX = gridX
+        fromGridY = gridY
+        moveProgress = 1f
         updatePosition()
     }
 
     private fun updatePosition() {
-        img.x = gridX * tileWidth + pixelOffsetX
-        img.y = gridY * tileHeight + pixelOffsetY
+        img.x = visualGridX * tileWidth + pixelOffsetX
+        img.y = visualGridY * tileHeight + pixelOffsetY
     }
 
     private fun updateFacing() {
         img.scaleX = if (facing == Facing.LEFT) -1.0 else 1.0
-        // Adjust x when flipped so the sprite doesn't shift
         updatePosition()
-    }
-
-    companion object {
-        // Expose for CharacterSprite init
-        internal fun buildFallbackBitmap() = SpriteLoader.buildFallbackBitmap()
     }
 }
