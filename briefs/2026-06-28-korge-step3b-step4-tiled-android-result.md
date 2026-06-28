@@ -2,7 +2,7 @@
 
 **Brief:** `briefs/2026-06-28-korge-step3b-step4-tiled-android.md`
 **Branch:** `kiro/korge-step4-tiled-android`
-**PR:** *(wird nach Push ergänzt)*
+**PR:** https://github.com/Lootziffer666/GAIME/pull/32
 **Datum:** 2026-06-28
 **Autor:** Kiro
 **Status:** ✅ Abgeschlossen — verifizierbarer Acceptance-Subset grün
