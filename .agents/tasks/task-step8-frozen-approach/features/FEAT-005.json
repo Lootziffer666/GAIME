@@ -1,0 +1,35 @@
+{
+  "id": "FEAT-005",
+  "type": "feat",
+  "description": "4-Seasons + Weather Showcase: Spring (flowers trampled, tree blossoms), Summer (grass bends on walkover, wind sway, long-day lighting), Autumn (falling leaves kicked up, gusts, rain, thunder), Winter (already done). Per-season MapConfig variants with screenshot captures showing the passage of time through the year.",
+  "status": "completed",
+  "steps": [
+    "Create core/src/commonMain/kotlin/rpg/weather/SeasonState.kt: enum Season { SPRING, SUMMER, AUTUMN, WINTER }. Data class SeasonalGrid(width, height, offsetX, offsetY) with per-cell flowerIntensity:Float (spring flowers, 0-1), grassBend:Float (summer grass displacement), leafCount:Float (autumn leaves on ground). Methods: trampleFlower(x,y) reduces flowerIntensity, bendGrass(x,y) sets grassBend=1.0 (decays over time), dropLeaves(rate) adds to leafCount, kickLeaves(x,y) clears leafCount at position. regrowFlowers(rate), unbendGrass(rate), windSwayGrass(windDx) applies global offset factor.",
+    "Create core/src/commonTest/kotlin/rpg/weather/SeasonStateTest.kt: Tests for trampleFlower reduces intensity, bendGrass + unbendGrass decay, dropLeaves accumulates, kickLeaves clears, regrowFlowers recovers.",
+    "Create game/src/desktopMain/kotlin/game/SpringOverlay.kt: Following WaterOverlay pattern. Reads SeasonalGrid. Per cell with flowerIntensity > 0.1: pink/yellow SolidRects (small, ~40% tile size, centered) with alpha proportional to intensity. Trampled flowers = reduced alpha. Fresh flowers = bright pink RGBA(0xff, 0x88, 0xcc, alpha). Tree blossoms: at cells marked as 'tree' (flowerIntensity > 0.7), add white/pink blossom particles (extra small rects above the flower cells).",
+    "Create game/src/desktopMain/kotlin/game/SummerOverlay.kt: Reads SeasonalGrid. Per cell: green grass tufts (small green SolidRects at bottom of tile). When grassBend > 0, offset the rect position slightly in wind direction (visual bend). Longer days = brighter ambient via DayNightClock (timeOfDay=0.6 for summer). Grass sway: slight x-position oscillation using a time-based offset.",
+    "Create game/src/desktopMain/kotlin/game/AutumnOverlay.kt: Reads SeasonalGrid. Per cell with leafCount > 0: orange/brown/red small SolidRects scattered (2-3 per tile at random-but-deterministic offsets based on cell coords). When player walks over: leafCount drops (kicked up = particles briefly visible then removed). Falling leaf effect: new leaves appear at random-ish cells each frame (using time-based deterministic placement, not Random).",
+    "Modify game/src/desktopMain/kotlin/game/MapConfig.kt: Add 4 season factory methods: springApproach() (season='spring', weather=CLEAR, timeOfDay=0.55, fog=0.1), summerApproach() (season='summer', weather=CLEAR, timeOfDay=0.65, fog=0.0), autumnApproach() (season='autumn', weather=RAIN, timeOfDay=0.4, fog=0.2), winterApproach() = existing frozenApproach(). Add MapId entries: SPRING_APPROACH, SUMMER_APPROACH, AUTUMN_APPROACH. Wire in forId().",
+    "Modify game/src/desktopMain/kotlin/game/WorldScene.kt: When season is 'spring', instantiate SeasonalGrid + SpringOverlay, fill flowers at start, trample on player step. When 'summer', SeasonalGrid + SummerOverlay, bend grass on step, wind sway via WindState. When 'autumn', SeasonalGrid + AutumnOverlay, drop leaves continuously, kick on step, apply rain+wind. Wire DayNightClock timeOfDay from atmosphere for season-appropriate lighting.",
+    "Modify game/src/desktopMain/kotlin/game/ScreenshotHarness.kt: Add 4 new captures (DO NOT touch localCurrentDirVfs line - B007): captureSpringApproach() shows flowers + blossoms on bright spring day, captureSummerApproach() shows grass bending in wind + long-day light, captureAutumnApproach() shows fallen leaves + rain + dark sky, captureWinterApproach() shows the existing frozen scene (or reuse frozen_approach). All position effects around player spawn. Register in main().",
+    "Run ./gradlew :core:desktopTest to verify new SeasonState tests pass.",
+    "Run ./gradlew :game:compileKotlinDesktop to verify all compiles."
+  ],
+  "acceptance_criteria": [
+    "./gradlew :core:desktopTest passes including SeasonStateTest",
+    "./gradlew :game:compileKotlinDesktop succeeds",
+    "./gradlew :composeApp:compileKotlinDesktop succeeds",
+    "4 new season overlays exist (Spring, Summer, Autumn - Winter uses existing SnowOverlay)",
+    "4 new MapConfig factories (spring/summer/autumn + existing winter)",
+    "4 new screenshot captures registered showing seasonal progression",
+    "WorldScene correctly instantiates season-appropriate overlays based on atmosphere.season",
+    "ScreenshotHarness localCurrentDirVfs line unchanged (B007)"
+  ],
+  "verification": [
+    "./gradlew :core:desktopTest",
+    "./gradlew :game:compileKotlinDesktop",
+    "./gradlew :composeApp:compileKotlinDesktop"
+  ],
+  "blocked_reason": null,
+  "findings": "All 15 SeasonStateTest cases pass. All 3 modules compile (core:desktopTest, game:compileKotlinDesktop, composeApp:compileKotlinDesktop). B007 constraint (localCurrentDirVfs line) preserved. SeasonalGrid uses deterministic hash-based placement (no Random). 4 seasonal MapConfig variants added (SPRING_APPROACH, SUMMER_APPROACH, AUTUMN_APPROACH plus existing FROZEN_APPROACH for winter). WorldScene wires season-appropriate overlays and player interactions (trample/bend/kick). 4 new screenshot captures registered."
+}

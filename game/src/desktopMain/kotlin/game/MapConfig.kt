@@ -3,9 +3,24 @@ package game
 import rpg.bark.BarkEvent
 
 /**
- * Identifies one of the two available TMX locations.
+ * Identifies one of the available TMX locations.
  */
-enum class MapId { INTERIOR, EXTERIOR }
+enum class MapId { INTERIOR, EXTERIOR, FROZEN_APPROACH, SPRING_APPROACH, SUMMER_APPROACH, AUTUMN_APPROACH }
+
+/**
+ * Weather type for the atmosphere system.
+ */
+enum class Weather { CLEAR, RAIN, SNOW }
+
+/**
+ * Atmospheric settings for a map: season, time of day, weather type, and fog density.
+ */
+data class WorldAtmosphere(
+    val season: String = "summer",
+    val timeOfDay: Float = 0.5f,
+    val weather: Weather = Weather.CLEAR,
+    val fog: Float = 0f,
+)
 
 /**
  * A configured exit tile: stepping on (tileX, tileY) triggers a transition to
@@ -42,6 +57,7 @@ data class MapConfig(
     val npcs: List<NpcDefinition>,
     val exits: List<MapExit>,
     val displayName: String,
+    val atmosphere: WorldAtmosphere = WorldAtmosphere(),
 ) {
     val tmxPath: String get() = "$tmxDir/$tmxFile"
 
@@ -140,6 +156,10 @@ data class MapConfig(
         fun forId(id: MapId): MapConfig = when (id) {
             MapId.INTERIOR -> interior()
             MapId.EXTERIOR -> exterior()
+            MapId.FROZEN_APPROACH -> frozenApproach()
+            MapId.SPRING_APPROACH -> springApproach()
+            MapId.SUMMER_APPROACH -> summerApproach()
+            MapId.AUTUMN_APPROACH -> autumnApproach()
         }
 
         /**
@@ -148,5 +168,101 @@ data class MapConfig(
          */
         fun forId(id: MapId, spawnX: Int, spawnY: Int): MapConfig =
             forId(id).copy(spawnX = spawnX, spawnY = spawnY)
+
+        /**
+         * The Frozen Approach — uses Exterior.tmx in winter conditions.
+         * Night time, heavy snow, fog. A cold and dangerous path.
+         */
+        fun frozenApproach(): MapConfig = MapConfig(
+            id = MapId.FROZEN_APPROACH,
+            tmxDir = "assets/HD/locations/heroes-home/Tiled_files",
+            tmxFile = "Exterior.tmx",
+            spawnX = -5,
+            spawnY = 9,
+            bgmPath = "assets/audio/music/Sovereign_Heights.mp3",
+            displayName = "The Frozen Approach",
+            npcs = emptyList(),
+            exits = listOf(
+                MapExit(tileX = -5, tileY = 7, destination = MapId.INTERIOR, spawnX = -5, spawnY = 1),
+            ),
+            atmosphere = WorldAtmosphere(
+                season = "winter",
+                timeOfDay = 0.1f,
+                weather = Weather.SNOW,
+                fog = 0.4f,
+            ),
+        )
+
+        /**
+         * Spring Approach — uses Exterior.tmx in bright spring morning.
+         * Clear sky, flowers blooming, gentle light.
+         */
+        fun springApproach(): MapConfig = MapConfig(
+            id = MapId.SPRING_APPROACH,
+            tmxDir = "assets/HD/locations/heroes-home/Tiled_files",
+            tmxFile = "Exterior.tmx",
+            spawnX = -5,
+            spawnY = 9,
+            bgmPath = "assets/audio/music/Sovereign_Heights.mp3",
+            displayName = "The Spring Approach",
+            npcs = emptyList(),
+            exits = listOf(
+                MapExit(tileX = -5, tileY = 7, destination = MapId.INTERIOR, spawnX = -5, spawnY = 1),
+            ),
+            atmosphere = WorldAtmosphere(
+                season = "spring",
+                timeOfDay = 0.55f,
+                weather = Weather.CLEAR,
+                fog = 0.1f,
+            ),
+        )
+
+        /**
+         * Summer Approach — uses Exterior.tmx in long summer daylight.
+         * Clear sky, warm light, lush grass.
+         */
+        fun summerApproach(): MapConfig = MapConfig(
+            id = MapId.SUMMER_APPROACH,
+            tmxDir = "assets/HD/locations/heroes-home/Tiled_files",
+            tmxFile = "Exterior.tmx",
+            spawnX = -5,
+            spawnY = 9,
+            bgmPath = "assets/audio/music/Sovereign_Heights.mp3",
+            displayName = "The Summer Approach",
+            npcs = emptyList(),
+            exits = listOf(
+                MapExit(tileX = -5, tileY = 7, destination = MapId.INTERIOR, spawnX = -5, spawnY = 1),
+            ),
+            atmosphere = WorldAtmosphere(
+                season = "summer",
+                timeOfDay = 0.65f,
+                weather = Weather.CLEAR,
+                fog = 0.0f,
+            ),
+        )
+
+        /**
+         * Autumn Approach — uses Exterior.tmx in rainy autumn overcast.
+         * Rain, wind, fallen leaves, darker sky.
+         */
+        fun autumnApproach(): MapConfig = MapConfig(
+            id = MapId.AUTUMN_APPROACH,
+            tmxDir = "assets/HD/locations/heroes-home/Tiled_files",
+            tmxFile = "Exterior.tmx",
+            spawnX = -5,
+            spawnY = 9,
+            bgmPath = "assets/audio/music/Sovereign_Heights.mp3",
+            displayName = "The Autumn Approach",
+            npcs = emptyList(),
+            exits = listOf(
+                MapExit(tileX = -5, tileY = 7, destination = MapId.INTERIOR, spawnX = -5, spawnY = 1),
+            ),
+            atmosphere = WorldAtmosphere(
+                season = "autumn",
+                timeOfDay = 0.4f,
+                weather = Weather.RAIN,
+                fog = 0.2f,
+            ),
+        )
     }
 }

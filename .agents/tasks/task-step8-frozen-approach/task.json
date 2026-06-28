@@ -1,0 +1,7 @@
+{
+  "task_id": "task-step8-frozen-approach",
+  "task_description": "Step 8 - The Frozen Approach: Complete implementation of brief parts A-F. Snow/Blood/DayNight/Temp/Fog/Gold simulations in :core, Frozen Approach level with overlays and atmosphere in :game, Questbook visual upgrade, 4 screenshot captures, result brief.",
+  "status": "in_progress",
+  "feature_order": ["FEAT-001", "FEAT-002", "FEAT-003", "FEAT-004"],
+  "blocked_reason": null
+}

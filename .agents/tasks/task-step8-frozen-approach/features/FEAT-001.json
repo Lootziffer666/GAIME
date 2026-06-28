@@ -1,0 +1,36 @@
+{
+  "id": "FEAT-001",
+  "type": "feat",
+  "description": "Part A: New :core simulations (SnowGrid, BloodGrid, DayNightClock, TemperatureField, FogState) with unit tests + Gold API extension (Inventory.spend/steal)",
+  "status": "completed",
+  "steps": [
+    "Create branch kiro/korge-step8-frozen-approach from origin/main. Verify git log --oneline -3 shows a5df48dd at HEAD.",
+    "Create core/src/commonMain/kotlin/rpg/weather/SnowGrid.kt: Analog WaterGrid pattern. Fields: snowDepth FloatArray per cell (width x height with offsetX/Y). Methods: accumulate(rate) adds snow everywhere, clearAt(x,y,amount) reduces depth (footprint), regrow(rate) refills cleared cells slowly, depthAt(x,y) getter. Use the same bounds-checking pattern as WaterGrid.",
+    "Create core/src/commonMain/kotlin/rpg/weather/BloodGrid.kt: Per-cell bloodAmount:Float + freshness:Float. Methods: spill(x,y,amount) sets fresh blood, age(rate) decays freshness over time (fresh->dark), isFresh(x,y) returns true if freshness > 0.5. Same grid pattern with offsetX/Y.",
+    "Create core/src/commonMain/kotlin/rpg/weather/DayNightClock.kt: timeOfDay:Float (0..1, 0=midnight, 0.5=noon). advance(dt, speed) wraps cyclically. ambientColor(): Triple<Float,Float,Float> (warm daytime, cool-blue night). darkness(): Float (0 at noon, ~0.6 at midnight). Pure calculation, no randomness.",
+    "Create core/src/commonMain/kotlin/rpg/weather/TemperatureField.kt: On-demand calculation from registered heat sources. addHeatSource(x,y,radius,strength), clearSources(), tempAt(x,y):Float (-1 cold .. +1 hot). Heat falls off with distance. Multiple sources additive. Default temp when no sources = -0.5 (cold world).",
+    "Create core/src/commonMain/kotlin/rpg/weather/FogState.kt: density:Float (0..1), windDriftX/Y:Float. setDensity(d), drift(dt, windState:WindState) shifts drift offset using wind direction.",
+    "Modify core/src/commonMain/kotlin/rpg/items/Inventory.kt: Add fun spend(amount: Int): Boolean (if gold >= amount, deduct and return true, else false) and fun steal(amount: Int): Int (deducts min(amount, gold), returns actual stolen amount). This fixes the 7d limitation where goldStolenWhileAsleep could not actually deduct gold.",
+    "Create core/src/commonTest/kotlin/rpg/weather/SnowGridTest.kt: Tests for accumulate raises depth, clearAt creates footprint depression, regrow refills, depthAt bounds check.",
+    "Create core/src/commonTest/kotlin/rpg/weather/BloodGridTest.kt: Tests for spill sets blood, age decays freshness, isFresh threshold.",
+    "Create core/src/commonTest/kotlin/rpg/weather/DayNightClockTest.kt: Tests for advance cycles 0..1, darkness high at night low at noon, ambientColor blue at night warm at day.",
+    "Create core/src/commonTest/kotlin/rpg/weather/TemperatureFieldTest.kt: Tests for near source is warm, far is cold, multiple sources add, no sources = base cold.",
+    "Create core/src/commonTest/kotlin/rpg/weather/FogStateTest.kt: Tests for setDensity, drift changes offset.",
+    "Extend core/src/commonTest/kotlin/rpg/items/InventoryTest.kt: Add tests for spend with sufficient gold (returns true, gold decremented), spend with insufficient (returns false, unchanged), steal capped at current gold.",
+    "Run ./gradlew :core:desktopTest and verify all tests pass."
+  ],
+  "acceptance_criteria": [
+    "./gradlew :core:desktopTest passes with all new tests green",
+    "SnowGrid accumulate/clearAt/regrow/depthAt work correctly per tests",
+    "BloodGrid spill/age/isFresh work correctly per tests",
+    "DayNightClock advance/darkness/ambientColor are mathematically correct",
+    "TemperatureField heat source distance falloff is tested",
+    "FogState density/drift work per tests",
+    "Inventory.spend and Inventory.steal pass new tests"
+  ],
+  "verification": [
+    "./gradlew :core:desktopTest"
+  ],
+  "blocked_reason": null,
+  "findings": "All tests pass. Build successful in 25s. No environment issues. Branch kiro/korge-step8-frozen-approach created from origin/main (a5df48dd). Committed as c7e2036a. WindState uses effectiveStrength (includes gusts) for FogState drift - matches existing API."
+}
