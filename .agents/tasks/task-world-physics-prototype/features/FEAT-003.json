@@ -2,7 +2,7 @@
   "id": "FEAT-003",
   "type": "fix",
   "description": "Address 5 code review issues: document grid-to-shader limitation, remove dead RainFilter, fix refill iteration order dependency, document intentional wind param behavior, clarify windAngle naming.",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "Add KDoc to SnowFilter and BloodFilter documenting grid-to-shader gap as a known prototype limitation",
     "Remove dead RainFilter construction and unused import from PhysicsTestScene",
@@ -22,5 +22,5 @@
     "./gradlew :game:compileKotlinDesktop"
   ],
   "blocked_reason": null,
-  "findings": null
+  "findings": "All 5 review issues addressed. Double-buffer in SnowGrid.refill ensures deterministic spatial behavior. Dead RainFilter removed. KDoc clarifies windAngle is a shear factor. Both :core:desktopTest and :game:compileKotlinDesktop pass cleanly."
 }
