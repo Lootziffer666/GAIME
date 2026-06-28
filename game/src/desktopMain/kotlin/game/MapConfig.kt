@@ -5,7 +5,7 @@ import rpg.bark.BarkEvent
 /**
  * Identifies one of the available TMX locations.
  */
-enum class MapId { INTERIOR, EXTERIOR, FROZEN_APPROACH, SPRING_APPROACH, SUMMER_APPROACH, AUTUMN_APPROACH }
+enum class MapId { INTERIOR, EXTERIOR, FROZEN_APPROACH, SPRING_APPROACH, SUMMER_APPROACH, AUTUMN_APPROACH, CHAPEL, GUILD_HALL, GLASSBLOWERS, RUINED_TEMPLE, BRIDGE }
 
 /**
  * Weather type for the atmosphere system.
@@ -149,6 +149,10 @@ data class MapConfig(
             ),
             exits = listOf(
                 MapExit(tileX = -5, tileY = 7, destination = MapId.INTERIOR, spawnX = -5, spawnY = 1),
+                // Step 10: Exits to Stokeport locations (use walkable tiles on the edges)
+                MapExit(tileX = -8, tileY = 7, destination = MapId.CHAPEL, spawnX = -4, spawnY = -3),
+                MapExit(tileX = -12, tileY = 9, destination = MapId.GUILD_HALL, spawnX = 0, spawnY = -1),
+                MapExit(tileX = 5, tileY = 7, destination = MapId.GLASSBLOWERS, spawnX = 0, spawnY = 2),
             ),
         )
 
@@ -160,6 +164,11 @@ data class MapConfig(
             MapId.SPRING_APPROACH -> springApproach()
             MapId.SUMMER_APPROACH -> summerApproach()
             MapId.AUTUMN_APPROACH -> autumnApproach()
+            MapId.CHAPEL -> chapel()
+            MapId.GUILD_HALL -> guildHall()
+            MapId.GLASSBLOWERS -> glassblowers()
+            MapId.RUINED_TEMPLE -> ruinedTemple()
+            MapId.BRIDGE -> bridge()
         }
 
         /**
@@ -262,6 +271,116 @@ data class MapConfig(
                 timeOfDay = 0.4f,
                 weather = Weather.RAIN,
                 fog = 0.2f,
+            ),
+        )
+
+        // =====================================================================
+        // Step 10: Stokeport Locations
+        // =====================================================================
+
+        /**
+         * Chapel Exterior — chapel/Tiled_files/Exterior.tmx.
+         * Infinite map. Walkable bbox: x=-14..15, y=-14..7.
+         * Spawn (-4,-3) verified WALKABLE (nearest to center).
+         * Exit: top edge → back to EXTERIOR.
+         */
+        fun chapel(): MapConfig = MapConfig(
+            id = MapId.CHAPEL,
+            tmxDir = "assets/HD/locations/chapel/Tiled_files",
+            tmxFile = "Exterior.tmx",
+            spawnX = -4,
+            spawnY = -3,
+            bgmPath = "assets/audio/music/Sovereign_Heights.mp3",
+            displayName = "Chapel Grounds",
+            npcs = emptyList(),
+            exits = listOf(
+                MapExit(tileX = -4, tileY = -14, destination = MapId.EXTERIOR, spawnX = -3, spawnY = 9),
+            ),
+        )
+
+        /**
+         * Guild Hall Exterior — guild-hall/Tiled_files/Exterior.tmx.
+         * Infinite map. Grid: 20x13, offset=(-9,-8). Walkable bbox: x=-9..10, y=-8..4.
+         * Spawn (0,-1) verified WALKABLE (nearest to center).
+         * Exit: top edge → back to EXTERIOR.
+         */
+        fun guildHall(): MapConfig = MapConfig(
+            id = MapId.GUILD_HALL,
+            tmxDir = "assets/HD/locations/guild-hall/Tiled_files",
+            tmxFile = "Exterior.tmx",
+            spawnX = 0,
+            spawnY = -1,
+            bgmPath = "assets/audio/music/Quest_Accepted_Unfortunately_.mp3",
+            displayName = "Guild Hall",
+            npcs = emptyList(),
+            exits = listOf(
+                MapExit(tileX = 0, tileY = -8, destination = MapId.EXTERIOR, spawnX = 0, spawnY = 9),
+                MapExit(tileX = 0, tileY = 4, destination = MapId.BRIDGE, spawnX = 0, spawnY = 0),
+            ),
+        )
+
+        /**
+         * Glassblowers Workshop Exterior — glassblowers-workshop/Tiled_files/Exterior.tmx.
+         * Infinite map. Grid: 22x15, offset=(-10,-10). Walkable bbox: x=-10..11, y=-3..4.
+         * Spawn (0,2) verified WALKABLE (nearest to center).
+         * Exit: left edge → back to EXTERIOR.
+         */
+        fun glassblowers(): MapConfig = MapConfig(
+            id = MapId.GLASSBLOWERS,
+            tmxDir = "assets/HD/locations/glassblowers-workshop/Tiled_files",
+            tmxFile = "Exterior.tmx",
+            spawnX = 0,
+            spawnY = 2,
+            bgmPath = "assets/audio/music/Sovereign_Heights.mp3",
+            displayName = "Glassblowers Workshop",
+            npcs = emptyList(),
+            exits = listOf(
+                MapExit(tileX = -10, tileY = 0, destination = MapId.EXTERIOR, spawnX = 0, spawnY = 9),
+            ),
+        )
+
+        /**
+         * Ruined Temple Exterior — ruined-temple/Tiled_files/Ruined_temple_exterior.tmx.
+         * Infinite map. Grid: 23x17, offset=(-11,-13).
+         * NOTE: CollisionGrid reports 0 walkable cells (trees layers override ground as SOLID).
+         * This is a known limitation (BLOCKER: CollisionGrid.layerType classifies "trees*" as SOLID
+         * even though ground is underneath). Spawn set at visual center of the temple courtyard.
+         * Exit: bottom edge → back to BRIDGE.
+         */
+        fun ruinedTemple(): MapConfig = MapConfig(
+            id = MapId.RUINED_TEMPLE,
+            tmxDir = "assets/HD/locations/ruined-temple/Tiled_files",
+            tmxFile = "Ruined_temple_exterior.tmx",
+            spawnX = 0,
+            spawnY = -2,
+            bgmPath = "assets/audio/music/Sovereign_Heights.mp3",
+            displayName = "Ruined Temple",
+            npcs = emptyList(),
+            exits = listOf(
+                MapExit(tileX = 0, tileY = 3, destination = MapId.BRIDGE, spawnX = 0, spawnY = 48),
+            ),
+        )
+
+        /**
+         * Bridge — bridges/PNG_n_Tiled/Bridges.tmx.
+         * Infinite map. Grid: 85x69, offset=(-32,-16).
+         * NOTE: CollisionGrid reports 0 walkable cells (layer "Bridges" classified as SOLID).
+         * BLOCKER: CollisionGrid.layerType should classify "bridges" as FLOOR for this map.
+         * Spawn set at visual center of the bridge structure.
+         * Exits: west → GUILD_HALL, east → RUINED_TEMPLE.
+         */
+        fun bridge(): MapConfig = MapConfig(
+            id = MapId.BRIDGE,
+            tmxDir = "assets/HD/locations/bridges/PNG_n_Tiled",
+            tmxFile = "Bridges.tmx",
+            spawnX = 0,
+            spawnY = 10,
+            bgmPath = "assets/audio/music/Sovereign_Heights.mp3",
+            displayName = "Stone Bridge",
+            npcs = emptyList(),
+            exits = listOf(
+                MapExit(tileX = -20, tileY = 10, destination = MapId.GUILD_HALL, spawnX = 0, spawnY = 4),
+                MapExit(tileX = 40, tileY = 10, destination = MapId.RUINED_TEMPLE, spawnX = 0, spawnY = -2),
             ),
         )
     }
