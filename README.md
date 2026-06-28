@@ -148,9 +148,13 @@ All user-facing **text** is localized via `:core`'s `Localizer` into 9 languages
 
 The current playable frontend uses a **Compose Canvas** engine. The locked
 long-term renderer is **KorGE 2.5D** (GPU-accelerated, HD-2D layered look, still
-Kotlin Multiplatform); the staged migration extracts `:core` (done), then adds a
-`:game` KorGE module and ports gameplay before retiring the Compose engine. See
-[`.kiro/steering/rendering-engine.md`](.kiro/steering/rendering-engine.md).
+Kotlin Multiplatform); the staged migration extracts `:core` (done), adds a
+`:game` KorGE module (done), and ports gameplay before retiring the Compose
+engine. **Step 3 is done**: the 2.5D HD-2D stage (`game/.../Hd2dStage.kt`) is
+ported to KorGE 6.0.0 and compiles; **Step 4** (own Tiled tilemap loader +
+tile-derived collision in `:core`) is next. See
+[`.kiro/steering/rendering-engine.md`](.kiro/steering/rendering-engine.md) and
+[`docs/KORGE_MIGRATION_PLAN.md`](docs/KORGE_MIGRATION_PLAN.md).
 
 ---
 
@@ -158,7 +162,9 @@ Kotlin Multiplatform); the staged migration extracts `:core` (done), then adds a
 
 ### Prerequisites
 
-- JDK 17+ (JDK 25 works; Android target compiles to JVM 17)
+- JDK 17+ (JDK 25 works; `:core`/`:composeApp` compile to JVM 17 for Android).
+  The `:game` KorGE module targets **JVM 21** (KorGE 6.0.0 ships JVM-21 bytecode)
+  and needs a JDK 21+ to build — the bundled toolchain (JDK 21) satisfies this.
 - Gradle wrapper is included (`./gradlew`); Android builds also need the Android SDK
 
 ### Common commands
