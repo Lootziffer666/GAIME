@@ -139,6 +139,22 @@ bash scripts/setup-gl.sh          # one-time: Mesa EGL headless GL
 - **Donor policy:** Anime4K & co. reimplemented from concept, NEVER copy foreign
   code into the tree (KORGE_MIGRATION_PLAN §1).
 
+### Pixel-art upscale — what actually works (Step 11 experiment)
+
+Low resolution is NOT the blocker; the **upscale method** is. Verified by direct
+comparison on a 64px CraftPix sprite scaled ~6×:
+- **bilinear** (`smoothing = true`) → soft/blurry. This is why the first doodle
+  shots looked washed out.
+- **nearest** (`smoothing = false`) → crisp, blocky — sharp base.
+- **The Step 11 `DoodleLineFilter` SOFTENS instead of adding crisp lines** — it
+  samples bilinearly and only luminance-darkens, so it washes the sprite out
+  rather than drawing outlines. It is NOT the right algorithm.
+The real "nice upscale to clean doodle lines" needs an **edge-aware, point-sampled**
+shader (true Anime4K/xBR/hqx concept): sample the low-res texels with nearest,
+reconstruct smooth edges, then draw/dilate a dark outline. Build that on a
+nearest base, not bilinear. Sprites load fine in the harness — earlier
+"invisible character" was scale/off-screen placement, not a load failure.
+
 ## tools/mapbuilder (owner tool, Python)
 
 Photo/sketch → OpenCV HSV segmentation → WFC → TMX (`Floor`→WALKABLE,
