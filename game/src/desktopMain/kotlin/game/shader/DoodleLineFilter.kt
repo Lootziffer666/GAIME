@@ -77,12 +77,15 @@ class DoodleLineFilter(
             SET(srcX, floor(uv_x / texelW) * texelW + texelW * 0.5f.lit)
             SET(srcY, floor(uv_y / texelH) * texelH + texelH * 0.5f.lit)
 
-            // Sample center P and 4 cardinal neighbors (all point-sampled)
-            val P = tex(vec2(srcX, srcY))
-            val A = tex(vec2(srcX, srcY - texelH))           // up
-            val B = tex(vec2(srcX + texelW, srcY))           // right
-            val C = tex(vec2(srcX - texelW, srcY))           // left
-            val D = tex(vec2(srcX, srcY + texelH))           // down
+            // Sample center P and 4 cardinal neighbors (all point-sampled).
+            // tex() expects PIXEL coords (like the other filters: coords01 * texSize),
+            // so convert the normalized srcX/srcY back to pixel space. Feeding
+            // normalized 0..1 here sampled the (0,0) corner → fully transparent output.
+            val P = tex(vec2(srcX, srcY) * texSize)
+            val A = tex(vec2(srcX, srcY - texelH) * texSize)           // up
+            val B = tex(vec2(srcX + texelW, srcY) * texSize)           // right
+            val C = tex(vec2(srcX - texelW, srcY) * texSize)           // left
+            val D = tex(vec2(srcX, srcY + texelH) * texSize)           // down
 
             // ============================================================
             // EPX/Scale2x: determine sub-quadrant and apply rules
