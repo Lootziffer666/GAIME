@@ -19,14 +19,38 @@ Diese Dateien **vor jedem Auftrag** lesen:
 
 ## Vor dem Start eines Auftrags
 
-1. Den `BASE_SHA` aus dem Auftrag prüfen: `git log --oneline origin/main | head -1`
-2. Falls der aktuelle main-HEAD vom `BASE_SHA` abweicht: **Auftrag abbrechen, Abweichung im PR melden.**
-3. Immer von `main` branchen, niemals von einem anderen Feature-Branch.
-
 ```bash
 git fetch origin
+git rev-parse origin/main   # diesen Wert mit BASE_SHA aus dem Brief vergleichen
+```
+
+- Stimmt `origin/main` **nicht** mit `BASE_SHA` überein → **Auftrag abbrechen.**
+  Im Result-Report (`briefs/...-result.md`) vermerken: "Abgebrochen — main hat sich
+  seit Brief-Erstellung verändert. Neuer SHA: <aktuell>. Claude Code muss Brief neu ausstellen."
+- Stimmt der SHA → von `origin/main` branchen:
+
+```bash
 git checkout -b <BRANCH_NAME> origin/main
 ```
+
+Niemals von einem anderen Feature-Branch branchen.
+
+## Nach dem Push — Verifizieren dass die Arbeit auf GitHub gelandet ist
+
+Nach `git push -u origin <BRANCH_NAME>` zwingend prüfen:
+
+```bash
+# Branch wirklich auf Remote?
+git ls-remote --heads origin <BRANCH_NAME>
+# Gibt leere Ausgabe → Push hat lautlos versagt → Blocker im Result-Report
+```
+
+Außerdem: PR über GitHub MCP anlegen und die zurückgegebene PR-URL im Result-Report
+eintragen. Nur wenn eine gültige PR-URL vorliegt, gilt der Auftrag als abgeliefert.
+
+Wenn weder Push noch PR-Erstellung funktionieren (Netzwerk/Proxy), im Result-Report
+unter "Abweichungen" vermerken: "Arbeit lokal fertig, aber nicht auf GitHub gelandet.
+Branch-Name: <name>, letzter lokaler Commit: <sha>. Manuelle Übertragung nötig."
 
 ---
 
