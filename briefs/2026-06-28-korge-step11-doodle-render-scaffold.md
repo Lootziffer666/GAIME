@@ -40,6 +40,29 @@ git log --oneline -3   # soll e7641993 ganz oben zeigen
 
 ---
 
+## Raster ist die Maßeinheit (gilt für alle Karten)
+
+Jedes Referenzbild gibt sein **eigenes** logisches Raster vor (native Tile-Größe → eigene
+Spalten/Zeilen). Es gibt KEINE feste Tile-Größe und KEINE feste Figur-Skala. Alles leitet sich
+pro Karte aus dem Raster ab:
+
+```
+screenTile = OUTPUT_H / gridRows         // Bildschirm-Pixel pro Tile (Sylvanoria@1440p: 1440/48 = 30)
+charScale  = tilesTall * screenTile / 64 // CraftPix-Sprite = 64px; tilesTall ≈ 1.8
+worldPos   = gridCell * screenTile        // Platzierung in Bildschirm-Pixeln
+moveStep   = 1 Tile                        // Bewegung/Collision in Tile-Einheiten (renderer-agnostisch)
+```
+
+Folge: auf der Regions-Karte (86×48) ist eine Figur winzig (≈2 Tiles), auf einer näheren Karte
+(größeres Tile) automatisch groß — **gleiche Welt-Proportion über alle Karten**. Die `:core`-Logik
+(Collision + Physik-Grids) ist bereits in Tile-Einheiten und passt sich von selbst an; nur die
+**Anzeige-Skala der Figuren** muss aus `screenTile` berechnet werden. Hartkodierte Pixel-Skalen
+sind in diesem und allen Folge-Briefs verboten.
+
+(Die native Tile-Größe pro Bild — bei Sylvanoria 16px → 86×48 — ist ein **Pipeline-Parameter pro
+Referenzbild**; verschiedene Bilder brauchen verschiedene Teiler. Für Step 11 ist es in der
+fertigen `sylvanoria_wildwood.tmx` schon festgelegt.)
+
 ## Teil A — `DoodleLineFilter` (neuer Shader)
 
 Neue Datei `game/src/desktopMain/kotlin/game/shader/DoodleLineFilter.kt`, Muster wie die
@@ -72,9 +95,11 @@ Neue Capture im `ScreenshotHarness` bei **2560×1440** (`korgeScreenshotTest(Siz
 1. **Hintergrund:** `assets/HD/backgrounds/sylvanoria_wildwood.png` vollflächig zeichnen
    (`image(resourcesVfs[...].readBitmap())`, auf 2560×1440 skaliert, `smoothing = true` für den
    gemalten Look). Kein Shader auf dem Hintergrund.
-2. **Charakter-Layer:** ein eigener `Container`; darin 2–3 `CharacterSprite` (Swordsman/Vampire),
-   deutlich vergrößert (z.B. scale 4–6 → große Figuren wie im 1440p-Ziel), auf sinnvollen
-   Positionen vor dem Hintergrund. Auf DIESEN Container `DoodleLineFilter` anwenden
+2. **Charakter-Layer:** ein eigener `Container`; darin 2–3 `CharacterSprite` (Swordsman/Vampire).
+   **Größe + Position leiten sich aus dem Raster ab — NICHT hartkodiert** (s. „Raster ist die
+   Maßeinheit" unten): `screenTile = OUTPUT_H / gridRows`; `charScale = (tilesTall × screenTile) /
+   64f` (CraftPix-Frame = 64px; `tilesTall` ≈ 1.8); Position = `gridCell × screenTile`. Figuren auf
+   begehbare Zellen setzen. Auf DIESEN Container `DoodleLineFilter` anwenden
    (`effects.enable(charLayer, doodleLineFilter)` oder `charLayer.filter = doodleLineFilter`),
    `u_LineStrength` ~0.8, `u_Jitter` ~0.4, `u_Time` fest (z.B. 1.5).
 3. `save("doodle_1440p")`.
