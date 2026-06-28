@@ -155,6 +155,15 @@ reconstruct smooth edges, then draw/dilate a dark outline. Build that on a
 nearest base, not bilinear. Sprites load fine in the harness — earlier
 "invisible character" was scale/off-screen placement, not a load failure.
 
+**Step 12 implemented this as EPX/Scale2x in `DoodleLineFilter`** (point-sampled via
+`floor`, EPX rules, outline + boil). It works — crisp inked outlines. One trap that
+bit it: **`tex()` wants PIXEL coords, not normalized 0..1.** All filters sample as
+`tex(coords01 * texSize)` (see PoisonFilter). The first EPX cut computed sample
+coords in normalized space and called `tex(vec2(srcX,srcY))` → sampled the (0,0)
+corner → fully transparent output that still COMPILED GREEN. If a filter renders
+nothing/empty: check you multiplied sample coords by `texSize`. (Caught only by
+looking at the PNG.)
+
 ## tools/mapbuilder (owner tool, Python)
 
 Photo/sketch → OpenCV HSV segmentation → WFC → TMX (`Floor`→WALKABLE,
