@@ -9,7 +9,17 @@ Format: `[ID] Kurzbeschreibung — gefunden von, Datum, betroffene Datei(en), St
 
 ## Offen
 
-*(noch keine Einträge)*
+- **B004 — Infinite-TMX-Maps haben NEGATIVE Chunk-Offsets; deklarierte `width`/`height` sind irreführend.**
+  Gefunden: Claude, 2026-06-28. Betrifft: `MapConfig.kt`, jede `:game`-Szene die Tile-Koordinaten
+  hartkodiert. Status: für heroes-home Interior1/Exterior **behoben** (echte Koordinaten verifiziert),
+  als Klasse aber offen für alle künftigen Maps.
+  Interior1.tmx deklariert `width="16" height="24"`, aber als `infinite="1"`-Map liegen die echten
+  Tile-Daten bei `tileX -17..8 / tileY -10..11` (begehbarer Raum nur `tileX -7..2 / tileY -2..4`).
+  Step 5a's Spawn `(8,12)` und alle Step-5b-Koordinaten aus dem Brief waren BLOCKED/out-of-bounds —
+  der Spieler stand im Nichts. Compile-only-Acceptance fängt das NICHT.
+  **Regel:** Vor dem Hartkodieren von Tile-Koordinaten für eine Map immer `CollisionGrid.from(map)`
+  laden und das Grid dumpen (offsetX/Y + WALKABLE-Bereich), Koordinaten gegen `grid[x-offX, y-offY]`
+  prüfen. `offsetX/Y` sind bei Infinite-Maps fast immer negativ.
 
 ---
 

@@ -49,18 +49,22 @@ data class MapConfig(
          * NPCs: Barkeep at (4,8), Patron at (12,16).
          * Exit: Tile (8,1) → EXTERIOR, spawn (8,20).
          */
+        // Heroes' Home interior — Interior1.tmx. INFINITE map: real walkable room is
+        // tileX -7..2 / tileY -2..4 (chunk offsets, NOT 0-based — see KNOWN_BUGS).
+        // Spawn (-5,1) room centre. NPCs: Barkeep (-6,0), Patron (-3,2).
+        // Exit (-5,4) → EXTERIOR, arrival (-5,9). All coords verified WALKABLE.
         fun interior(): MapConfig = MapConfig(
             id = MapId.INTERIOR,
             tmxDir = "assets/HD/locations/heroes-home/Tiled_files",
             tmxFile = "Interior1.tmx",
-            spawnX = 8,
-            spawnY = 12,
+            spawnX = -5,
+            spawnY = 1,
             bgmPath = "assets/audio/music/Quest_Accepted_Unfortunately_.mp3",
             displayName = "Heroes' Home",
             npcs = listOf(
                 NpcDefinition(
-                    tileX = 4,
-                    tileY = 8,
+                    tileX = -6,
+                    tileY = 0,
                     idleSheetPath = "assets/HD/characters/swordsman/PNG/Swordsman_lvl2/Without_shadow/Swordsman_lvl2_Idle_without_shadow.png",
                     facing = Facing.RIGHT,
                     dialog = listOf(
@@ -71,8 +75,8 @@ data class MapConfig(
                     )
                 ),
                 NpcDefinition(
-                    tileX = 12,
-                    tileY = 16,
+                    tileX = -3,
+                    tileY = 2,
                     idleSheetPath = "assets/HD/characters/vampire/PNG/Vampires1/Without_shadow/Vampires1_Idle_without_shadow.png",
                     facing = Facing.LEFT,
                     dialog = listOf(
@@ -82,27 +86,25 @@ data class MapConfig(
                 ),
             ),
             exits = listOf(
-                MapExit(tileX = 8, tileY = 1, destination = MapId.EXTERIOR, spawnX = 8, spawnY = 20),
+                MapExit(tileX = -5, tileY = 4, destination = MapId.EXTERIOR, spawnX = -5, spawnY = 9),
             ),
         )
 
-        /**
-         * Heroes' Home exterior — Exterior.tmx.
-         * NPCs: Guard at (5,10), Traveler at (12,8).
-         * Exit: Tile (8,22) → INTERIOR, spawn (8,11).
-         */
+        // Heroes' Home exterior — Exterior.tmx. INFINITE map: open courtyard is
+        // tileX -18..8 / tileY 7..11 (fully walkable). Spawn (-5,9).
+        // NPCs: Guard (-3,9), Traveler (0,10). Exit (-5,7) → INTERIOR, arrival (-5,1).
         fun exterior(): MapConfig = MapConfig(
             id = MapId.EXTERIOR,
             tmxDir = "assets/HD/locations/heroes-home/Tiled_files",
             tmxFile = "Exterior.tmx",
-            spawnX = 8,
-            spawnY = 20,
+            spawnX = -5,
+            spawnY = 9,
             bgmPath = "assets/audio/music/Sovereign_Heights.mp3",
             displayName = "Village Exterior",
             npcs = listOf(
                 NpcDefinition(
-                    tileX = 5,
-                    tileY = 10,
+                    tileX = -3,
+                    tileY = 9,
                     idleSheetPath = "assets/HD/characters/swordsman/PNG/Swordsman_lvl3/Without_shadow/Swordsman_lvl3_Idle_without_shadow.png",
                     facing = Facing.RIGHT,
                     dialog = listOf(
@@ -113,8 +115,8 @@ data class MapConfig(
                     )
                 ),
                 NpcDefinition(
-                    tileX = 12,
-                    tileY = 8,
+                    tileX = 0,
+                    tileY = 10,
                     idleSheetPath = null,
                     facing = Facing.DOWN,
                     dialog = listOf(
@@ -124,7 +126,7 @@ data class MapConfig(
                 ),
             ),
             exits = listOf(
-                MapExit(tileX = 8, tileY = 22, destination = MapId.INTERIOR, spawnX = 8, spawnY = 11),
+                MapExit(tileX = -5, tileY = 7, destination = MapId.INTERIOR, spawnX = -5, spawnY = 1),
             ),
         )
 
