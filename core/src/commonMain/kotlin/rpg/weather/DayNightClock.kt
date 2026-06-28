@@ -55,4 +55,26 @@ class DayNightClock(initialTime: Float = 0f) {
 
         return Triple(r, g, bFinal)
     }
+
+    /**
+     * Moon intensity: 0.0 during daytime, peaks at ~0.7 at midnight.
+     * Creates a cool silver glow effect at night that supplements
+     * ambient darkness (stars + moon). Based on inverse sun factor.
+     */
+    fun moonIntensity(): Float {
+        val angle = (timeOfDay - 0.5f) * 2f * PI.toFloat()
+        val sunFactor = (1f + cos(angle)) * 0.5f // 1 at noon, 0 at midnight
+        // Moon is inverse of sun, but not full brightness
+        return (1f - sunFactor) * 0.7f
+    }
+
+    /**
+     * Moon color tint as (r, g, b). Cool silver-blue.
+     * Intensity is modulated by [moonIntensity].
+     */
+    fun moonColor(): Triple<Float, Float, Float> {
+        val intensity = moonIntensity()
+        // Silver-blue tint scaled by moon strength
+        return Triple(0.6f * intensity, 0.7f * intensity, 0.9f * intensity)
+    }
 }

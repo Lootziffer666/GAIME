@@ -37,30 +37,31 @@ class SummerOverlay(
                 val wx = lx + grid.offsetX
                 val wy = ly + grid.offsetY
 
-                // All cells get grass (summer is lush). We use a hash to vary alpha.
+                // All cells get grass (summer is lush). Hash for variety.
                 val hash = (lx * 7 + ly * 13) % 7
                 if (hash > 4) continue // ~28% bare patches for variety
 
                 val bend = grid.grassBendAt(wx, wy)
-                val alpha = if (bend > 0.5f) 120 else 180 // bent grass is slightly faded
+                // Kräftiges Alpha (Lehre 7d/8): bent grass slightly faded
+                val alpha = if (bend > 0.5f) 140 else 200
 
                 // Choose green shade based on cell hash
                 val green = if (hash < 2) 0xaa else 0xcc
                 val color = RGBA(0x22, green, 0x33, alpha)
 
-                // Grass tuft: small rect at bottom of tile
+                // Grass tuft: positioned at bottom of tile in mapView coordinates
                 val rect = getOrCreateRect(rectIndex)
                 val grassW = tileWidth * 0.5
-                val grassH = tileHeight * 0.3
+                val grassH = tileHeight * 0.35
                 val baseX = wx.toDouble() * tileWidth + (tileWidth - grassW) / 2.0
-                val baseY = wy.toDouble() * tileHeight + tileHeight * 0.7
+                val baseY = wy.toDouble() * tileHeight + tileHeight * 0.65
 
                 // Apply bend offset (player walked over) and wind sway
                 val bendOffset = bend * windState.dx * tileWidth * 0.4
                 rect.x = baseX + bendOffset + swayOffset
                 rect.y = baseY
-                rect.width = grassW
-                rect.height = grassH
+                rect.scaledWidth = grassW
+                rect.scaledHeight = grassH
                 rect.color = color
                 rect.visible = true
                 rectIndex++

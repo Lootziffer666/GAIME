@@ -35,7 +35,8 @@ class AutumnOverlay(
                 val wy = ly + grid.offsetY
                 val leaves = grid.leafCountAt(wx, wy)
                 if (leaves > 0.05f) {
-                    val alpha = (leaves * 230).toInt().coerceIn(0, 255)
+                    // Kräftiges Alpha (Lehre 7d/8)
+                    val alpha = (110 + leaves * 140).toInt().coerceIn(0, 255)
                     // 2-3 leaf rects per cell (deterministic count from hash)
                     val leafNum = 2 + ((lx * 3 + ly * 11) % 2)
                     for (i in 0 until leafNum) {
@@ -43,16 +44,16 @@ class AutumnOverlay(
                         val baseColor = leafColors[colorIdx]
                         val color = RGBA(baseColor.r, baseColor.g, baseColor.b, alpha)
 
-                        // Deterministic offset within tile
+                        // Deterministic offset within tile (mapView coordinates)
                         val offX = ((lx * 11 + ly * 3 + i * 7) % 10) / 10.0
                         val offY = ((lx * 5 + ly * 9 + i * 4) % 10) / 10.0
-                        val leafSize = tileWidth * 0.2
+                        val leafSize = tileWidth * 0.25
 
                         val rect = getOrCreateRect(rectIndex)
                         rect.x = wx.toDouble() * tileWidth + offX * (tileWidth - leafSize)
                         rect.y = wy.toDouble() * tileHeight + offY * (tileHeight - leafSize)
-                        rect.width = leafSize
-                        rect.height = leafSize
+                        rect.scaledWidth = leafSize
+                        rect.scaledHeight = leafSize
                         rect.color = color
                         rect.visible = true
                         rectIndex++

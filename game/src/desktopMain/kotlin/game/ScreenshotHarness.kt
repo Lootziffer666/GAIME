@@ -76,6 +76,8 @@ fun main() {
     captureSummerApproach()
     captureAutumnApproach()
     captureWinterApproach()
+    captureComposeLightingFog()
+    captureMaterialFatigue()
 }
 
 private fun captureWorld(config: MapConfig, name: String, withDialog: Boolean) {
@@ -751,11 +753,13 @@ private fun captureFrozenApproach() {
                 intensity = 1.4f, flickerSpeed = 3f, flickerAmount = 0.15f
             )
         )
-        // Lighting LAST so it wins the single mapView.filter slot — shows the
-        // night ambient + warm torch glow (the point of "The Frozen Approach").
-        // NOTE: fog is NOT stacked here — a Container has one filter; composing
-        // fog + lighting needs a filter chain (tracked as a follow-up).
+        // Lighting COMPOSED WITH FOG (Step 9: ComposedFilter enables both simultaneously)
+        // Night ambient + warm torch glow + misty fog — the full atmosphere.
+        effects.fogFilter.density = 0.3f
+        effects.fogFilter.time = 1.5f
+        effects.fogFilter.driftX = 0.2f
         effects.attachLighting(mapView, effects.lightingFilter.lights, tilePx)
+        effects.enable(mapView, effects.fogFilter)
 
         val hero = Combatant(id = "nib", name = "Nib", maxHp = 80, side = Side.PLAYER, attackPower = 12)
         HudOverlay(this, hero, Inventory(initialGold = 50), "The Frozen Approach")
@@ -1262,5 +1266,114 @@ private fun captureWinterApproach() {
         HudOverlay(this, hero, Inventory(initialGold = 50), "The Winter Approach")
 
         save("winter_approach")
+    }
+}
+
+// =============================================================================
+// STEP 9: FILTER COMPOSITION + MATERIAL FATIGUE CAPTURES
+// =============================================================================
+
+/**
+ * Demonstrates filter composition: Lighting AND Fog simultaneously visible.
+ * Dark night with warm torch glow PLUS fog veil — both clearly readable at once.
+ */
+private fun captureComposeLightingFog() {
+    val config = MapConfig.interior()
+    korgeScreenshotTest(Size(VW, VH)) {
+        val tiledMap = TmxLoader.parse(resourcesVfs[config.tmxPath].readString())
+        val atlases = tiledMap.tilesets.map { TilesetAtlas.load(it, config.tmxDir) }
+        val mapView = TiledMapView(tiledMap, atlases)
+        mapView.scale = SCALE
+        addChild(mapView)
+
+        val player = CharacterSprite(mapView, tiledMap.tileWidth, tiledMap.tileHeight)
+        player.loadSwordsman()
+        player.gridX = config.spawnX; player.gridY = config.spawnY
+        player.play(SpriteAnimation.IDLE)
+
+        for (npc in config.npcs) {
+            val s = CharacterSprite(mapView, tiledMap.tileWidth, tiledMap.tileHeight)
+            s.loadFromSheet(npc.idleSheetPath)
+            s.gridX = npc.tileX; s.gridY = npc.tileY; s.facing = npc.facing
+            s.play(SpriteAnimation.IDLE)
+        }
+
+        mapView.x = VW / 2.0 - player.visualGridX * tiledMap.tileWidth * SCALE
+        mapView.y = VH / 2.0 - player.visualGridY * tiledMap.tileHeight * SCALE
+
+        val tilePx = (tiledMap.tileWidth * SCALE).toFloat()
+        val effects = game.shader.ShaderEffects()
+
+        // Night lighting: dark ambient + warm candle
+        effects.lightingFilter.ambientDarkness = 0.12f
+        effects.lightingFilter.tilePixelSize = tilePx
+        effects.lightingFilter.time = 1.7f
+        effects.lightingFilter.lights = listOf(
+            game.shader.LightSource(
+                tileX = config.spawnX, tileY = config.spawnY,
+                radius = 6f, r = 1.0f, g = 0.8f, b = 0.4f,
+                intensity = 1.0f, flickerSpeed = 2.5f, flickerAmount = 0.15f
+            )
+        )
+        // Fog: moderate density, visible drift
+        effects.fogFilter.density = 0.35f
+        effects.fogFilter.time = 2.0f
+        effects.fogFilter.driftX = 0.3f
+
+        // COMPOSED: both active simultaneously via ComposedFilter
+        effects.enable(mapView, effects.lightingFilter)
+        effects.enable(mapView, effects.fogFilter)
+
+        val hero = Combatant(id = "nib", name = "Nib", maxHp = 80, side = Side.PLAYER, attackPower = 12)
+        HudOverlay(this, hero, Inventory(initialGold = 50), "Composed: Lighting + Fog")
+
+        save("compose_lighting_fog")
+    }
+}
+
+/**
+ * Material fatigue: visible cracks appearing at different stress levels.
+ * Some tiles cracked (hairline), some broken (major fractures).
+ */
+private fun captureMaterialFatigue() {
+    val config = MapConfig.interior()
+    korgeScreenshotTest(Size(VW, VH)) {
+        val tiledMap = TmxLoader.parse(resourcesVfs[config.tmxPath].readString())
+        val atlases = tiledMap.tilesets.map { TilesetAtlas.load(it, config.tmxDir) }
+        val mapView = TiledMapView(tiledMap, atlases)
+        mapView.scale = SCALE
+        addChild(mapView)
+
+        val player = CharacterSprite(mapView, tiledMap.tileWidth, tiledMap.tileHeight)
+        player.loadSwordsman()
+        player.gridX = config.spawnX; player.gridY = config.spawnY
+        player.play(SpriteAnimation.IDLE)
+
+        mapView.x = VW / 2.0 - player.visualGridX * tiledMap.tileWidth * SCALE
+        mapView.y = VH / 2.0 - player.visualGridY * tiledMap.tileHeight * SCALE
+
+        // Material fatigue grid: various stress levels around the player
+        val fatigue = rpg.weather.MaterialFatigue(20, 20, offsetX = -10, offsetY = -5)
+
+        // Light cracks near player (above threshold 0.3)
+        fatigue.addStress(-5, 8, 0.4f)
+        fatigue.addStress(-4, 9, 0.35f)
+        fatigue.addStress(-6, 9, 0.45f)
+
+        // Medium cracks
+        fatigue.addStress(-5, 10, 0.55f)
+        fatigue.addStress(-3, 9, 0.6f)
+
+        // Broken tiles (above 0.7)
+        fatigue.addStress(-4, 10, 0.8f)
+        fatigue.addStressRadius(-6, 10, radius = 1, amount = 0.75f)
+
+        val fatigueOverlay = MaterialFatigueOverlay(mapView, tiledMap.tileWidth, tiledMap.tileHeight)
+        fatigueOverlay.update(fatigue)
+
+        val hero = Combatant(id = "nib", name = "Nib", maxHp = 80, side = Side.PLAYER, attackPower = 12)
+        HudOverlay(this, hero, Inventory(initialGold = 50), "Material Fatigue")
+
+        save("material_fatigue")
     }
 }

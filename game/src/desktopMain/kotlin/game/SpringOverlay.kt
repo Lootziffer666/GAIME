@@ -28,7 +28,8 @@ class SpringOverlay(
                 val wy = ly + grid.offsetY
                 val intensity = grid.flowerAt(wx, wy)
                 if (intensity > 0.1f) {
-                    val alpha = (intensity * 200).toInt().coerceIn(0, 255)
+                    // Kräftiges Alpha (Lehre 7d/8): mindestens 110, skaliert mit Intensität
+                    val alpha = (110 + intensity * 140).toInt().coerceIn(0, 255)
 
                     // Determine color: alternating pink/yellow based on cell hash
                     val hash = (lx * 7 + ly * 13) % 5
@@ -37,14 +38,14 @@ class SpringOverlay(
                     else
                         RGBA(0xff, 0xdd, 0x44, alpha) // yellow
 
-                    // Small flower rect (~40% of tile, centered)
+                    // Flower rect: ~50% of tile, centered (mapView coordinates)
                     val rect = getOrCreateRect(rectIndex)
-                    val flowerSize = tileWidth * 0.4
+                    val flowerSize = tileWidth * 0.5
                     val offsetInTile = (tileWidth - flowerSize) / 2.0
                     rect.x = wx.toDouble() * tileWidth + offsetInTile
                     rect.y = wy.toDouble() * tileHeight + offsetInTile
-                    rect.width = flowerSize
-                    rect.height = flowerSize
+                    rect.scaledWidth = flowerSize
+                    rect.scaledHeight = flowerSize
                     rect.color = color
                     rect.visible = true
                     rectIndex++
@@ -52,12 +53,12 @@ class SpringOverlay(
                     // Tree blossom effect: extra small white/pink rects for high intensity
                     if (intensity > 0.7f) {
                         val blosRect = getOrCreateRect(rectIndex)
-                        val blosSize = tileWidth * 0.25
+                        val blosSize = tileWidth * 0.3
                         blosRect.x = wx.toDouble() * tileWidth + tileWidth * 0.1
-                        blosRect.y = wy.toDouble() * tileHeight - tileHeight * 0.2
-                        blosRect.width = blosSize
-                        blosRect.height = blosSize
-                        blosRect.color = RGBA(0xff, 0xee, 0xf0, (alpha * 0.8).toInt().coerceIn(0, 255))
+                        blosRect.y = wy.toDouble() * tileHeight - tileHeight * 0.15
+                        blosRect.scaledWidth = blosSize
+                        blosRect.scaledHeight = blosSize
+                        blosRect.color = RGBA(0xff, 0xee, 0xf0, (alpha * 0.85).toInt().coerceIn(0, 255))
                         blosRect.visible = true
                         rectIndex++
                     }
