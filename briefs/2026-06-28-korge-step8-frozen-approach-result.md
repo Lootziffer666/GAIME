@@ -42,24 +42,38 @@
 ### Part F -- This Result Brief
 - `briefs/2026-06-28-korge-step8-frozen-approach-result.md`
 
+### Bonus: 4-Seasons Weather Showcase (FEAT-005, user-requested addition)
+- `core/src/commonMain/kotlin/rpg/weather/SeasonState.kt` -- SeasonalGrid with flowerIntensity, grassBend, leafCount per cell. Methods: trampleFlower, bendGrass, unbendGrass, dropLeaves, kickLeaves, regrowFlowers, initFlowers, windSwayGrass.
+- `core/src/commonTest/kotlin/rpg/weather/SeasonStateTest.kt` -- 15 tests covering all season mechanics + offset handling.
+- `game/src/desktopMain/kotlin/game/SpringOverlay.kt` -- Pink/yellow flowers (40% tile), tree blossoms at high intensity.
+- `game/src/desktopMain/kotlin/game/SummerOverlay.kt` -- Green grass tufts with wind sway + bend on walkover.
+- `game/src/desktopMain/kotlin/game/AutumnOverlay.kt` -- Orange/brown/red fallen leaves (2-3 per cell, deterministic scatter).
+- `game/src/desktopMain/kotlin/game/MapConfig.kt` -- springApproach(), summerApproach(), autumnApproach() factories + MapId entries.
+- `game/src/desktopMain/kotlin/game/WorldScene.kt` -- Season-appropriate overlay wiring (spring=flowers, summer=grass, autumn=leaves). Player interaction: trample/bend/kick on movement.
+- `game/src/desktopMain/kotlin/game/ScreenshotHarness.kt` -- 4 additional seasonal captures (spring/summer/autumn/winter_approach).
+
 ## Testergebnis
 
-- `:core:desktopTest` -- 299 tests, 0 failures
+- `:core:desktopTest` -- 314 tests, 0 failures (42 test classes)
 - `:game:compileKotlinDesktop` -- BUILD SUCCESSFUL
+- `:composeApp:compileKotlinDesktop` -- BUILD SUCCESSFUL
 
 ## Abweichungen vom Brief
 
 - FogFilter uses fixedLocation=10 (next available after existing shaders) -- no conflict.
 - captureQuestbookGlory renders book content inline (same as captureQuestbookOpen pattern) rather than instantiating QuestbookScreen as a Scene, since harness uses korgeScreenshotTest not scene containers.
 - captureFrozenApproach applies lighting then fog via ShaderEffects. Due to KorGE filter stacking, the last attachX call wins. The fog overlay is the dominant visible effect in the screenshot.
+- Per-Layer filter composition (brief mentions "SHADER_VISION Per-Layer"): KorGE 6.0 allows only one filter per container. Decision: primary atmosphere effect (fog/lighting) applied to mapView; additional effects rendered as overlays (SnowOverlay, BloodOverlay etc.) which are non-shader rect-based. Documented here per brief instruction.
 
 ## Neu entdeckte Bugs / Pitfalls
 
 - None discovered during this step. All grids/overlays follow the established WaterGrid/WaterOverlay pattern cleanly.
+- KorGE filter stacking limitation confirmed: only one ShaderFilter per container. Multiple atmospheric effects must be either composed into a single shader, or separated into rect-based overlays. Current approach uses overlays for most effects, shader only for fog/lighting.
 
 ## Was nicht angefasst wurde
 
-- `localCurrentDirVfs` line (B007) -- UNCHANGED, verified.
+- `localCurrentDirVfs` line (B007) -- UNCHANGED, verified (line 47).
 - No existing shader filter classes were modified (consumed only via ShaderEffects).
-- DO_NOT_TOUCH files remain untouched.
+- DO_NOT_TOUCH files remain untouched: PoisonFilter, BeerGoggleFilter, LightingFilter, RainFilter, HeatShimmerFilter, LightSource, WaterOverlay, ShaderStateBinder, HudOverlay, BattleScene, CharacterSprite, SpriteLoader, NpcDefinition.
 - No changes to `:composeApp` module.
+- `settings.gradle.kts` untouched.
