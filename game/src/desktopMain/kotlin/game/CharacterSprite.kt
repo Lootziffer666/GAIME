@@ -9,8 +9,9 @@ import korlibs.time.milliseconds
 
 /**
  * A character sprite with real CraftPix sheets (Idle/Walk/Attack/Hurt/Death),
- * grid-based positioning with smooth interpolated movement, and facing flip.
- * Falls back to procedural bitmaps if asset loading fails.
+ * grid-based positioning with smooth interpolated movement, and directional
+ * sprite rows (4 rows per sheet = DOWN/UP/RIGHT/LEFT). Falls back to procedural
+ * bitmaps if asset loading fails.
  */
 enum class SpriteAnimation { IDLE, WALK, ATTACK, HURT, DEATH }
 
@@ -18,6 +19,14 @@ enum class SpriteAnimation { IDLE, WALK, ATTACK, HURT, DEATH }
 // Extension properties for direction deltas:
 val Facing.dx: Int get() = when (this) { Facing.LEFT -> -1; Facing.RIGHT -> 1; else -> 0 }
 val Facing.dy: Int get() = when (this) { Facing.UP -> -1; Facing.DOWN -> 1; else -> 0 }
+
+/** Maps a Facing to the sprite-sheet row index. */
+val Facing.spriteRow: Int get() = when (this) {
+    Facing.DOWN -> SpriteLoader.ROW_DOWN
+    Facing.UP -> SpriteLoader.ROW_UP
+    Facing.RIGHT -> SpriteLoader.ROW_RIGHT
+    Facing.LEFT -> SpriteLoader.ROW_LEFT
+}
 
 class CharacterSprite(
     private val parent: Container,
@@ -29,42 +38,46 @@ class CharacterSprite(
     var gridY: Int = 0
         set(value) { field = value; updatePosition() }
     var facing: Facing = Facing.DOWN
-        set(value) { field = value; updateFacing() }
+        set(value) {
+            if (field != value) {
+                field = value
+                updateFacing()
+                applyDirectionRow()
+            }
+        }
     var pixelOffsetX: Double = 0.0
     var pixelOffsetY: Double = 0.0
 
     // --- Smooth movement ---
     private var fromGridX: Int = 0
     private var fromGridY: Int = 0
-    private var moveProgress: Float = 1f  // 1f = idle/arrived
+    private var moveProgress: Float = 1f
     private val stepDurationMs: Float = 160f
 
-    /** True while the sprite is mid-step between tiles. */
     val isMoving: Boolean get() = moveProgress < 1f
 
-    /** Interpolated X position in tile units (for camera follow). */
     val visualGridX: Double
         get() = fromGridX + (gridX - fromGridX) * moveProgress.toDouble()
-
-    /** Interpolated Y position in tile units (for camera follow). */
     val visualGridY: Double
         get() = fromGridY + (gridY - fromGridY) * moveProgress.toDouble()
 
-    /**
-     * Requests a move to (toGridX, toGridY). Returns false if mid-step.
-     * On success: records from-position, sets gridX/Y, resets moveProgress to 0.
-     */
     fun startMove(toGridX: Int, toGridY: Int): Boolean {
         if (isMoving) return false
         fromGridX = gridX
         fromGridY = gridY
-        moveProgress = 0f  // Set BEFORE gridX/Y so updatePosition reads visualGrid = fromGrid
+        moveProgress = 0f
         gridX = toGridX
         gridY = toGridY
         return true
     }
 
+    // --- Directional animation storage ---
+    // Key: SpriteAnimation → Map<rowIndex, List<BmpSlice>>
+    private val directionalAnims = mutableMapOf<SpriteAnimation, Map<Int, List<BmpSlice>>>()
+
+    // Flattened current-direction frames (updated when facing changes)
     private val animations = mutableMapOf<SpriteAnimation, List<BmpSlice>>()
+
     private var currentAnim: SpriteAnimation = SpriteAnimation.IDLE
     private var frameIndex = 0
     private var elapsedMs = 0f
@@ -88,40 +101,44 @@ class CharacterSprite(
 
     suspend fun loadSwordsman() {
         val base = "assets/HD/characters/swordsman/PNG/Swordsman_lvl1/Without_shadow"
-        animations[SpriteAnimation.IDLE] = SpriteLoader.load("$base/Swordsman_lvl1_Idle_without_shadow.png")
-        animations[SpriteAnimation.WALK] = SpriteLoader.load("$base/Swordsman_lvl1_Walk_without_shadow.png")
-        animations[SpriteAnimation.ATTACK] = SpriteLoader.load("$base/Swordsman_lvl1_attack_without_shadow.png")
-        animations[SpriteAnimation.HURT] = SpriteLoader.load("$base/Swordsman_lvl1_Hurt_without_shadow.png")
-        animations[SpriteAnimation.DEATH] = SpriteLoader.load("$base/Swordsman_lvl1_Death_without_shadow.png")
+        loadDirectional(SpriteAnimation.IDLE, "$base/Swordsman_lvl1_Idle_without_shadow.png")
+        loadDirectional(SpriteAnimation.WALK, "$base/Swordsman_lvl1_Walk_without_shadow.png")
+        loadDirectional(SpriteAnimation.ATTACK, "$base/Swordsman_lvl1_attack_without_shadow.png")
+        loadDirectional(SpriteAnimation.HURT, "$base/Swordsman_lvl1_Hurt_without_shadow.png")
+        loadDirectional(SpriteAnimation.DEATH, "$base/Swordsman_lvl1_Death_without_shadow.png")
+        applyDirectionRow()
         applyFirstFrame()
     }
 
     suspend fun loadVampire() {
         val base = "assets/HD/characters/vampire/PNG/Vampires1/Without_shadow"
-        animations[SpriteAnimation.IDLE] = SpriteLoader.load("$base/Vampires1_Idle_without_shadow.png")
-        animations[SpriteAnimation.WALK] = SpriteLoader.load("$base/Vampires1_Walk_without_shadow.png")
-        animations[SpriteAnimation.ATTACK] = SpriteLoader.load("$base/Vampires1_Attack_without_shadow.png")
-        animations[SpriteAnimation.HURT] = SpriteLoader.load("$base/Vampires1_Hurt_without_shadow.png")
-        animations[SpriteAnimation.DEATH] = SpriteLoader.load("$base/Vampires1_Death_without_shadow.png")
+        loadDirectional(SpriteAnimation.IDLE, "$base/Vampires1_Idle_without_shadow.png")
+        loadDirectional(SpriteAnimation.WALK, "$base/Vampires1_Walk_without_shadow.png")
+        loadDirectional(SpriteAnimation.ATTACK, "$base/Vampires1_Attack_without_shadow.png")
+        loadDirectional(SpriteAnimation.HURT, "$base/Vampires1_Hurt_without_shadow.png")
+        loadDirectional(SpriteAnimation.DEATH, "$base/Vampires1_Death_without_shadow.png")
+        applyDirectionRow()
         applyFirstFrame()
     }
 
     /**
      * Loads a single idle sheet (and optionally walk). Used for NPC sprites.
-     * Falls back to procedural bitmaps on error.
+     * Falls back to procedural bitmaps on error. Only loads row 0 (front).
      */
     suspend fun loadFromSheet(idleSheetPath: String?, walkSheetPath: String? = null) {
-        val idleFrames = if (idleSheetPath != null) {
-            SpriteLoader.load(idleSheetPath)
+        val idleRows = if (idleSheetPath != null) {
+            SpriteLoader.loadAllRows(idleSheetPath)
         } else {
-            SpriteLoader.sliceFrames(SpriteLoader.buildFallbackBitmap())
+            val fb = SpriteLoader.sliceFrames(SpriteLoader.buildFallbackBitmap())
+            mapOf(0 to fb, 1 to fb, 2 to fb, 3 to fb)
         }
-        animations[SpriteAnimation.IDLE] = idleFrames
-        animations[SpriteAnimation.WALK] = if (walkSheetPath != null) SpriteLoader.load(walkSheetPath) else idleFrames
-        // Fallback for other anims so play() never crashes
-        animations[SpriteAnimation.ATTACK] = idleFrames
-        animations[SpriteAnimation.HURT] = idleFrames
-        animations[SpriteAnimation.DEATH] = idleFrames
+        directionalAnims[SpriteAnimation.IDLE] = idleRows
+        val walkRows = if (walkSheetPath != null) SpriteLoader.loadAllRows(walkSheetPath) else idleRows
+        directionalAnims[SpriteAnimation.WALK] = walkRows
+        directionalAnims[SpriteAnimation.ATTACK] = idleRows
+        directionalAnims[SpriteAnimation.HURT] = idleRows
+        directionalAnims[SpriteAnimation.DEATH] = idleRows
+        applyDirectionRow()
         applyFirstFrame()
     }
 
@@ -139,8 +156,24 @@ class CharacterSprite(
 
     // --- Internals ---
 
+    private suspend fun loadDirectional(anim: SpriteAnimation, path: String) {
+        directionalAnims[anim] = SpriteLoader.loadAllRows(path)
+    }
+
+    /**
+     * Updates the flat `animations` map from `directionalAnims` for the current [facing].
+     * Called when facing changes or after loading.
+     */
+    private fun applyDirectionRow() {
+        val row = facing.spriteRow
+        for ((anim, rowMap) in directionalAnims) {
+            // Use requested row, fall back to row 0, fall back to any available
+            animations[anim] = rowMap[row] ?: rowMap[0] ?: rowMap.values.firstOrNull() ?: emptyList()
+        }
+    }
+
     private fun advanceAnimation(dtMs: Float) {
-        // Smooth movement tick FIRST — independent of animation frames
+        // Smooth movement tick FIRST
         if (isMoving) {
             moveProgress = (moveProgress + dtMs / stepDurationMs).coerceAtMost(1f)
             updatePosition()
@@ -198,7 +231,15 @@ class CharacterSprite(
     }
 
     private fun updateFacing() {
-        img.scaleX = if (facing == Facing.LEFT) -1.0 else 1.0
+        // With directional rows, we don't need scaleX flip for LEFT anymore
+        // (row 3 IS the left-facing animation). Reset scaleX to 1.
+        // Exception: if sheet has only 3 rows (no row 3), use scaleX=-1 on row 2.
+        val rowMap = directionalAnims[currentAnim]
+        if (rowMap != null && facing == Facing.LEFT && !rowMap.containsKey(SpriteLoader.ROW_LEFT)) {
+            img.scaleX = -1.0
+        } else {
+            img.scaleX = 1.0
+        }
         updatePosition()
     }
 }

@@ -7,9 +7,15 @@ import korlibs.korge.scene.sceneContainer
 import korlibs.korge.view.SContainer
 import korlibs.korge.view.addUpdater
 import kotlinx.coroutines.launch
+import rpg.SliceDirector
+import rpg.bark.BarkAudioRegistry
+import rpg.bark.BarkEvent
 import rpg.combat.Combatant
+import rpg.combat.CombatAction
+import rpg.combat.CombatResult
 import rpg.combat.Side
 import rpg.items.Inventory
+import rpg.questbook.RoomContext
 import rpg.tiled.CollisionGrid
 import rpg.tiled.TileType
 import rpg.tiled.TmxLoader
@@ -27,6 +33,13 @@ class WorldScene : Scene() {
     }
 
     private val audioManager = AudioManager()
+    private val sliceDirector = SliceDirector(clockMillis = { System.currentTimeMillis() })
+
+    /** Plays a bark's WAV via the AudioManager (fire-and-forget). */
+    private fun playBarkAudio(event: BarkEvent) {
+        val path = "assets/audio/" + BarkAudioRegistry.pathFor(event)
+        kotlinx.coroutines.MainScope().launch { audioManager.playSfx(path) }
+    }
 
     override suspend fun SContainer.sceneMain() {
         val config = pendingConfig
@@ -36,6 +49,9 @@ class WorldScene : Scene() {
         val tiledMap = TmxLoader.parse(tmxContent)
         val collision = CollisionGrid.from(tiledMap)
         val atlases = tiledMap.tilesets.map { TilesetAtlas.load(it, config.tmxDir) }
+
+        // Set room context for the Bark/Questbook pipeline
+        sliceDirector.enterRoom(RoomContext(mapId = config.id.name.lowercase(), roomId = config.displayName))
 
         // 2. Map rendern
         val mapView = TiledMapView(tiledMap, atlases)
@@ -95,7 +111,7 @@ class WorldScene : Scene() {
                 return@addUpdater
             }
 
-            // --- E → NPC interaction ---
+            // --- E → NPC interaction (fires bark + shows dialog) ---
             if (keys.justPressed(Key.E)) {
                 val faceX = player.gridX + player.facing.dx
                 val faceY = player.gridY + player.facing.dy
@@ -104,6 +120,12 @@ class WorldScene : Scene() {
                 }
                 if (npc != null) {
                     dialog.show(npc.first.dialog)
+                    // Fire a greeting bark through the pipeline (Questbook reacts)
+                    val greetingBark = npcGreetingBark(npc.first)
+                    if (greetingBark != null) {
+                        sliceDirector.fireBark(greetingBark)
+                        playBarkAudio(greetingBark)
+                    }
                     return@addUpdater
                 }
             }
@@ -158,5 +180,17 @@ class WorldScene : Scene() {
 
     override suspend fun sceneAfterDestroy() {
         audioManager.stopMusic()
+    }
+
+    /** Maps an NPC definition to an appropriate greeting bark (if available). */
+    private fun npcGreetingBark(npc: NpcDefinition): BarkEvent? {
+        val speaker = npc.dialog.firstOrNull()?.speaker?.lowercase() ?: return null
+        return when {
+            speaker.contains("barkeep") -> BarkEvent.BRUGG_GREETINGS_FRIEND
+            speaker.contains("guard") -> BarkEvent.BRUGG_GREETINGS_FRIEND
+            speaker.contains("patron") -> BarkEvent.NIB_WHAT_DO_WE_HAVE_HERE
+            speaker.contains("traveler") -> BarkEvent.VELLUM_GREETINGS_STRANGER
+            else -> null
+        }
     }
 }

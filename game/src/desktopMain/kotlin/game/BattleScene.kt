@@ -10,8 +10,12 @@ import korlibs.korge.view.addUpdater
 import korlibs.korge.view.solidRect
 import korlibs.korge.view.text
 import kotlinx.coroutines.launch
+import rpg.SliceDirector
+import rpg.bark.BarkAudioRegistry
+import rpg.bark.BarkEvent
 import rpg.combat.CombatAction
 import rpg.combat.CombatEngine
+import rpg.combat.CombatEvent
 import rpg.combat.CombatResult
 import rpg.combat.Combatant
 import rpg.combat.Side
@@ -34,6 +38,7 @@ import rpg.combat.Side
 class BattleScene : Scene() {
 
     private val audioManager = AudioManager()
+    private val sliceDirector = SliceDirector(clockMillis = { System.currentTimeMillis() })
 
     override suspend fun SContainer.sceneMain() {
         val vw = width
@@ -50,6 +55,7 @@ class BattleScene : Scene() {
             id = "vampire_1", name = "Vampire", maxHp = 60, side = Side.ENEMY, attackPower = 8
         )
         val engine = CombatEngine(party = listOf(hero), enemies = listOf(vampire))
+        sliceDirector.startCombat(engine)
 
         // --- Sprites ---
         val heroSprite = CharacterSprite(this, 48, 48)
@@ -122,16 +128,23 @@ class BattleScene : Scene() {
                     // Attack SFX
                     launch { audioManager.playSfx(sfxAttack) }
 
-                    // Tick the engine (hero attacks, then enemy retaliates)
-                    engine.tick(CombatAction.Attack(target.id))
+                    // Tick via SliceDirector (routes combat barks through Questbook)
+                    val turn = sliceDirector.combatAction(CombatAction.Attack(target.id))
                     acted = true
 
-                    // Hit SFX for the enemy taking damage
+                    // Play any bark audio triggered by combat events
+                    for (event in turn.events) {
+                        if (event is CombatEvent.BarkTriggered) {
+                            playBarkAudio(event.bark)
+                        }
+                    }
+
+                    // Hit SFX
                     launch { audioManager.playSfx(sfxHit) }
                 }
             } else if (keys.justPressed(Key.E)) {
                 heroHpBefore = hero.hp
-                engine.tick(CombatAction.Heal)
+                sliceDirector.combatAction(CombatAction.Heal)
                 acted = true
             }
 
@@ -182,5 +195,11 @@ class BattleScene : Scene() {
 
     override suspend fun sceneAfterDestroy() {
         audioManager.stopMusic()
+        sliceDirector.clearCombat()
+    }
+
+    private fun playBarkAudio(event: BarkEvent) {
+        val path = "assets/audio/" + BarkAudioRegistry.pathFor(event)
+        kotlinx.coroutines.MainScope().launch { audioManager.playSfx(path) }
     }
 }
