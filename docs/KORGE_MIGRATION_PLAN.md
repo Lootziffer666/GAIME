@@ -1,9 +1,11 @@
 # KorGE Migration & Tilemap World — Exact Plan
 
 **Status:** Step 1 done (`:core` extracted). Step 2 done (`:game` KorGE module).
-Step 3 done (2.5D HD-2D stage ported & compiling against KorGE 6.0.0). Steps 4–5
-not started. This document is the agreed, recorded plan for a larger, multi-step
-effort and is committed *before* the heavy work begins.
+Step 3 done (2.5D HD-2D stage ported & compiling against KorGE 6.0.0).
+Step 3b done (Android target für `:game`). Step 4 done (Tiled tilemap loader +
+tile-derived collision in `:core`). Step 4b–5 not started. This document is the
+agreed, recorded plan for a larger, multi-step effort and is committed *before*
+the heavy work begins.
 
 It extends `.kiro/steering/rendering-engine.md` (the locked KorGE 2.5D decision)
 with the concrete tasks, the build setup actually used, the "donor code" policy,
@@ -106,37 +108,29 @@ Android target, so `:core`/`:composeApp` stay at 17 for Android). This is the
 blocker the §4 risk table anticipated; Step 2's minimal `Korge { println }` never
 exercised it because `Korge(...)` itself is not inline.
 
-### Step 3b — Android target für `:game` (gebündelt mit Step 4)
-`:game` hat derzeit nur `jvm("desktop")`. Android und Desktop sollen das gleiche
-Spiel bekommen. Step 3b ergänzt `androidTarget()` + AGP-Config in
-`game/build.gradle.kts` und fügt KorGE's Android-Artefakte als `androidMain`-Dependency
-hinzu. Der JVM_21-Zwang gilt nur für den Desktop-JVM-Bytecode; Android geht durch
-AGP → Dex und ist davon unberührt. **Kein eigener PR — wird als Vorbedingung in den
-Step-4-Brief aufgenommen und gemeinsam mit dem Tiled-Loader geliefert.**
+### Step 3b — Android target für `:game` — ✅ done
+`:game` erhielt neben `jvm("desktop")` ein `androidTarget()` + `id("com.android.library")`
+(AGP 8.2.2, compileSdk 34, minSdk 24). KorGE-Dependency von `desktopMain` nach
+`commonMain` verschoben → beide Targets erben sie. Android-Target kompiliert lokal
+mit SDK; Sandbox hat kein SDK (identisch mit `:composeApp`-Android-Target). Desktop
+weiterhin grün. Minimales `androidMain/kotlin/game/.gitkeep` als Marker.
 
-### Step 4 — Own Tiled tilemap loader + tile collision (in `:core`)
-The visual quality lever: render the **artist-authored Tiled scenes** (17 `.tmx`
-already in `assets/HD/locations/...`) with their real layers and animated tiles,
-instead of a flat baked backdrop.
-- **Donor reference:** `scripts/tmx_render.py` (already in repo) shows exactly how
-  these `.tmx` are structured — infinite/chunked CSV layers, multi-tileset
-  `firstgid`/`columns`/`tilecount`, GID flip bits (H/V/D), document-order layers,
-  animated-tile `<animation><frame>`. We reimplement that understanding as Kotlin.
-- **New in `:core` (own code, no deps):** a `TiledMap` model + a TMX loader
-  (minimal XML reading for the subset these files use) producing: tile layers
-  (with gids + flips), animated-tile definitions, object/entity layers, and a
-  **tile-derived collision grid**.
-- **Collision-from-tiles:** classify by layer/tile semantics —
-  `Floor/Ground/Road/Grass/Carpet → WALKABLE`, `Walls*/House*/Roof/Fence/Statues/
-  trees* → BLOCKED`, `Water* → WATER`, `Door*/stairs/entrance/Sign → TRIGGER`,
-  `*details*/Shadow*/Blood → DECORATIVE (no collision)`. Mixed `Objects*` layers
-  fall back to per-tile/explicit overrides. Reuses the floor-derived rule from
-  the donor (cells without a floor tile are blocked) + solid layers.
-- Renderer-agnostic and **unit-tested** in `:core`. `:game` renders it with KorGE;
-  the interim Compose renderer can also consume it.
-- **Format choice:** **Tiled** (the 17 maps already exist; the donor parses them).
-  LDtk (IntGrid collision + auto-layer scatter) remains a future option; both are
-  used only as **editors** (tools), their output data is owned by us.
+### Step 4 — Own Tiled tilemap loader + tile collision (in `:core`) — ✅ done
+`core/src/commonMain/kotlin/rpg/tiled/` enthält:
+- **`TiledMap.kt`** — reine data classes (TiledMap, Tileset, AnimationFrame,
+  TileLayer, TileCell). Keine Dependencies.
+- **`TmxLoader.kt`** — minimaler Zeilenweise-Parser für das TMX-Subset der
+  CraftPix-Karten (CSV, infinite-Chunks, Flip-Bits, animierte Tiles). Keine
+  externe XML-Bibliothek.
+- **`CollisionGrid.kt`** — Tile-abgeleitetes Kollisionsraster; Strategie:
+  Floor → WALKABLE, kein Floor → BLOCKED, SOLID-Layer → BLOCKED, WATER → WATER,
+  TRIGGER → TRIGGER, DECORATIVE → ignoriert. Bounding-Box über alle Zellen;
+  negative Grid-Koordinaten normalisiert.
+
+Unit-Tests (`core/src/commonTest/kotlin/rpg/tiled/`): TmxLoaderTest (finite map,
+infinite chunks, flip bits, animated tiles, multiple tilesets, empty cells) +
+CollisionGridTest (floor rule, solid override, water, trigger, no-floor, negative
+coords). Alle grün.
 
 ### Step 4b — Gameplay into KorGE
 World/grid movement, HD animated sprites (Idle/Walk/Attack sheets from the packs),

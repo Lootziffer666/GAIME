@@ -55,3 +55,19 @@ aus Doku — die online-Doku war teils veraltet.
 - **Binär-Assets nie als Inhalt lesen** (siehe B002): Die KorGE-API-Recherche lief
   ausschließlich über Text (`-sources.jar` entpackt + grep, Bytecode-Major über
   8-Byte-Header), kein PNG/WAV wurde eingelesen.
+
+---
+
+## TMX-Parser-Fallstricke (Step 4, Kiro 2026-06-28)
+
+Beim Implementieren des `TmxLoader.kt` in `:core` gefundene Fallstricke, die für
+zukünftige Parser-Erweiterungen (z. B. Object-Layers, Properties) relevant sind.
+
+| Fallstrick | Erklärung | Lösung |
+|---|---|---|
+| **Inline-CSV auf derselben Zeile wie `<data>`/`<chunk>`** | Tiled schreibt oft `<data encoding="csv">1,2,3,4</data>` auf eine Zeile. Ein naiver „nächste-Zeile-ist-CSV"-Ansatz verpasst das. | `substringAfter(">")` nach dem Tag-Match; prüfe `</data>`/`</chunk>` auf derselben Zeile. |
+| **GID > Int.MAX_VALUE durch Flip-Bits** | Flip-Bits setzen die oberen 3 Bits eines unsigned 32-bit Int. Kotlin's `String.toInt()` wirft `NumberFormatException` für Werte > 2³¹-1. | `String.toLong()` + `and 0xFFFFFFFFL` → dann `.toInt()` für die Bit-Operationen. |
+| **`</chunk>` auf derselben Zeile wie letzter CSV-Block** | Z. B. `7,8</chunk>`. Wenn der Parser nur `startsWith("</chunk>")` prüft, geht der CSV-Rest verloren. | `line.contains("</chunk>")` + `substringBefore(…)` für den CSV-Anteil vor dem Close-Tag. |
+| **Layer-Width bei finite Maps nötig** | Finite Maps (`infinite="0"`) haben kein `<chunk>`; der CSV-Block hängt direkt in `<data>`. Die Zeilenpositionen leiten sich vom `width`-Attribut des `<layer>` ab. | `<layer width="...">` mitlesen + als `currentLayerWidth` an `parseCsvCells` übergeben. |
+| **Negative Chunk-Koordinaten (infinite Maps)** | `<chunk x="-16" y="-16" ...>` ist normal. Der Kollisionsraster muss erst die Bounding-Box aller Zellen berechnen und dann ins 0-basierte Grid normalisieren. | `CollisionGrid.offsetX/Y` speichert das Offset; Grid-Zugriff über normalisierte Indizes. |
+| **Kein Android SDK in der Sandbox** | `:game:compileDebugKotlinAndroid` kann in der Kiro-Sandbox nicht verifiziert werden (identisch mit `:composeApp` Android-Target). Build-Config ist korrekt; lokaler Build/CI mit SDK bestätigt Funktionstüchtigkeit. | Result-Report dokumentiert es als Sandbox-Limitation, nicht als Bug. |
