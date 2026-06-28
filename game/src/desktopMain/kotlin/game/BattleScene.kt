@@ -9,15 +9,21 @@ import korlibs.korge.view.SContainer
 import korlibs.korge.view.addUpdater
 import korlibs.korge.view.solidRect
 import korlibs.korge.view.text
+import korlibs.time.seconds
+import korlibs.time.seconds
 import kotlinx.coroutines.launch
 import rpg.SliceDirector
 import rpg.bark.BarkEvent
 import rpg.bark.audio.BarkAudioPlayer
 import rpg.combat.CombatAction
 import rpg.combat.CombatEngine
+import rpg.combat.CombatEvent
 import rpg.combat.CombatResult
 import rpg.combat.Combatant
+import rpg.combat.EnemyArchetype
 import rpg.combat.Side
+import rpg.combat.TaxCollectorController
+import game.shader.ShaderEffects
 
 /**
  * Side-by-side battle scene: Swordsman (left) vs Vampire (right).
@@ -36,6 +42,11 @@ import rpg.combat.Side
  */
 class BattleScene : Scene() {
 
+    companion object {
+        /** true → Boss-Encounter (Rat Accountant), false → Standard-Vampir-Kampf. */
+        var bossEncounter: Boolean = false
+    }
+
     private val audioManager = AudioManager()
 
     override suspend fun SContainer.sceneMain() {
@@ -52,7 +63,15 @@ class BattleScene : Scene() {
         val vampire = Combatant(
             id = "vampire_1", name = "Vampire", maxHp = 60, side = Side.ENEMY, attackPower = 8
         )
-        val engine = CombatEngine(party = listOf(hero), enemies = listOf(vampire))
+        val engine = if (bossEncounter) {
+            val boss = EnemyArchetype.RAT_ACCOUNTANT.spawn("boss_rat_accountant")
+            CombatEngine(party = listOf(hero), enemies = emptyList(),
+                boss = boss, bossController = TaxCollectorController())
+        } else {
+            CombatEngine(party = listOf(hero), enemies = listOf(vampire))
+        }
+        val enemyDisplay = if (bossEncounter) engine.boss!! else vampire
+        val enemyName = if (bossEncounter) "The Rat Accountant" else "Vampire"
 
         // SliceDirector for combat barks
         val director = SliceDirector { System.currentTimeMillis() }
@@ -82,7 +101,7 @@ class BattleScene : Scene() {
 
         val heroLabel = text("Nib: ${hero.hp}/${hero.maxHp}", textSize = 14.0, color = Colors.WHITE)
             .apply { x = 40.0; y = 36.0 }
-        val vampLabel = text("Vampire: ${vampire.hp}/${vampire.maxHp}", textSize = 14.0, color = Colors.WHITE)
+        val vampLabel = text("$enemyName: ${enemyDisplay.hp}/${enemyDisplay.maxHp}", textSize = 14.0, color = Colors.WHITE)
             .apply { x = vw - 160.0; y = 36.0 }
 
         text("ENTER=Attack  E=Heal  Q=Back", textSize = 12.0, color = Colors["#aaaaaa"])
@@ -94,6 +113,14 @@ class BattleScene : Scene() {
         // --- Audio: battle BGM ---
         audioManager.playMusic("assets/audio/music/Defiance_at_Dawn.mp3")
 
+        // --- QuestbookOverlay + ShaderStateBinder ---
+        val questbook = QuestbookOverlay(this, vw, vh)
+        questbook.refresh(director.pressure, director.questMarkers + director.falseMarkers)
+        val effects = ShaderEffects()
+        effects.startTimeUpdater(this)
+        val shaderBinder = ShaderStateBinder(effects, this)
+        shaderBinder.applyCombatDistress(hero.hpFraction, director.pressure)
+
         // --- SFX paths ---
         val sfxAttack = "assets/audio/sfx/Minifantasy_Dungeon_SFX/07_human_atk_sword_1.wav"
         val sfxHit = "assets/audio/sfx/Minifantasy_Dungeon_SFX/26_sword_hit_1.wav"
@@ -103,8 +130,10 @@ class BattleScene : Scene() {
         var battleOver = false
         var heroHpBefore = hero.hp
         var lastTurnResult: CombatResult = CombatResult.ONGOING
+        var lastEvents: List<CombatEvent> = emptyList()
 
-        addUpdater {
+        addUpdater { dt ->
+            questbook.update(dt.seconds.toFloat())
             val keys = views.input.keys
 
             // Q → flee / return to map
@@ -135,6 +164,7 @@ class BattleScene : Scene() {
                     // Attack via SliceDirector (routes combat barks through Questbook)
                     launch { director.fireBark(BarkEvent.BRUGG_ATTACK) }
                     val turn = director.combatAction(CombatAction.Attack(target.id))
+                    lastEvents = turn.events
                     lastTurnResult = turn.result
                     acted = true
 
@@ -144,19 +174,32 @@ class BattleScene : Scene() {
             } else if (keys.justPressed(Key.E)) {
                 heroHpBefore = hero.hp
                 val turn = director.combatAction(CombatAction.Heal)
+                lastEvents = turn.events
                 lastTurnResult = turn.result
                 acted = true
             }
 
             if (acted) {
+                // Process combat events (boss phase, adds, messages)
+                for (event in lastEvents) {
+                    when (event) {
+                        is CombatEvent.BossPhaseChanged -> questbook.showMessage("The Accountant files objections!", director.pressure)
+                        is CombatEvent.AddsSummoned -> questbook.showMessage("Adds summoned: ${event.count}", director.pressure)
+                        is CombatEvent.Message -> questbook.showMessage(event.text, director.pressure)
+                        is CombatEvent.BarkTriggered -> { /* audio already handled by director */ }
+                    }
+                }
+                // Shader = State: combat distress
+                shaderBinder.applyCombatDistress(hero.hpFraction, director.pressure)
+
                 // Update HP bars
                 heroBarFg.width = barWidth * hero.hpFraction
-                vampBarFg.width = barWidth * vampire.hpFraction
+                vampBarFg.width = barWidth * enemyDisplay.hpFraction
                 heroLabel.text = "Nib: ${hero.hp}/${hero.maxHp}"
-                vampLabel.text = "Vampire: ${vampire.hp}/${vampire.maxHp}"
+                vampLabel.text = "$enemyName: ${enemyDisplay.hp}/${enemyDisplay.maxHp}"
 
                 // --- Vampire animations ---
-                if (!vampire.isAlive) {
+                if (!enemyDisplay.isAlive) {
                     vampireSprite.play(SpriteAnimation.DEATH, loop = false)
                 } else {
                     // Vampire was hit → hurt animation, then back to idle

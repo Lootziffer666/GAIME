@@ -20,6 +20,7 @@ import rpg.tiled.TmxLoader
 import rpg.BarkOutcome
 import rpg.SliceDirector
 import rpg.bark.BarkEvent
+import rpg.questbook.QuestPressure
 import rpg.questbook.RoomContext
 
 /**
@@ -54,6 +55,8 @@ fun main() {
     captureBattleMidway()
     captureBattleVictory()
     captureQuestbookReaction()
+    captureWorldPressureHigh()
+    captureBattleBossPhase2()
 }
 
 private fun captureWorld(config: MapConfig, name: String, withDialog: Boolean) {
@@ -448,5 +451,69 @@ private fun captureQuestbookReaction() {
         }
 
         save("questbook_reaction")
+    }
+}
+
+private fun captureWorldPressureHigh() {
+    val config = MapConfig.interior()
+    korgeScreenshotTest(Size(VW, VH)) {
+        val tiledMap = rpg.tiled.TmxLoader.parse(resourcesVfs[config.tmxPath].readString())
+        val atlases = tiledMap.tilesets.map { TilesetAtlas.load(it, config.tmxDir) }
+        val mapView = TiledMapView(tiledMap, atlases)
+        mapView.scale = SCALE
+        addChild(mapView)
+        val player = CharacterSprite(mapView, tiledMap.tileWidth, tiledMap.tileHeight)
+        player.loadSwordsman(); player.gridX = config.spawnX; player.gridY = config.spawnY
+        player.play(SpriteAnimation.IDLE)
+        mapView.x = VW / 2.0 - player.visualGridX * tiledMap.tileWidth * SCALE
+        mapView.y = VH / 2.0 - player.visualGridY * tiledMap.tileHeight * SCALE
+
+        // Shader = State: Pressure HIGH → Poison-Shader on mapView
+        val effects = game.shader.ShaderEffects()
+        val shaderBinder = ShaderStateBinder(effects, mapView)
+        effects.poisonFilter.time = 1.5f  // frozen animation frame for reproducibility
+        shaderBinder.applyPressure(QuestPressure.HIGH)
+
+        val hero = Combatant(id = "nib", name = "Nib", maxHp = 80, side = Side.PLAYER, attackPower = 12)
+        HudOverlay(this, hero, Inventory(initialGold = 50), "Heroes' Home (PRESSURE HIGH)")
+        QuestbookOverlay(this, VW, VH).refresh(QuestPressure.HIGH, listOf("Locate subterranean valuables", "Objection Pending (Case #0002)"))
+
+        save("world_pressure_high")
+    }
+}
+
+private fun captureBattleBossPhase2() {
+    korgeScreenshotTest(Size(VW, VH)) {
+        solidRect(VW, VH, RGBA(0x0a, 0x0a, 0x14, 0xff))
+
+        val hero = Combatant(id = "nib", name = "Nib", maxHp = 80, side = Side.PLAYER, attackPower = 12)
+        // Simulate hero taking damage (40% HP)
+        hero.takeDamage(48)
+
+        val heroSprite = CharacterSprite(this, 48, 48)
+        heroSprite.loadSwordsman(); heroSprite.gridX = 2; heroSprite.gridY = 3; heroSprite.facing = Facing.RIGHT
+        heroSprite.play(SpriteAnimation.IDLE)
+        val bossSprite = CharacterSprite(this, 48, 48)
+        bossSprite.loadVampire(); bossSprite.gridX = 9; bossSprite.gridY = 3; bossSprite.facing = Facing.LEFT
+        bossSprite.play(SpriteAnimation.ATTACK)
+
+        val barW = 120.0
+        solidRect(barW, 12.0, Colors["#333333"]).apply { x = 40.0; y = 20.0 }
+        solidRect(barW * hero.hpFraction, 12.0, Colors["#22cc22"]).apply { x = 40.0; y = 20.0 }
+        solidRect(barW, 12.0, Colors["#333333"]).apply { x = VW - 160.0; y = 20.0 }
+        solidRect(barW * 0.7, 12.0, Colors["#cc2222"]).apply { x = VW - 160.0; y = 20.0 }
+        text("Nib: ${hero.hp}/${hero.maxHp}", textSize = 14.0, color = Colors.WHITE).apply { x = 40.0; y = 36.0 }
+        text("Rat Accountant: 70/100", textSize = 14.0, color = Colors.WHITE).apply { x = VW - 160.0; y = 36.0 }
+
+        // Shader = State: combat distress (low HP + HIGH pressure)
+        val effects = game.shader.ShaderEffects()
+        val shaderBinder = ShaderStateBinder(effects, this)
+        effects.poisonFilter.time = 1.5f
+        shaderBinder.applyCombatDistress(hero.hpFraction, QuestPressure.HIGH)
+
+        // Boss toast
+        QuestbookOverlay(this, VW, VH).showMessage("The Accountant files objections!", QuestPressure.HIGH)
+
+        save("battle_boss_phase2")
     }
 }

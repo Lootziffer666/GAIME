@@ -102,6 +102,23 @@ class QuestbookOverlay(
     }
 
     /**
+     * Shows a simple message toast (e.g. combat events) without marker update.
+     */
+    fun showMessage(text: String, pressure: QuestPressure) {
+        val wrapped = if (text.length > 50) text.chunked(50).joinToString("\n") else text
+        toastBody.text = wrapped
+        setToastVisible(true)
+        toastRemaining = 3f
+        val (color, label) = when (pressure) {
+            QuestPressure.LOW -> Colors["#22cc22"] to "PRESSURE: LOW"
+            QuestPressure.MEDIUM -> Colors["#ddaa22"] to "PRESSURE: MEDIUM"
+            QuestPressure.HIGH -> Colors["#cc2222"] to "PRESSURE: HIGH"
+        }
+        pillBg.color = color
+        pillLabel.text = label
+    }
+
+    /**
      * Refreshes pressure pill + marker list without showing a toast.
      */
     fun refresh(pressure: QuestPressure, markers: List<String>) {
