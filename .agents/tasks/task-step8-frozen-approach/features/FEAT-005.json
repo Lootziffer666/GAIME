@@ -2,7 +2,7 @@
   "id": "FEAT-005",
   "type": "feat",
   "description": "4-Seasons + Weather Showcase: Spring (flowers trampled, tree blossoms), Summer (grass bends on walkover, wind sway, long-day lighting), Autumn (falling leaves kicked up, gusts, rain, thunder), Winter (already done). Per-season MapConfig variants with screenshot captures showing the passage of time through the year.",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "Create core/src/commonMain/kotlin/rpg/weather/SeasonState.kt: enum Season { SPRING, SUMMER, AUTUMN, WINTER }. Data class SeasonalGrid(width, height, offsetX, offsetY) with per-cell flowerIntensity:Float (spring flowers, 0-1), grassBend:Float (summer grass displacement), leafCount:Float (autumn leaves on ground). Methods: trampleFlower(x,y) reduces flowerIntensity, bendGrass(x,y) sets grassBend=1.0 (decays over time), dropLeaves(rate) adds to leafCount, kickLeaves(x,y) clears leafCount at position. regrowFlowers(rate), unbendGrass(rate), windSwayGrass(windDx) applies global offset factor.",
     "Create core/src/commonTest/kotlin/rpg/weather/SeasonStateTest.kt: Tests for trampleFlower reduces intensity, bendGrass + unbendGrass decay, dropLeaves accumulates, kickLeaves clears, regrowFlowers recovers.",
@@ -31,5 +31,5 @@
     "./gradlew :composeApp:compileKotlinDesktop"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "All 15 SeasonStateTest cases pass. All 3 modules compile (core:desktopTest, game:compileKotlinDesktop, composeApp:compileKotlinDesktop). B007 constraint (localCurrentDirVfs line) preserved. SeasonalGrid uses deterministic hash-based placement (no Random). 4 seasonal MapConfig variants added (SPRING_APPROACH, SUMMER_APPROACH, AUTUMN_APPROACH plus existing FROZEN_APPROACH for winter). WorldScene wires season-appropriate overlays and player interactions (trample/bend/kick). 4 new screenshot captures registered."
 }
