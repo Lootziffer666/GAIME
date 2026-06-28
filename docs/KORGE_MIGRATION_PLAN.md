@@ -4,7 +4,8 @@
 Step 3 done (2.5D HD-2D stage ported & compiling against KorGE 6.0.0).
 Step 3b done (Android target für `:game`). Step 4 done (Tiled tilemap loader +
 tile-derived collision in `:core`). Step 4b done (TiledMap renderer + PlayerSprite
-in `:game`). Step 5 not started. This document is the agreed, recorded plan for a
+in `:game`). Step 5a done (real sprites, BattleScene, audio). Step 5 (retire
+Compose engine) not started. This document is the agreed, recorded plan for a
 larger, multi-step effort and is committed *before* the heavy work begins.
 
 It extends `.kiro/steering/rendering-engine.md` (the locked KorGE 2.5D decision)
@@ -141,6 +142,21 @@ Connected `:core`'s `TmxLoader`/`CollisionGrid` with KorGE rendering:
 - **`TiledMapScene.kt`** — orchestrates: TMX load → collision → atlases → render →
   keyboard input with collision check → camera follow.
 - `Main.kt` boots into `TiledMapScene`. `Hd2dStage` stays as reference.
+**Acceptance met:** all 3 compile checks green.
+
+### Step 5a — Real Sprites + BattleScene + Audio — ✅ done
+Replaces procedural placeholders with real HD sprite sheets, adds a turn-based
+BattleScene wired to `:core`'s `CombatEngine`, and introduces background music
++ SFX via KorGE Audio API:
+- **`SpriteLoader.kt`** — loads CraftPix horizontal sheets, slices into frames.
+- **`CharacterSprite.kt`** — loads Swordsman/Vampire sheets, Idle/Walk/Attack/
+  Hurt/Death animations, directional facing, fallback to procedural bitmaps.
+- **`AudioManager.kt`** — `readMusic()` for streaming BGM, `readSound()` for SFX,
+  graceful degradation in headless environments.
+- **`BattleScene.kt`** — side-by-side combat, HP bars, turn-based via
+  `CombatEngine.tick()`, Attack/Heal/Flee controls, VICTORY/DEFEAT state.
+- **`TiledMapScene.kt`** — upgraded: uses `CharacterSprite`, plays BGM, SPACE
+  triggers `BattleScene`.
 **Acceptance met:** all 3 compile checks green.
 
 ### Step 5 — Retire the Compose gameplay engine
