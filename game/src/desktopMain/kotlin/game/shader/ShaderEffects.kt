@@ -23,6 +23,8 @@ class ShaderEffects {
     val poisonFilter = PoisonFilter()
     val beerGoggleFilter = BeerGoggleFilter()
     val lightingFilter = LightingFilter()
+    val heatShimmerFilter = HeatShimmerFilter()
+    val rainFilter = RainFilter()
 
     private var time = 0f
 
@@ -36,6 +38,8 @@ class ShaderEffects {
             poisonFilter.time = time
             beerGoggleFilter.time = time
             lightingFilter.time = time
+            heatShimmerFilter.time = time
+            rainFilter.time = time
         }
     }
 
@@ -54,6 +58,16 @@ class ShaderEffects {
         lightingFilter.lights = lights
         lightingFilter.tilePixelSize = tilePixelSize
         target.filter = lightingFilter
+    }
+
+    /** Applies heat shimmer to [target]. */
+    fun attachHeatShimmer(target: Container) {
+        target.filter = heatShimmerFilter
+    }
+
+    /** Applies rain to [target]. */
+    fun attachRain(target: Container) {
+        target.filter = rainFilter
     }
 
     /** Removes all filters from [target]. */

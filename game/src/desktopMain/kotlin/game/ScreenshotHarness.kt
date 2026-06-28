@@ -42,6 +42,8 @@ fun main() {
     captureShaderBeerGoggle()
     captureShaderPoison()
     captureShaderLighting()
+    captureShaderRain()
+    captureShaderHeatShimmer()
 }
 
 private fun captureWorld(config: MapConfig, name: String, withDialog: Boolean) {
@@ -234,5 +236,68 @@ private fun captureShaderLighting() {
         HudOverlay(this, hero, Inventory(initialGold = 50), "Heroes' Home (night)")
 
         save("shader_lighting")
+    }
+}
+
+/**
+ * Rain: Exterior scene with downpour (diagonal rain streaks).
+ */
+private fun captureShaderRain() {
+    val config = MapConfig.exterior()
+    korgeScreenshotTest(Size(VW, VH)) {
+        val tiledMap = TmxLoader.parse(resourcesVfs[config.tmxPath].readString())
+        val atlases = tiledMap.tilesets.map { TilesetAtlas.load(it, config.tmxDir) }
+        val mapView = TiledMapView(tiledMap, atlases)
+        mapView.scale = SCALE
+        addChild(mapView)
+
+        val player = CharacterSprite(mapView, tiledMap.tileWidth, tiledMap.tileHeight)
+        player.loadSwordsman()
+        player.gridX = config.spawnX; player.gridY = config.spawnY
+        player.facing = Facing.DOWN
+        player.play(SpriteAnimation.WALK)
+
+        mapView.x = VW / 2.0 - player.visualGridX * tiledMap.tileWidth * SCALE
+        mapView.y = VH / 2.0 - player.visualGridY * tiledMap.tileHeight * SCALE
+
+        // Rain shader (heavy downpour with slight wind)
+        val rainFilter = game.shader.RainFilter(intensity = 0.8f, windAngle = 0.2f, time = 3.7f)
+        mapView.filter = rainFilter
+
+        val hero = Combatant(id = "nib", name = "Nib", maxHp = 80, side = Side.PLAYER, attackPower = 12)
+        HudOverlay(this, hero, Inventory(initialGold = 50), "Village (RAINING)")
+
+        save("shader_rain")
+    }
+}
+
+/**
+ * Heat shimmer: Interior near forge/oven — rising hot air distortion.
+ */
+private fun captureShaderHeatShimmer() {
+    val config = MapConfig.interior()
+    korgeScreenshotTest(Size(VW, VH)) {
+        val tiledMap = TmxLoader.parse(resourcesVfs[config.tmxPath].readString())
+        val atlases = tiledMap.tilesets.map { TilesetAtlas.load(it, config.tmxDir) }
+        val mapView = TiledMapView(tiledMap, atlases)
+        mapView.scale = SCALE
+        addChild(mapView)
+
+        val player = CharacterSprite(mapView, tiledMap.tileWidth, tiledMap.tileHeight)
+        player.loadSwordsman()
+        player.gridX = config.spawnX; player.gridY = config.spawnY
+        player.play(SpriteAnimation.IDLE)
+
+        mapView.x = VW / 2.0 - player.visualGridX * tiledMap.tileWidth * SCALE
+        mapView.y = VH / 2.0 - player.visualGridY * tiledMap.tileHeight * SCALE
+
+        // Heat shimmer (strong, near forge)
+        val heatFilter = game.shader.HeatShimmerFilter(intensity = 0.8f, time = 2.1f, frequency = 35f)
+        mapView.filter = heatFilter
+
+        val hero = Combatant(id = "nib", name = "Nib", maxHp = 80, side = Side.PLAYER, attackPower = 12)
+        HudOverlay(this, hero, Inventory(initialGold = 50), "Heroes' Home (HOT)")
+
+        save("shader_heat_shimmer")
     }
 }
