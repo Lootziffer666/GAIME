@@ -220,6 +220,13 @@ conventional Questbook-UI HUD markers, or driving the Step 7a shaders directly (
 shader-first vision). Currently `WorldScene` fires barks but the reactions are not
 yet surfaced. Combat depth (BossPhase/Adds visualization) is a parallel follow-up.
 
+### Step 11 — Render-Gerüst: Doodle-Figuren @ 1440p (done)
+`DoodleLineFilter` (GLSL): Luminance-gradient edge detection + time-driven jitter ("boil")
+produces fine cartoon outlines on character sprites. Applied per-layer via ComposedFilter
+(background stays sharp, only characters get the doodle look). 1440p captures prove the
+"cartoon figure in front of painted scenery" vision. Grid-overlay debug proves the invisible
+collision grid matches the painted background (image = skin, grid = logic).
+
 ---
 
 ## 4. Risks & mitigations

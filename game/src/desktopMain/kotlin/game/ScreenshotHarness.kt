@@ -28,6 +28,11 @@ import rpg.weather.FootprintGrid
 import rpg.weather.SeasonalGrid
 import rpg.weather.SnowGrid
 import rpg.weather.WindState
+import korlibs.image.format.readBitmap
+import korlibs.korge.view.Container
+import korlibs.korge.view.container
+import korlibs.korge.view.image
+import korlibs.korge.view.filter.filter
 
 /**
  * Offscreen GL screenshot harness — renders the real game scenes (interior,
@@ -83,6 +88,8 @@ fun main() {
     captureGlassblowers()
     captureRuinedTemple()
     captureBridge()
+    captureDoodle1440p()
+    captureGridOverlayDebug()
 }
 
 private fun captureWorld(config: MapConfig, name: String, withDialog: Boolean) {
@@ -1484,5 +1491,113 @@ private fun captureBridge() {
         val hero = Combatant(id = "nib", name = "Nib", maxHp = 80, side = Side.PLAYER, attackPower = 12)
         HudOverlay(this, hero, Inventory(initialGold = 50), config.displayName)
         save("map_bridge")
+    }
+}
+
+// =============================================================================
+// STEP 11: DOODLE RENDER SCAFFOLD (1440p)
+// =============================================================================
+
+/**
+ * Doodle 1440p: Cartoon-line characters in front of hi-res painted background.
+ * Uses tavern_interior.png (gameplay scene) as background, characters get DoodleLineFilter.
+ * Grid-derived sizing: gridRows=78, screenTile=1440/78, charScale from screenTile.
+ */
+private fun captureDoodle1440p() {
+    korgeScreenshotTest(Size(2560.0, 1440.0)) {
+        // 1. Hi-res painted background (full-screen, NO shader)
+        val bgBitmap = resourcesVfs["assets/HD/backgrounds/tavern_interior.png"].readBitmap()
+        val bg = image(bgBitmap)
+        bg.smoothing = true
+        bg.scaledWidth = 2560.0
+        bg.scaledHeight = 1440.0
+
+        // 2. Character layer: own container with DoodleLineFilter.
+        // PROOF-SCALE close-up: at true gameplay scale on this fine 78-row grid a
+        // figure is only ~90px and the fine doodle lines are sub-pixel/invisible
+        // (exactly the owner's "tiny on a region map" tension). For this scaffold
+        // PROOF we render the figures large so the line + boil effect is legible;
+        // in-game the same charLayer would use the grid-derived scale.
+        val charLayer = container {}
+        addChild(charLayer)
+
+        // At tilePx=64 × charScale, one grid cell = 64*scale px on screen. Keep grid
+        // coords small so the big figures stay on the 2560×1440 frame.
+        val tilePx = 64 // sprite-native tile → positions are in sprite pixels
+        val hero = CharacterSprite(charLayer, tilePx, tilePx)
+        hero.loadSwordsman()
+        hero.gridX = 1; hero.gridY = 1
+        hero.facing = Facing.RIGHT
+        hero.play(SpriteAnimation.IDLE)
+
+        val vampire = CharacterSprite(charLayer, tilePx, tilePx)
+        vampire.loadVampire()
+        vampire.gridX = 3; vampire.gridY = 1
+        vampire.facing = Facing.LEFT
+        vampire.play(SpriteAnimation.IDLE)
+
+        // Large demo scale so a 64px sprite is ~480px tall → fine doodle lines read.
+        val charScale = 7.5
+        charLayer.scaleX = charScale
+        charLayer.scaleY = charScale
+
+        // 4. Apply DoodleLineFilter ONLY to character layer (not background!)
+        val doodleFilter = game.shader.DoodleLineFilter(
+            time = 1.5f,  // fixed for reproducible screenshot
+            lineStrength = 0.8f,
+            jitter = 0.4f,
+        )
+        charLayer.filter = doodleFilter
+
+        save("doodle_1440p")
+    }
+}
+
+/**
+ * Grid overlay debug: proves the invisible logic grid matches the painted background.
+ * Shows tavern_interior.png with CollisionGrid overlaid (BLOCKED=red, WALKABLE=green, WATER=blue).
+ */
+private fun captureGridOverlayDebug() {
+    korgeScreenshotTest(Size(2560.0, 1440.0)) {
+        // 1. Hi-res painted background
+        val bgBitmap = resourcesVfs["assets/HD/backgrounds/tavern_interior.png"].readBitmap()
+        val bg = image(bgBitmap)
+        bg.smoothing = true
+        bg.scaledWidth = 2560.0
+        bg.scaledHeight = 1440.0
+
+        // 2. Load the TMX and build CollisionGrid
+        val tmxContent = resourcesVfs["assets/HD/backgrounds/tavern_interior.tmx"].readString()
+        val tiledMap = TmxLoader.parse(tmxContent)
+        val grid = rpg.tiled.CollisionGrid.from(tiledMap)
+
+        // 3. Overlay: semi-transparent colored rects per grid cell
+        val gridRows = 78
+        val gridCols = 78
+        val cellW = 2560.0 / gridCols  // ~32.8px
+        val cellH = 1440.0 / gridRows  // ~18.5px
+
+        for (cy in 0 until grid.rows) {
+            for (cx in 0 until grid.cols) {
+                val tileType = grid[cx, cy]
+                val color = when (tileType) {
+                    rpg.tiled.TileType.BLOCKED -> RGBA(0xff, 0x22, 0x22, 0x55)  // red tint
+                    rpg.tiled.TileType.WALKABLE -> RGBA(0x22, 0xff, 0x22, 0x25) // light green
+                    rpg.tiled.TileType.WATER -> RGBA(0x22, 0x66, 0xff, 0x55)    // blue
+                    rpg.tiled.TileType.TRIGGER -> RGBA(0xff, 0xff, 0x22, 0x55)  // yellow
+                    else -> RGBA(0x00, 0x00, 0x00, 0x00)  // transparent
+                }
+                if (color.a > 0) {
+                    val wx = cx + grid.offsetX
+                    val wy = cy + grid.offsetY
+                    solidRect(cellW, cellH, color).apply {
+                        x = (cx.toDouble()) * cellW
+                        y = (cy.toDouble()) * cellH
+                    }
+                }
+            }
+        }
+
+        save("grid_overlay_debug")
     }
 }
