@@ -740,22 +740,22 @@ private fun captureFrozenApproach() {
         // Lighting: ambient dark night with one warm torch at player position
         val tilePx = (tiledMap.tileWidth * SCALE).toFloat()
         val effects = game.shader.ShaderEffects()
-        effects.lightingFilter.ambientDarkness = 0.08f
+        // Dusk, not pitch black, so the snow + warm torch cone both read.
+        effects.lightingFilter.ambientDarkness = 0.4f
         effects.lightingFilter.tilePixelSize = tilePx
         effects.lightingFilter.time = 1.5f
         effects.lightingFilter.lights = listOf(
             game.shader.LightSource(
                 tileX = config.spawnX, tileY = config.spawnY,
-                radius = 6f, r = 1.0f, g = 0.8f, b = 0.4f,
-                intensity = 0.9f, flickerSpeed = 3f, flickerAmount = 0.15f
+                radius = 7f, r = 1.0f, g = 0.82f, b = 0.45f,
+                intensity = 1.4f, flickerSpeed = 3f, flickerAmount = 0.15f
             )
         )
+        // Lighting LAST so it wins the single mapView.filter slot — shows the
+        // night ambient + warm torch glow (the point of "The Frozen Approach").
+        // NOTE: fog is NOT stacked here — a Container has one filter; composing
+        // fog + lighting needs a filter chain (tracked as a follow-up).
         effects.attachLighting(mapView, effects.lightingFilter.lights, tilePx)
-
-        // Fog: density 0.3 for atmosphere
-        effects.fogFilter.density = 0.3f
-        effects.fogFilter.time = 2.0f
-        effects.attachFog(mapView)
 
         val hero = Combatant(id = "nib", name = "Nib", maxHp = 80, side = Side.PLAYER, attackPower = 12)
         HudOverlay(this, hero, Inventory(initialGold = 50), "The Frozen Approach")
