@@ -27,6 +27,16 @@ bewiesenem Fundament (wie bei der Filter-Komposition in Step 9).
   bleibt der Hintergrund scharf und nur die Figuren bekommen den Zeichentrick-Look (Per-Layer —
   geht seit Step 9 / ComposedFilter).
 
+**Drei Karten-Ebenen (Owner-Referenzbilder):**
+- **Weltkarte** (`sylvanoria_wildwood.png`) = Übersicht/Reise. Figuren winzig → **kein Doodle**
+  (feine Linien lesen auf ~2-Tile-Figuren nicht). Reine Navigationsebene.
+- **Lokale Außenszene** (`tavern_exterior.png`) = Annäherung.
+- **Gameplay-Innenszene** (`tavern_interior.png`) = hier wird gespielt: Figuren in voller Größe,
+  **Doodle liest perfekt**, Exits („HINTERTÜR") markiert.
+**Doodle ist ein Nah-/Gameplay-Feature.** Darum nutzt der Doodle-Test (Teil B/D) die
+**Taverne-Innenszene**, NICHT die Weltkarte. (Weltkarten-Traversierung — Reise-Ebene vs. Overworld
+vs. Zoom — ist noch offen; Empfehlung: Reise-/Auswahl-Ebene. Kein Teil dieses Briefs.)
+
 **Donor-Policy (gilt):** KEIN Anime4K-Fremdcode kopieren. Der Linien-Look wird aus dem
 **klassischen Anime4K-Konzept neu implementiert** (Kanten/Gradient → Linien verdünnen + abdunkeln),
 nur als Referenz gelesen. Kommentar im Shader nennt das Konzept, kopiert aber keinen Code.
@@ -92,14 +102,15 @@ registrieren wie die anderen; `ShaderEffects.kt` ist im Scope).
 ## Teil B — 1440p-Capture: Doodle-Figur vor hi-res Hintergrund
 
 Neue Capture im `ScreenshotHarness` bei **2560×1440** (`korgeScreenshotTest(Size(2560.0, 1440.0))`):
-1. **Hintergrund:** `assets/HD/backgrounds/sylvanoria_wildwood.png` vollflächig zeichnen
+1. **Hintergrund:** `assets/HD/backgrounds/tavern_interior.png` vollflächig zeichnen
    (`image(resourcesVfs[...].readBitmap())`, auf 2560×1440 skaliert, `smoothing = true` für den
-   gemalten Look). Kein Shader auf dem Hintergrund.
+   gemalten Look). Kein Shader auf dem Hintergrund. (Gameplay-Innenszene — hier liest der Doodle.)
 2. **Charakter-Layer:** ein eigener `Container`; darin 2–3 `CharacterSprite` (Swordsman/Vampire).
    **Größe + Position leiten sich aus dem Raster ab — NICHT hartkodiert** (s. „Raster ist die
-   Maßeinheit" unten): `screenTile = OUTPUT_H / gridRows`; `charScale = (tilesTall × screenTile) /
-   64f` (CraftPix-Frame = 64px; `tilesTall` ≈ 1.8); Position = `gridCell × screenTile`. Figuren auf
-   begehbare Zellen setzen. Auf DIESEN Container `DoodleLineFilter` anwenden
+   Maßeinheit"): `gridRows = 78` (tavern_interior.tmx); `screenTile = 1440 / 78 ≈ 18.5`;
+   `charScale = (tilesTall × screenTile) / 64f` mit `tilesTall ≈ 5` (so groß wie die gemalten
+   NPCs in der Szene); Position = `gridCell × screenTile`. Figuren auf begehbare Zellen (Floor)
+   setzen. Auf DIESEN Container `DoodleLineFilter` anwenden
    (`effects.enable(charLayer, doodleLineFilter)` oder `charLayer.filter = doodleLineFilter`),
    `u_LineStrength` ~0.8, `u_Jitter` ~0.4, `u_Time` fest (z.B. 1.5).
 3. `save("doodle_1440p")`.
@@ -131,9 +142,10 @@ Owner-Architektur: **„Unter dem hochauflösenden Bild liegt unsichtbar das Til
 gesamte Logik läuft über das Raster."** Genau das beweist dieser Teil — das Bild ist nur die Haut,
 das Grid ist das Logik-Substrat.
 
-Das Raster liegt schon bereit: `assets/HD/backgrounds/sylvanoria_wildwood.tmx` (86×48, vom
-mapbuilder aus exakt diesem Bild segmentiert → Layer `Floor`/`Walls`/`Water`). Es deckt sich 1:1
-mit dem Bild (16px/Tile), d.h. Grid-Zelle (gx,gy) ↔ Bild-Region.
+Das Raster liegt schon bereit: `assets/HD/backgrounds/tavern_interior.tmx` (78×78, vom mapbuilder
+aus genau dieser Innenszene segmentiert → Layer `Floor`/`Walls`/`Water`). Es deckt sich 1:1 mit dem
+Bild (16px/Tile), d.h. Grid-Zelle (gx,gy) ↔ Bild-Region. (Die Welt-/Außen-TMX
+`sylvanoria_wildwood.tmx` bleibt als Referenz im Repo, ist aber NICHT Teil dieses Tests.)
 
 1. TMX laden (`TmxLoader.parse(resourcesVfs[...])`), `CollisionGrid.from(map)` bauen — das ist die
    **unsichtbare Logik-Ebene** unter dem Bild. Die Physik-Grids in `:core` (Water/Snow/Blood/…)
@@ -141,14 +153,15 @@ mit dem Bild (16px/Tile), d.h. Grid-Zelle (gx,gy) ↔ Bild-Region.
 2. Die Figur(en) aus Teil B auf eine **verifiziert begehbare** Zelle setzen (gegen `CollisionGrid`
    prüfen — B004-Methode: offset + WALKABLE-bbox), Position aus Grid-Koordinate × Bild-Tile-Größe.
 3. **Debug-Beweis-Capture** `grid_overlay_debug.png` (2560×1440): das Bild vollflächig + das
-   CollisionGrid halbtransparent darübergelegt (WATER = blauer Tint, BLOCKED = roter Tint, WALKABLE
-   = klar), auf passender Skala. Beweist, dass das unsichtbare Raster zum gemalten Hintergrund
-   passt — der blaue Tint muss über dem gemalten Fluss/See liegen, roter über Dorf/Mauern.
+   CollisionGrid halbtransparent darübergelegt (BLOCKED = roter Tint, WALKABLE = klar/leicht grün,
+   WATER = blau falls vorhanden), auf passender Skala. Beweist, dass das unsichtbare Raster zum
+   gemalten Hintergrund passt — roter Tint muss über **Möbel/Wänden/dunklem Rand** liegen, der
+   **Boden/Teppich** klar/begehbar.
 
-**Hinweis:** Die Collision ist auto-segmentiert (grob — Wald = begehbar, Wasser = blockiert,
-erkannte Gebäude = blockiert). Das reicht, um die **Kopplung** zu beweisen; Feinschliff der
-Collision ist späterer Schritt. Im echten Spiel würde der Spieler sich auf diesem Grid bewegen,
-während er das Bild sieht.
+**Hinweis:** Die Collision ist auto-segmentiert (grob — Boden = begehbar, Möbel/Wände/Rand =
+blockiert). Das reicht, um die **Kopplung** zu beweisen; Feinschliff (z.B. Tische einzeln) ist
+späterer Schritt. Im echten Spiel würde der Spieler sich auf diesem Grid bewegen, während er das
+gemalte Bild sieht.
 
 ## SCOPE
 
@@ -173,7 +186,8 @@ create:
 - core/                          NUR konsumieren
 - game/  WorldScene, BattleScene, alle Overlays, QuestbookScreen, MapConfig, CharacterSprite,
         SpriteLoader, NpcDefinition, ShaderStateBinder  (unberührt)
-- assets/   nur lesen (Hintergrundbild + sylvanoria_wildwood.tmx sind schon committed)
+- assets/   nur lesen (tavern_interior.png/.tmx, tavern_exterior.png, sylvanoria_wildwood.png/.tmx
+            sind schon committed)
 - tools/mapbuilder/   NICHT anfassen (separates Owner-Tool)
 - composeApp/ , settings.gradle.kts
 - docs/KNOWN_BUGS.md   nur lesen
@@ -192,9 +206,10 @@ bash scripts/setup-gl.sh; ./gradlew :game:screenshot   → bestehende + doodle_1
 Bei GL-„Too many callbacks" einmal wiederholen. Bestehende Screenshots müssen weiter funktionieren
 (Regression — der neue Filter darf die anderen nicht beeinflussen).
 
-`grid_overlay_debug.png` muss zeigen, dass das unsichtbare Raster zum Bild passt: blauer Tint über
-dem gemalten Fluss/See, roter über Dorf/Mauern, der Rest klar/begehbar. Damit ist die Kopplung
-„Bild = Haut, Grid = Logik" bewiesen.
+`grid_overlay_debug.png` muss zeigen, dass das unsichtbare Raster zur Taverne-Innenszene passt:
+roter Tint über Möbel/Wänden/Rand, Boden/Teppich klar/begehbar. Damit ist die Kopplung
+„Bild = Haut, Grid = Logik" bewiesen. `doodle_1440p.png`: große Figur(en) mit deutlichem
+feinen Linien-Look vor der scharfen gemalten Innenszene.
 
 ---
 
