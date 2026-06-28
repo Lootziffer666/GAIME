@@ -27,13 +27,25 @@ GROUND_TILE_IDS = {
     "empty": 0,
 }
 
-# Weather zone IDs (stored as tile IDs in a custom layer)
+# Weather/Hydrology zone IDs (stored as tile IDs in a custom layer)
+# These drive the WaterGrid simulation at runtime:
+# - puddle_zone: water accumulates here (low ground)
+# - drain: water flows away here (sewer grate, crack)
+# - flow_*: directional flow (rivers, gutters)
+# - sheltered: no rain hits here (under roof/canopy)
+# - exposed: rain falls directly (open sky)
+# - slope_low/high: elevation determines flow direction
 WEATHER_TILE_IDS = {
-    "rain_zone": 20,
-    "snow_zone": 21,
-    "leaves_zone": 22,
-    "wind_zone": 23,
-    "fog_zone": 24,
+    "puddle_zone": 20,
+    "drain": 21,
+    "flow_north": 22,
+    "flow_south": 23,
+    "flow_east": 24,
+    "flow_west": 25,
+    "sheltered": 26,
+    "exposed": 27,
+    "slope_low": 28,
+    "slope_high": 29,
     "none": 0,
 }
 
@@ -181,10 +193,11 @@ def export_tmx(
     layer_id = _write_layer(map_el, "Walls", wall_data, width, height, layer_id)
     layer_id = _write_layer(map_el, "Water", water_data, width, height, layer_id)
     
-    # --- Weather Zones layer ---
+    # --- Weather / Hydrology Zones layer ---
+    # Drives WaterGrid simulation: where puddles form, where water drains, flow direction
     if weather:
         weather_data = [[WEATHER_TILE_IDS.get(cell, 0) for cell in row] for row in weather]
-        layer_id = _write_layer(map_el, "Weather_Zones", weather_data, width, height, layer_id)
+        layer_id = _write_layer(map_el, "Hydrology", weather_data, width, height, layer_id)
     
     # --- Exits / Entrances layer ---
     if exits:

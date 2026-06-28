@@ -21,7 +21,7 @@ let painting = false;
 // --- Multi-Layer System ---
 const LAYERS = {
     ground: { name: "Ground", visible: true, data: null },
-    weather: { name: "Weather Zones", visible: true, data: null },
+    weather: { name: "Hydrology (Pfützen/Abfluss)", visible: true, data: null },
     exits: { name: "Exits / Entrances", visible: true, data: null },
     npc_routes: { name: "NPC Routes", visible: true, data: null },
     interactable: { name: "Interactive Objects", visible: true, data: null },
@@ -48,12 +48,17 @@ const GROUND_LABELS = [
 ];
 
 const WEATHER_LABELS = [
-    { id: "rain_zone", name: "Rain", color: "#4488cc", pattern: "///" },
-    { id: "snow_zone", name: "Snow", color: "#ccddff", pattern: "***" },
-    { id: "leaves_zone", name: "Leaves", color: "#cc8833", pattern: "~~~" },
-    { id: "wind_zone", name: "Wind", color: "#88ccaa", pattern: ">>>" },
-    { id: "fog_zone", name: "Fog", color: "#999999", pattern: "..." },
-    { id: "none", name: "Clear", color: "transparent" },
+    { id: "puddle_zone", name: "Puddle Area", color: "#3366aa", icon: "\u25cf" },
+    { id: "drain", name: "Drain/Abfluss", color: "#224488", icon: "\u2193" },
+    { id: "flow_north", name: "Flow North", color: "#4499cc", icon: "\u2191" },
+    { id: "flow_south", name: "Flow South", color: "#4499cc", icon: "\u2193" },
+    { id: "flow_east", name: "Flow East", color: "#4499cc", icon: "\u2192" },
+    { id: "flow_west", name: "Flow West", color: "#4499cc", icon: "\u2190" },
+    { id: "sheltered", name: "Sheltered (kein Regen)", color: "#665544", icon: "\u2302" },
+    { id: "exposed", name: "Exposed (Regen direkt)", color: "#5588bb", icon: "\u2602" },
+    { id: "slope_low", name: "Low Point (sammelt)", color: "#223366", icon: "\u25bc" },
+    { id: "slope_high", name: "High Point (flie\u00dft ab)", color: "#88bbdd", icon: "\u25b2" },
+    { id: "none", name: "Normal", color: "transparent" },
 ];
 
 const EXIT_LABELS = [
@@ -361,9 +366,12 @@ function floodFill(layerData, startX, startY, targetLabel, newLabel) {
 const LABEL_COLORS = {
     floor: "#c8b48c", wall: "#3c3c3c", water: "#2878b4",
     grass: "#50b450", stone: "#b4b4b4", door: "#c83c3c", empty: "#000000",
-    // Weather
-    rain_zone: "#4488cc", snow_zone: "#ccddff", leaves_zone: "#cc8833",
-    wind_zone: "#88ccaa", fog_zone: "#999999",
+    // Weather / Hydrology
+    puddle_zone: "#3366aa", drain: "#224488",
+    flow_north: "#4499cc", flow_south: "#4499cc",
+    flow_east: "#4499cc", flow_west: "#4499cc",
+    sheltered: "#665544", exposed: "#5588bb",
+    slope_low: "#223366", slope_high: "#88bbdd",
     // Exits
     spawn: "#00ff00", exit_north: "#ffaa00", exit_south: "#ffaa00",
     exit_east: "#ffaa00", exit_west: "#ffaa00",
@@ -384,6 +392,9 @@ const LABEL_ICONS = {
     exit_east: "\u2192", exit_west: "\u2190",
     tree: "T", rock: "R", flower: "F", torch: "\u{1f525}", chest: "C", sign: "!",
     rain_zone: "~", snow_zone: "*", leaves_zone: "\u{1f342}", wind_zone: ">", fog_zone: "\u2601",
+    puddle_zone: "\u25cf", drain: "\u2193",
+    flow_north: "\u2191", flow_south: "\u2193", flow_east: "\u2192", flow_west: "\u2190",
+    sheltered: "\u2302", exposed: "\u2602", slope_low: "\u25bc", slope_high: "\u25b2",
     // NPC Routes
     npc_waypoint: "\u25cf", npc_patrol_a: "A", npc_patrol_b: "B",
     npc_patrol_c: "C", npc_idle_spot: "\u23f8", npc_spawn: "N",
