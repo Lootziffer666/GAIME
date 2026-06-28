@@ -14,7 +14,12 @@ plugins {
 kotlin {
     jvm("desktop") {
         compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_17)
+            // KorGE 6.0.0 publishes its JVM artifacts (incl. inline functions
+            // like container()/image()/sceneContainer()/changeTo()) as JVM
+            // target 21 bytecode. Inlining that into a JVM 17 target fails, so
+            // :game targets 21. This is desktop-only (no Android target), so it
+            // does not affect :core/:composeApp which stay at 17 for Android.
+            jvmTarget.set(JvmTarget.JVM_21)
         }
     }
 

@@ -1,19 +1,18 @@
 package game
 
 import korlibs.korge.Korge
-import rpg.combat.EnemyArchetype
+import korlibs.korge.scene.sceneContainer
+import rpg.combat.EnemyArchetype   // :core reachability proof
 
 /**
- * Minimal KorGE entry point for the :game module (migration Step 2).
+ * KorGE entry point for the :game module (migration Step 3).
  *
- * Goal of this step: a minimal *compiling* KorGE entry that depends on :core,
- * confirming the toolchain resolves. Step 3 ports demos/korge-hd2d/Hd2dStage.kt
- * to render the 2.5D scene; Step 4 brings the :core gameplay into KorGE scenes.
- *
- * The reference to a :core type below proves the pure logic module is on the
- * classpath and usable from the renderer.
+ * Step 2 proved the toolchain + :core wiring with a minimal Korge block. Step 3
+ * boots straight into the ported 2.5D HD-2D scene ([Hd2dStage]). Acceptance is
+ * compilation only — the GL window is opened manually/locally (the sandbox has
+ * no display). Step 4 brings the :core tilemap/gameplay into KorGE scenes.
  */
 suspend fun main() = Korge {
-    val coreArchetypes = EnemyArchetype.entries.size
-    println("GAIME :game (KorGE) booted — :core reachable ($coreArchetypes enemy archetypes).")
+    // :core reachable: ${EnemyArchetype.entries.size} enemy archetypes
+    sceneContainer().changeTo<Hd2dStage>()
 }
