@@ -3,9 +3,9 @@
 **Status:** Step 1 done (`:core` extracted). Step 2 done (`:game` KorGE module).
 Step 3 done (2.5D HD-2D stage ported & compiling against KorGE 6.0.0).
 Step 3b done (Android target für `:game`). Step 4 done (Tiled tilemap loader +
-tile-derived collision in `:core`). Step 4b–5 not started. This document is the
-agreed, recorded plan for a larger, multi-step effort and is committed *before*
-the heavy work begins.
+tile-derived collision in `:core`). Step 4b done (TiledMap renderer + PlayerSprite
+in `:game`). Step 5 not started. This document is the agreed, recorded plan for a
+larger, multi-step effort and is committed *before* the heavy work begins.
 
 It extends `.kiro/steering/rendering-engine.md` (the locked KorGE 2.5D decision)
 with the concrete tasks, the build setup actually used, the "donor code" policy,
@@ -132,11 +132,16 @@ infinite chunks, flip bits, animated tiles, multiple tilesets, empty cells) +
 CollisionGridTest (floor rule, solid override, water, trigger, no-floor, negative
 coords). Alle grün.
 
-### Step 4b — Gameplay into KorGE
-World/grid movement, HD animated sprites (Idle/Walk/Attack sheets from the packs),
-dialogue, combat UI, bark audio playback — all driven by `:core` logic, rendered
-in KorGE scenes. Animated props/VFX (magic book, fire/smoke/explosions) wired here
-(KorGE sprite-animation/particles), since the assets already exist.
+### Step 4b — TiledMap renderer + PlayerSprite in `:game` — ✅ done
+Connected `:core`'s `TmxLoader`/`CollisionGrid` with KorGE rendering:
+- **`TilesetAtlas.kt`** — loads tileset PNGs, provides `sliceFor(localTileId)`.
+- **`TiledMapView.kt`** — renders all tile layers with flip bits + animated tiles.
+- **`PlayerSprite.kt`** — grid-based player with Idle/Walk animation (procedural
+  placeholder bitmaps for compile-check; real sheets in Step 5).
+- **`TiledMapScene.kt`** — orchestrates: TMX load → collision → atlases → render →
+  keyboard input with collision check → camera follow.
+- `Main.kt` boots into `TiledMapScene`. `Hd2dStage` stays as reference.
+**Acceptance met:** all 3 compile checks green.
 
 ### Step 5 — Retire the Compose gameplay engine
 Once `:game` reaches parity, remove the Compose-Canvas gameplay engine; keep
