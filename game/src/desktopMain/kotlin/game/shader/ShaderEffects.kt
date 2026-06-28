@@ -22,6 +22,7 @@ class ShaderEffects {
 
     val poisonFilter = PoisonFilter()
     val beerGoggleFilter = BeerGoggleFilter()
+    val lightingFilter = LightingFilter()
 
     private var time = 0f
 
@@ -34,6 +35,7 @@ class ShaderEffects {
             time += dt.seconds.toFloat()
             poisonFilter.time = time
             beerGoggleFilter.time = time
+            lightingFilter.time = time
         }
     }
 
@@ -45,6 +47,13 @@ class ShaderEffects {
     /** Applies the beer goggle filter to [target]. */
     fun attachBeerGoggle(target: Container) {
         target.filter = beerGoggleFilter
+    }
+
+    /** Applies the lighting filter to [target] with the given [lights]. */
+    fun attachLighting(target: Container, lights: List<LightSource>, tilePixelSize: Float = 48f) {
+        lightingFilter.lights = lights
+        lightingFilter.tilePixelSize = tilePixelSize
+        target.filter = lightingFilter
     }
 
     /** Removes all filters from [target]. */
