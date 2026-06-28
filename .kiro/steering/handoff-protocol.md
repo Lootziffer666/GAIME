@@ -2,6 +2,17 @@
 
 **Status:** BINDING. Diese Regeln gelten für alle Kiro-Aufträge in diesem Repo.
 
+## Pflichtlektüre vor Arbeitsbeginn
+
+Diese Dateien **vor jedem Auftrag** lesen:
+
+| Datei | Inhalt |
+|---|---|
+| `.kiro/steering/handoff-protocol.md` (diese Datei) | Bindende Handoff-Regeln |
+| `.kiro/steering/rendering-engine.md` | KorGE 2.5D — locked, nicht diskutieren |
+| `docs/KORGE_MIGRATION_PLAN.md` | Migrationsstufen, Modularchitektur, was Throwaway ist |
+| `docs/STORY_EXPANSION.md` | Dialogslots, offene Szenen — relevant für Content-Aufträge |
+
 ---
 
 ## Vor dem Start eines Auftrags

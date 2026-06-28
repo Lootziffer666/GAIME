@@ -1,5 +1,19 @@
 # CLAUDE.md — Session Protocol for Claude Code
 
+## Pflichtlektüre vor jeder Arbeit
+
+Folgende Dateien **immer lesen** bevor Code geschrieben oder Kiro beauftragt wird:
+
+| Datei | Inhalt |
+|---|---|
+| `CLAUDE.md` (diese Datei) | Session-Protokoll, Kiro-Auftrag-Format, Branch-Strategie |
+| `.kiro/steering/handoff-protocol.md` | Bindende Regeln für Kiro-Aufträge |
+| `.kiro/steering/rendering-engine.md` | Architekturentscheidung KorGE 2.5D (locked) |
+| `docs/KORGE_MIGRATION_PLAN.md` | Stufenplan KorGE-Migration (aktueller Stand) |
+| `docs/STORY_EXPANSION.md` | Offene Dialogslots, unbelegte Szenen, Vorlage für neue Quests |
+
+---
+
 ## Session-Start Ritual (immer, ohne Ausnahme)
 
 ```bash
