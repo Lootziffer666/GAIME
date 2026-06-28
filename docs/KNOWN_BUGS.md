@@ -39,6 +39,24 @@ Format: `[ID] Kurzbeschreibung — gefunden von, Datum, betroffene Datei(en), St
   Tasks:** `game/build.gradle.kts` legt via `desktopRuntime()` das Repo-Root auf den Classpath, dann
   wird `assets/...` als Classpath-Ressource gefunden. Jeder neue Launcher muss das ebenso tun.
 
+- **B007 — Kiro reverts B006-Fix (`localCurrentDirVfs`) bei jedem neuen Branch.**
+  Gefunden: Claude, 2026-06-28. Betrifft: `game/src/desktopMain/kotlin/game/ScreenshotHarness.kt`.
+  Drittes Mal in Folge: Kiro ändert `localCurrentDirVfs["build/screenshots"]` zurück zu
+  `localVfs("build/screenshots")` — das schreibt nach `/build/screenshots` statt ins CWD.
+  **Fix (jedes Mal):** `import korlibs.io.file.std.localCurrentDirVfs` + `localCurrentDirVfs["build/screenshots"]`.
+  **Regel für Briefs:** `ScreenshotHarness.kt` in `DO_NOT_TOUCH` aufnehmen. Alternativ:
+  Kommentar direkt über der Zeile lassen (war bei Step 5-Integration vorhanden, Kiro hat ihn gelöscht).
+
+- **B008 — Kiro reverts Step-5-Architektur wenn der Branch-Base-Commit nicht stimmt.**
+  Gefunden: Claude, 2026-06-28. Betrifft: `composeApp/`, `core/`, Briefs.
+  PR#38 (step6-v2) versuchte, SliceDirector/AudioPlayer/BarkAudioPlayer zurück nach composeApp
+  zu verschieben, alle gelöschten Compose-Gameplay-Dateien neu anzulegen und App.kt mit Mode-Enum
+  zurückzubauen. Ursache: Kiro arbeitete intern von einem Commit vor Step-5-Integration.
+  **Neutralisiert:** Git's 3-Way-Merge (ort) hat alle Regressions automatisch ignoriert, da main
+  die Dateien korrekt positioniert hatte.
+  **Regel für Briefs:** `BASE_SHA` immer setzen, step5-Ergebnis explizit in SCOPE.DO_NOT_TOUCH
+  erwähnen. Kiro muss `git log --oneline -3` am Anfang jedes Auftrags ausführen.
+
 ---
 
 ## Behoben
@@ -56,6 +74,7 @@ Format: `[ID] Kurzbeschreibung — gefunden von, Datum, betroffene Datei(en), St
 - **Kiro briefen während Branches offen sind**: führt zu 3-Way-Divergenz. Immer erst `git fetch --all --prune` + Branch-Audit, dann brief.
 - **`settings.gradle.kts` anfassen ohne Auftrag**: Kiro hat dieses File mehrfach unaufgefordert geändert. Immer explizit in `DO_NOT_TOUCH` setzen wenn ein neues Modul im Auftrag ist.
 - **Compose-UI-Features investieren**: `composeApp/` ist Throwaway (KorGE-Migration). Keinen Aufwand in SliceScreen/DialogueLine/BarkAudioPlayer stecken.
+- **Step-6-Fehllieferung**: 6b (Richtungs-Sprites), 6c (Bark-Pipeline), 6d (Scripted Playthrough) aus PR#38 wurden nicht implementiert, trotz Claim im Result-Brief. Nächstes Brief muss diese explizit fordern und SCOPE auf die richtigen Dateien beschränken.
 
 ---
 
