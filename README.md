@@ -150,9 +150,10 @@ The current playable frontend uses a **Compose Canvas** engine. The locked
 long-term renderer is **KorGE 2.5D** (GPU-accelerated, HD-2D layered look, still
 Kotlin Multiplatform); the staged migration extracts `:core` (done), adds a
 `:game` KorGE module (done), and ports gameplay before retiring the Compose
-engine. **Step 3 is done**: the 2.5D HD-2D stage (`game/.../Hd2dStage.kt`) is
-ported to KorGE 6.0.0 and compiles; **Step 4** (own Tiled tilemap loader +
-tile-derived collision in `:core`) is next. See
+engine. **Steps 3, 3b, and 4 are done**: the 2.5D HD-2D stage is ported to KorGE
+6.0.0 (compiles), `:game` has an Android target, and the Tiled tilemap loader +
+tile-derived collision grid lives in `:core`; **Step 4b** (gameplay into KorGE —
+world movement, sprites, dialogue, combat) is next. See
 [`.kiro/steering/rendering-engine.md`](.kiro/steering/rendering-engine.md) and
 [`docs/KORGE_MIGRATION_PLAN.md`](docs/KORGE_MIGRATION_PLAN.md).
 
