@@ -1,0 +1,32 @@
+{
+  "id": "FEAT-001",
+  "type": "feat",
+  "description": "Create per-tile state grids in :core for the 5 world physics systems (Snow, Footprints, Wind, Blood). These are pure Kotlin data structures with simulation logic (accumulation, decay, direction). LightSource already exists in :game so torch light needs no :core grid. All grids are renderer-agnostic and fully unit-tested.",
+  "status": "in_progress",
+  "steps": [
+    "Create directory core/src/commonMain/kotlin/rpg/weather/",
+    "Create WindState.kt: data class with direction (angle in radians), strength (0.0-1.0), and gustiness. Provides dx/dy components derived from angle+strength. Include update(dt) that slowly drifts direction with Perlin-like smoothness (deterministic seed-based for testing).",
+    "Create SnowGrid.kt: 2D per-tile grid (width x height). Each cell has snowDepth (0.0-1.0). accumulate(dt, wind) adds snow uniformly with wind-drift bias. melt(dt, rate) reduces depth. Method stampFootprint(x, y) sets depth to 0. Method refill(dt, rate) gradually restores stamped cells toward surrounding average. Grid is initialized with configurable dimensions.",
+    "Create BloodGrid.kt: 2D per-tile grid. Each cell has bloodLevel (0.0-1.0). Method splatter(x, y, intensity, radius) sets cells within radius to intensity (clamped). Method fade(dt, rate) reduces all cells over time. Method clear() resets all.",
+    "Create WeatherState.kt: orchestrator that holds WindState + SnowGrid + BloodGrid together. Method tick(dt) advances all sub-systems. Configurable via WeatherConfig data class (snowRate, meltRate, bloodFadeRate, footprintRefillRate, windDriftSpeed).",
+    "Create unit tests in core/src/commonTest/kotlin/rpg/weather/SnowGridTest.kt: test accumulation increases depth, melting decreases depth, stampFootprint zeroes cell, refill restores stamped cells, depth clamped to 0.0-1.0.",
+    "Create unit tests in core/src/commonTest/kotlin/rpg/weather/BloodGridTest.kt: test splatter sets cells, radius works correctly, fade reduces over time, clear resets all, intensity clamped.",
+    "Create unit tests in core/src/commonTest/kotlin/rpg/weather/WindStateTest.kt: test dx/dy correspond to angle, strength=0 gives zero vector, update drifts direction.",
+    "Create unit tests in core/src/commonTest/kotlin/rpg/weather/WeatherStateTest.kt: test tick advances all subsystems, config parameters respected."
+  ],
+  "acceptance_criteria": [
+    "All new files compile: ./gradlew :core:desktopTest succeeds",
+    "SnowGrid accumulation/melt/stamp/refill logic works correctly (6+ test cases pass)",
+    "BloodGrid splatter/fade/clear logic works correctly (5+ test cases pass)",
+    "WindState direction/strength/update logic works correctly (3+ test cases pass)",
+    "WeatherState tick orchestrates all sub-grids (2+ test cases pass)",
+    "No KorGE or Compose dependencies in any :core file"
+  ],
+  "verification": [
+    "./gradlew :core:desktopTest (all tests pass including new weather/ tests)",
+    "./gradlew :game:compileKotlinDesktop (still compiles)",
+    "./gradlew :composeApp:compileKotlinDesktop (still compiles)"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

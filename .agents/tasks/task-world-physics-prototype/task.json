@@ -1,0 +1,7 @@
+{
+  "task_id": "task-world-physics-prototype",
+  "task_description": "Implement a prototype test level demonstrating 5 world physics systems: Snow (snowGrid accumulation with white overlay), Footprints (snowDepth zeroed on player path, gradual refill), Wind (drives rain/snow direction), Blood (splatter system with per-tile state grid), and Torch Light (LightingFilter + LightSource integration). State grids live in :core with unit tests; shader filters and the demo scene live in :game with screenshot harness captures for CI verification.",
+  "status": "in_progress",
+  "feature_order": ["FEAT-001", "FEAT-002"],
+  "blocked_reason": null
+}

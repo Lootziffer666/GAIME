@@ -1,0 +1,33 @@
+{
+  "id": "FEAT-002",
+  "type": "feat",
+  "description": "Create SnowFilter and BloodFilter GLSL shader filters in :game, and a prototype test scene (PhysicsTestScene) that demonstrates all 5 systems working together. Add screenshot harness captures for CI verification. Integrate with ShaderEffects registry. Torch light uses existing LightingFilter + LightSource. Wind drives RainFilter's windAngle and SnowFilter's drift direction. The scene is a standalone demo level (not wired into WorldScene gameplay yet).",
+  "status": "pending",
+  "steps": [
+    "Create game/src/desktopMain/kotlin/game/shader/SnowFilter.kt: ShaderFilter that renders a white overlay with alpha proportional to snow depth. Uses a uniform for a small tile-grid sample (8x8 floats packed into vec4 uniforms) plus wind direction to animate falling snow particles. UniformBlock fixedLocation=11. Fragment shader: white overlay (alpha = snowDepth per pixel region) + procedural falling snow particles drifting with wind.",
+    "Create game/src/desktopMain/kotlin/game/shader/BloodFilter.kt: ShaderFilter that renders dark red splatters. Uses a uniform for a small tile-grid sample (8x8 packed). UniformBlock fixedLocation=12. Fragment shader: red-black overlay (alpha = bloodLevel per pixel region) with splatter-edge noise pattern.",
+    "Update game/src/desktopMain/kotlin/game/shader/ShaderEffects.kt: Add snowFilter and bloodFilter instances. Update startTimeUpdater to drive time on both new filters. Add attachSnow(target) and attachBlood(target) methods.",
+    "Create game/src/desktopMain/kotlin/game/PhysicsTestScene.kt: A self-contained test scene that: (a) Creates a WeatherState from :core with a 13x8 grid (matching 640x360 at 48px tiles). (b) Configures wind blowing from the left (angle ~0.3 rad). (c) Runs snow accumulation for simulated 10 seconds (fills snowGrid to ~0.5). (d) Stamps footprints in a path (3-4 tiles). (e) Splatters blood at 2 locations. (f) Places 2 torch LightSources (warm flickering candles). (g) Applies SnowFilter on the map layer, BloodFilter as additive, LightingFilter with torches. (h) Renders a TMX map (reuses exterior map) as the base. The scene is deterministic (all values fixed, time frozen at specific moment).",
+    "Add capturePhysicsSnow(), capturePhysicsBlood(), capturePhysicsFootprints(), capturePhysicsTorchlight(), capturePhysicsComplete() functions to ScreenshotHarness.kt. Each isolates one system for clarity, the 'complete' one shows all 5 together. All use frozen time values and deterministic grid states. CRITICAL: use localCurrentDirVfs (not localVfs) for output path (B007 pitfall).",
+    "Call the 5 new capture functions from the existing main() function in ScreenshotHarness.kt.",
+    "Ensure RainFilter windAngle is driven by WindState.angle in PhysicsTestScene (demonstrating wind system drives both rain direction and snow drift)."
+  ],
+  "acceptance_criteria": [
+    "./gradlew :game:compileKotlinDesktop succeeds with new filters and scene",
+    "./gradlew :core:desktopTest still passes (no regressions)",
+    "./gradlew :composeApp:compileKotlinDesktop still passes",
+    "SnowFilter renders white overlay proportional to grid depth values",
+    "BloodFilter renders red overlay proportional to grid blood values",
+    "PhysicsTestScene integrates all 5 systems (snow + footprints + wind + blood + torch light)",
+    "5 new screenshot captures added to harness (physics_snow, physics_blood, physics_footprints, physics_torchlight, physics_complete)",
+    "Screenshot harness uses localCurrentDirVfs for output (not localVfs)"
+  ],
+  "verification": [
+    "./gradlew :core:desktopTest (no regressions)",
+    "./gradlew :game:compileKotlinDesktop (compiles with all new files)",
+    "./gradlew :composeApp:compileKotlinDesktop (no regressions)",
+    "./gradlew :game:screenshot (runs, produces PNGs including the 5 new physics_*.png files > 1KB each)"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}
