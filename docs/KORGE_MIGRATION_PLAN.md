@@ -106,6 +106,14 @@ Android target, so `:core`/`:composeApp` stay at 17 for Android). This is the
 blocker the §4 risk table anticipated; Step 2's minimal `Korge { println }` never
 exercised it because `Korge(...)` itself is not inline.
 
+### Step 3b — Android target für `:game` (gebündelt mit Step 4)
+`:game` hat derzeit nur `jvm("desktop")`. Android und Desktop sollen das gleiche
+Spiel bekommen. Step 3b ergänzt `androidTarget()` + AGP-Config in
+`game/build.gradle.kts` und fügt KorGE's Android-Artefakte als `androidMain`-Dependency
+hinzu. Der JVM_21-Zwang gilt nur für den Desktop-JVM-Bytecode; Android geht durch
+AGP → Dex und ist davon unberührt. **Kein eigener PR — wird als Vorbedingung in den
+Step-4-Brief aufgenommen und gemeinsam mit dem Tiled-Loader geliefert.**
+
 ### Step 4 — Own Tiled tilemap loader + tile collision (in `:core`)
 The visual quality lever: render the **artist-authored Tiled scenes** (17 `.tmx`
 already in `assets/HD/locations/...`) with their real layers and animated tiles,
