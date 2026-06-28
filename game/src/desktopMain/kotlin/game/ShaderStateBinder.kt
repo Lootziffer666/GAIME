@@ -48,4 +48,26 @@ class ShaderStateBinder(
         effects.poisonFilter.intensity = intensity.coerceIn(0f, 1f)
         if (!poisonAttached) { effects.attachPoison(target); poisonAttached = true }
     }
+
+    // --- Beer Goggles ---
+    private var drunkAttached = false
+
+    /**
+     * Applies beer goggle effect. When drunkLevel > 0, BeerGoggle takes priority
+     * over Poison (drunk overtones bureaucratic nausea). When 0, detaches.
+     */
+    fun applyDrunk(level: Float) {
+        if (level <= 0.01f) {
+            if (drunkAttached) { effects.detach(target); drunkAttached = false }
+            effects.beerGoggleFilter.drunkLevel = 0f
+            return
+        }
+        // Beer goggles have priority over poison when active
+        effects.beerGoggleFilter.drunkLevel = level.coerceIn(0f, 1f)
+        if (!drunkAttached) {
+            if (poisonAttached) { poisonAttached = false } // will be overridden
+            effects.attachBeerGoggle(target)
+            drunkAttached = true
+        }
+    }
 }
