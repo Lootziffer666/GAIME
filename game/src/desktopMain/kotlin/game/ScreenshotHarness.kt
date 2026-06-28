@@ -17,6 +17,10 @@ import rpg.combat.Combatant
 import rpg.combat.Side
 import rpg.items.Inventory
 import rpg.tiled.TmxLoader
+import rpg.BarkOutcome
+import rpg.SliceDirector
+import rpg.bark.BarkEvent
+import rpg.questbook.RoomContext
 
 /**
  * Offscreen GL screenshot harness — renders the real game scenes (interior,
@@ -49,6 +53,7 @@ fun main() {
     captureExteriorDialog()
     captureBattleMidway()
     captureBattleVictory()
+    captureQuestbookReaction()
 }
 
 private fun captureWorld(config: MapConfig, name: String, withDialog: Boolean) {
@@ -407,5 +412,41 @@ private fun captureBattleVictory() {
         text("Vampire: 0/60", textSize = 14.0, color = Colors.WHITE).apply { x = VW - 160.0; y = 36.0 }
         text("VICTORY!", textSize = 24.0, color = Colors["#ffcc00"]).apply { x = VW / 2.0 - 60.0; y = VH / 2.0 - 12.0 }
         save("battle_victory")
+    }
+}
+
+private fun captureQuestbookReaction() {
+    val config = MapConfig.interior()
+    korgeScreenshotTest(Size(VW, VH)) {
+        val tiledMap = rpg.tiled.TmxLoader.parse(resourcesVfs[config.tmxPath].readString())
+        val atlases = tiledMap.tilesets.map { TilesetAtlas.load(it, config.tmxDir) }
+        val mapView = TiledMapView(tiledMap, atlases)
+        mapView.scale = SCALE
+        addChild(mapView)
+        val player = CharacterSprite(mapView, tiledMap.tileWidth, tiledMap.tileHeight)
+        player.loadSwordsman(); player.gridX = config.spawnX; player.gridY = config.spawnY
+        player.play(SpriteAnimation.IDLE)
+        for (npc in config.npcs) {
+            val s = CharacterSprite(mapView, tiledMap.tileWidth, tiledMap.tileHeight)
+            s.loadFromSheet(npc.idleSheetPath); s.gridX = npc.tileX; s.gridY = npc.tileY; s.facing = npc.facing
+            s.play(SpriteAnimation.IDLE)
+        }
+        mapView.x = VW / 2.0 - player.visualGridX * tiledMap.tileWidth * SCALE
+        mapView.y = VH / 2.0 - player.visualGridY * tiledMap.tileHeight * SCALE
+
+        val hero = Combatant(id = "nib", name = "Nib", maxHp = 80, side = Side.PLAYER, attackPower = 12)
+        HudOverlay(this, hero, Inventory(initialGold = 50), config.displayName)
+
+        // Echte Reaktion aus der Pipeline (kein Mock):
+        val director = SliceDirector { 0L }
+        director.enterRoom(RoomContext(mapId = "tavern", roomId = RoomContext.ROOM_TAVERN, hasInteractableTarget = true))
+        val outcome = director.fireBark(BarkEvent.NIB_SMELL_TREASURE)
+
+        val questbook = QuestbookOverlay(this, VW, VH)
+        if (outcome is BarkOutcome.Fired) {
+            questbook.showReaction(outcome.reaction, director.pressure, director.questMarkers + director.falseMarkers)
+        }
+
+        save("questbook_reaction")
     }
 }
