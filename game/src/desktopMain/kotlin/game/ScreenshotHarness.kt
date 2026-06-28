@@ -4,7 +4,7 @@ import korlibs.image.color.Colors
 import korlibs.image.color.RGBA
 import korlibs.image.format.PNG
 import korlibs.image.format.writeTo
-import korlibs.io.file.std.localVfs
+import korlibs.io.file.std.localCurrentDirVfs
 import korlibs.io.file.std.resourcesVfs
 import korlibs.korge.testing.OffscreenStage
 import korlibs.korge.testing.korgeScreenshotTest
@@ -29,8 +29,10 @@ import rpg.tiled.TmxLoader
 private const val VW = 640.0
 private const val VH = 360.0
 private const val SCALE = 3.0
-// Relative to the task's workingDir (repo root); portable across machines.
-private val OUT = localVfs("build/screenshots")
+// Resolve against the process working dir (the task sets it to the repo root).
+// NOTE: korlibs localVfs("relative") resolves against "/", not the CWD — use
+// localCurrentDirVfs for a CWD-relative path.
+private val OUT = localCurrentDirVfs["build/screenshots"]
 
 fun main() {
     captureWorld(MapConfig.interior(), "interior", withDialog = true)

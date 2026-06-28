@@ -8,11 +8,14 @@ import rpg.bark.BarkEvent
 import rpg.bark.BarkRegistry
 import rpg.bark.audio.AudioPlayer
 import rpg.bark.audio.BarkAudioPlayer
-import ui.rpg.DialogueLine
 
 /**
- * Tests for the NPC dialogue system: DialogueLine.audioPath, BarkAudioPlayer.playRawPath,
- * and NPC bark registry entries.
+ * BarkAudioPlayer.playRawPath behaviour + NPC bark registry entries.
+ *
+ * Migrated from :composeApp during Step 5 (Compose gameplay retirement). The
+ * original NpcDialogueTest also tested ui.rpg.DialogueLine, which was deleted with
+ * the Compose UI — those three cases are gone; the engine-agnostic coverage below
+ * (BarkAudioPlayer / BarkRegistry / BarkAudioRegistry, all now in :core) is kept.
  */
 class NpcDialogueTest {
 
@@ -41,33 +44,6 @@ class NpcDialogueTest {
             _playing = false
             releaseCount++
         }
-    }
-
-    // --- DialogueLine.audioPath ---
-
-    @Test
-    fun dialogueLineWithAudioPathRetainsPath() {
-        val line = DialogueLine("Barkeep", "Spend some coin or get out.", "bark/brugg/spend_some_coin_or_get_out.wav")
-        assertEquals("Barkeep", line.speaker)
-        assertEquals("Spend some coin or get out.", line.text)
-        assertEquals("bark/brugg/spend_some_coin_or_get_out.wav", line.audioPath)
-    }
-
-    @Test
-    fun dialogueLineWithoutAudioPathDefaultsToNull() {
-        val line = DialogueLine("Nib", "Hello!")
-        assertEquals("Nib", line.speaker)
-        assertEquals("Hello!", line.text)
-        assertNull(line.audioPath)
-    }
-
-    @Test
-    fun dialogueLineBackwardCompatibility() {
-        // Existing code that creates DialogueLine(speaker, text) still works
-        val line = DialogueLine("", "Narration text.")
-        assertEquals("", line.speaker)
-        assertEquals("Narration text.", line.text)
-        assertNull(line.audioPath)
     }
 
     // --- BarkAudioPlayer.playRawPath ---
