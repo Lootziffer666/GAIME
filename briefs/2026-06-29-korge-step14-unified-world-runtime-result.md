@@ -105,3 +105,27 @@ Gameplay-Runtime mit:
 2. QuestbookScreen-Rückweg zu DoodleWorldScene (parametrisiertes changeTo-Ziel)
 3. AudioManager-Migration ins Unified Runtime
 4. WorldScene + composeApp retirement (mechanischer Folge-Brief)
+
+## Integration-Review (Claude)
+
+Verifiziert, nicht nur den Behauptungen vertraut:
+- `:core:desktopTest` + `:game`/`:composeApp`-Compile + `:game:screenshot` **grün** —
+  alle 39 bestehenden Screenshots laufen weiter, 3 neue dazu.
+- **Drei PNGs angesehen** (Skill „render ≠ logic"): `unified_tavern` (HUD oben links,
+  Doodle-Spieler zentriert/letterboxed, 2 Hotspot-Marker), `unified_wildwood` (breite Karte
+  füllt die **volle Breite** — Kamera-Fill statt Letterbox — Doodle-Spieler zwischen den
+  gemalten Waldfiguren, Brücke + Dorf im Bild), `unified_dialog` (DialogOverlay aktiv,
+  „Barkeep: Spend some coin or get out."). Spine beweisbar funktionsfähig.
+- Step-13-Skala-Regel korrekt übernommen (`layerTile`/`charScale`) — Figur sitzt sauber
+  auf dem Raster.
+
+**Anmerkungen (kein Blocker):**
+- `DEBUG_HOTSPOTS = true` zeigt die orangen Marker auch im laufenden Spiel. Für den
+  Entwicklungs-Stand ok (Hotspots sind ohnehin approximativ); vor Release auf `false`
+  bzw. an die gemalten Figuren ausrichten (Pfeiler 5).
+- **Scope-Slip:** `docs/VISION_SESSION_2026-06-29.md` (211 Z.) lag NICHT im SCOPE des
+  Briefs und wird im Result-File nicht erwähnt. Inhalt ist die echte Vision-Session des
+  Owners (ANVIL-Rahmen) — **behalten** (Owner bestätigt), aber Kiro hätte Out-of-Scope-
+  Dateien im Result deklarieren müssen.
+
+Gallery: `docs/screenshots/step14-tavern.png`, `docs/screenshots/step14-wildwood.png`.
