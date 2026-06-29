@@ -36,6 +36,7 @@ import korlibs.korge.view.filter.filter
 import rpg.world.Camera
 import game.world.ImageWorldDef
 import game.world.ImageMapId
+import rpg.weather.WaterGrid
 
 /**
  * Offscreen GL screenshot harness — renders the real game scenes (interior,
@@ -99,6 +100,8 @@ fun main() {
     captureUnifiedTavern()
     captureUnifiedWildwood()
     captureUnifiedDialog()
+    // Step 15: Systems architecture proof
+    captureUnifiedSystems()
 }
 
 private fun captureWorld(config: MapConfig, name: String, withDialog: Boolean) {
@@ -2008,5 +2011,93 @@ private fun captureUnifiedDialog() {
         DialogOverlay(this, outputW, outputH).show(def.npcs.first().dialog)
 
         save("unified_dialog")
+    }
+}
+
+/**
+ * Step 15: Unified Systems — Tavern with visible puddles (WaterSystem) proving
+ * the SystemRegistry + GridOverlay architecture works in the Unified Runtime.
+ */
+private fun captureUnifiedSystems() {
+    val def = ImageWorldDef.tavernInterior()
+    korgeScreenshotTest(Size(2560.0, 1440.0)) {
+        val outputW = 2560.0
+        val outputH = 1440.0
+
+        val bgBitmap = resourcesVfs[def.imagePath].readBitmap()
+        val imgW = bgBitmap.width.toFloat()
+        val imgH = bgBitmap.height.toFloat()
+        val tmxContent = resourcesVfs[def.gridTmxPath].readString()
+        val tiledMap = rpg.tiled.TmxLoader.parse(tmxContent)
+        val grid = rpg.tiled.CollisionGrid.from(tiledMap)
+
+        val gridRows = grid.rows
+        val screenTile = (outputH / gridRows).toFloat()
+        val bgScale = (outputH / imgH).toDouble()
+        val worldW = imgW * bgScale.toFloat()
+        val worldH = outputH.toFloat()
+
+        val worldLayer = container {}
+        addChild(worldLayer)
+
+        val bg = worldLayer.image(bgBitmap)
+        bg.smoothing = true
+        bg.scaleX = bgScale
+        bg.scaleY = bgScale
+
+        // Entity layer with doodle filter
+        val entityLayer = worldLayer.container {}
+        val tilesTall = 5
+        val layerTile = (64.0 / tilesTall).toInt().coerceAtLeast(1)
+        val charScale = screenTile / layerTile.toFloat()
+
+        val (spawnX, spawnY) = def.spawn ?: (grid.cols / 2 to grid.rows / 2)
+        val player = CharacterSprite(entityLayer, layerTile, layerTile)
+        player.loadSwordsman()
+        player.gridX = spawnX
+        player.gridY = spawnY
+        player.facing = Facing.DOWN
+        player.play(SpriteAnimation.IDLE)
+
+        entityLayer.scaleX = charScale.toDouble()
+        entityLayer.scaleY = charScale.toDouble()
+
+        val doodleFilter = game.shader.DoodleLineFilter(time = 1.5f, lineStrength = 0.8f, jitter = 0.4f)
+        entityLayer.filter = doodleFilter
+
+        // WaterSystem: pre-fill puddles around the player spawn to prove overlay works
+        val waterGrid = WaterGrid(
+            width = grid.cols, height = grid.rows,
+            offsetX = grid.offsetX, offsetY = grid.offsetY
+        )
+        // Fill puddles near spawn (deterministic, no rain needed)
+        for (dx in -3..3) {
+            for (dy in -3..3) {
+                val wx = spawnX - grid.offsetX + dx
+                val wy = spawnY - grid.offsetY + dy
+                if (wx in 0 until grid.cols && wy in 0 until grid.rows) {
+                    waterGrid[wx, wy] = 0.3f + (3 - kotlin.math.abs(dx) - kotlin.math.abs(dy)).coerceAtLeast(0) * 0.15f
+                }
+            }
+        }
+
+        // WaterOverlay in worldLayer (scrolls with camera)
+        val overlayTileSize = screenTile.toInt().coerceAtLeast(1)
+        val waterOverlay = WaterOverlay(worldLayer, overlayTileSize, overlayTileSize)
+        waterOverlay.update(waterGrid)
+
+        // Camera
+        val camera = Camera()
+        val playerScreenX = player.visualGridX.toFloat() * screenTile
+        val playerScreenY = player.visualGridY.toFloat() * screenTile
+        camera.follow(playerScreenX, playerScreenY, outputW.toFloat(), outputH.toFloat(), worldW, worldH)
+        worldLayer.x = -camera.x.toDouble()
+        worldLayer.y = -camera.y.toDouble()
+
+        // HUD
+        val hero = Combatant(id = "nib", name = "Nib", maxHp = 80, side = Side.PLAYER, attackPower = 12)
+        HudOverlay(this, hero, Inventory(initialGold = 50), "Heroes' Home (PUDDLES)")
+
+        save("unified_systems")
     }
 }

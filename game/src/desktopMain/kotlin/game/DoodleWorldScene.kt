@@ -29,6 +29,11 @@ import korlibs.korge.view.filter.filter
 import game.shader.DoodleLineFilter
 import game.world.ImageMapId
 import game.world.ImageWorldDef
+import game.systems.SystemRegistry
+import rpg.systems.WorldContext
+import rpg.systems.WaterSystem
+import rpg.systems.DrunkSystem
+import rpg.weather.WaterGrid
 
 /**
  * Step 14: Unified World Runtime (Pfeiler 1 — the Spine).
@@ -214,6 +219,24 @@ class DoodleWorldScene : Scene() {
         questbook.refresh(director.pressure, director.questMarkers + director.falseMarkers)
 
         // =====================================================================
+        // 9b. WORLD SYSTEMS — physics tick + render via SystemRegistry
+        // =====================================================================
+        val waterGrid = WaterGrid(
+            width = grid.cols, height = grid.rows,
+            offsetX = grid.offsetX, offsetY = grid.offsetY
+        )
+        val waterSystem = WaterSystem(waterGrid, isRaining = false)
+        val drunkSystem = DrunkSystem()
+
+        // Tile size for overlays in the worldLayer: screenTile (pixels per grid cell)
+        val overlayTileSize = screenTile.toInt().coerceAtLeast(1)
+        val waterOverlay = WaterOverlay(worldLayer, overlayTileSize, overlayTileSize)
+
+        val registry = SystemRegistry()
+        registry.register(waterSystem) { waterOverlay.update(waterGrid) }
+        registry.register(drunkSystem)
+
+        // =====================================================================
         // 10. INPUT LOOP
         // =====================================================================
         addUpdater { dt ->
@@ -224,6 +247,34 @@ class DoodleWorldScene : Scene() {
 
             // Tick questbook toast timer
             questbook.update(dtSec)
+
+            // ─── WorldSystem tick + render ───────────────────────────────────
+            val pGridX = player.gridX
+            val pGridY = player.gridY
+            val pIdle = !player.isMoving
+            val worldCtx = object : WorldContext {
+                override val player = hero
+                override val inventory = inventory
+                override val playerCellX = pGridX
+                override val playerCellY = pGridY
+                override val isPlayerIdle = pIdle
+            }
+            registry.tickAll(dtSec, worldCtx)
+            registry.renderAll()
+
+            // DrunkSystem feedback (toast messages)
+            if (drunkSystem.lastSoberDamage > 0) {
+                questbook.showMessage(
+                    "Ow. What happened last night? (-${drunkSystem.lastSoberDamage} HP)",
+                    director.pressure
+                )
+            }
+            if (drunkSystem.lastGoldStolen > 0) {
+                questbook.showMessage(
+                    "You fell asleep. Someone took ${drunkSystem.lastGoldStolen} gold.",
+                    director.pressure
+                )
+            }
 
             // ─── Camera follow ───────────────────────────────────────────────
             val playerScreenX = player.visualGridX.toFloat() * screenTile
@@ -299,6 +350,7 @@ class DoodleWorldScene : Scene() {
                 if (cellType == TileType.WALKABLE || cellType == TileType.TRIGGER) {
                     player.startMove(nx, ny)
                     player.play(SpriteAnimation.WALK)
+                    drunkSystem.resetIdle()
 
                     // Exit check after successful move
                     val exit = def.exits.firstOrNull { it.cellX == nx && it.cellY == ny }
