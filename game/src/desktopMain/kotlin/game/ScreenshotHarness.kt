@@ -33,6 +33,9 @@ import korlibs.korge.view.Container
 import korlibs.korge.view.container
 import korlibs.korge.view.image
 import korlibs.korge.view.filter.filter
+import rpg.world.Camera
+import game.world.ImageWorldDef
+import game.world.ImageMapId
 
 /**
  * Offscreen GL screenshot harness — renders the real game scenes (interior,
@@ -92,6 +95,10 @@ fun main() {
     captureGridOverlayDebug()
     captureDoodleUpscaleCompare()
     captureDoodleWorld()
+    // Step 14: Unified World Runtime captures
+    captureUnifiedTavern()
+    captureUnifiedWildwood()
+    captureUnifiedDialog()
 }
 
 private fun captureWorld(config: MapConfig, name: String, withDialog: Boolean) {
@@ -1763,5 +1770,243 @@ private fun captureDoodleWorld() {
         charLayer.filter = doodleFilter
 
         save("doodle_world_1440p")
+    }
+}
+
+// =============================================================================
+// STEP 14: UNIFIED WORLD RUNTIME CAPTURES
+// =============================================================================
+
+/**
+ * Unified Tavern: Full runtime — painted bg + doodle player on walkable cell +
+ * HUD visible + hotspot debug markers on NPC cells. Tavern is square (78x78),
+ * centered/letterboxed by camera clamp logic.
+ */
+private fun captureUnifiedTavern() {
+    val def = ImageWorldDef.tavernInterior()
+    korgeScreenshotTest(Size(2560.0, 1440.0)) {
+        val outputW = 2560.0
+        val outputH = 1440.0
+
+        // 1. Load image + grid
+        val bgBitmap = resourcesVfs[def.imagePath].readBitmap()
+        val imgW = bgBitmap.width.toFloat()
+        val imgH = bgBitmap.height.toFloat()
+        val tmxContent = resourcesVfs[def.gridTmxPath].readString()
+        val tiledMap = rpg.tiled.TmxLoader.parse(tmxContent)
+        val grid = rpg.tiled.CollisionGrid.from(tiledMap)
+
+        val gridRows = grid.rows
+        val screenTile = (outputH / gridRows).toFloat()
+        val bgScale = (outputH / imgH).toDouble()
+        val worldW = imgW * bgScale.toFloat()
+        val worldH = outputH.toFloat()
+
+        // 2. World layer
+        val worldLayer = container {}
+        addChild(worldLayer)
+
+        val bg = worldLayer.image(bgBitmap)
+        bg.smoothing = true
+        bg.scaleX = bgScale
+        bg.scaleY = bgScale
+
+        // 3. Entity layer with doodle filter
+        val entityLayer = worldLayer.container {}
+        val tilesTall = 5
+        val layerTile = (64.0 / tilesTall).toInt().coerceAtLeast(1)
+        val charScale = screenTile / layerTile.toFloat()
+
+        // Spawn
+        val (spawnX, spawnY) = def.spawn ?: (grid.cols / 2 to grid.rows / 2)
+        val player = CharacterSprite(entityLayer, layerTile, layerTile)
+        player.loadSwordsman()
+        player.gridX = spawnX
+        player.gridY = spawnY
+        player.facing = Facing.DOWN
+        player.play(SpriteAnimation.IDLE)
+
+        entityLayer.scaleX = charScale.toDouble()
+        entityLayer.scaleY = charScale.toDouble()
+
+        val doodleFilter = game.shader.DoodleLineFilter(time = 1.5f, lineStrength = 0.8f, jitter = 0.4f)
+        entityLayer.filter = doodleFilter
+
+        // 4. Hotspot debug markers
+        for (npc in def.npcs) {
+            val markerX = npc.cellX * screenTile
+            val markerY = npc.cellY * screenTile
+            worldLayer.solidRect(
+                screenTile.toDouble() * 0.6,
+                screenTile.toDouble() * 0.6,
+                RGBA(0xff, 0xaa, 0x00, 0x66)
+            ).apply {
+                x = (markerX + screenTile * 0.2).toDouble()
+                y = (markerY + screenTile * 0.2).toDouble()
+            }
+        }
+
+        // 5. Camera: center on player
+        val camera = Camera()
+        val playerScreenX = player.visualGridX.toFloat() * screenTile
+        val playerScreenY = player.visualGridY.toFloat() * screenTile
+        camera.follow(playerScreenX, playerScreenY, outputW.toFloat(), outputH.toFloat(), worldW, worldH)
+        worldLayer.x = -camera.x.toDouble()
+        worldLayer.y = -camera.y.toDouble()
+
+        // 6. HUD (screen-fixed)
+        val hero = Combatant(id = "nib", name = "Nib", maxHp = 80, side = Side.PLAYER, attackPower = 12)
+        HudOverlay(this, hero, Inventory(initialGold = 50), def.displayName)
+
+        save("unified_tavern")
+    }
+}
+
+/**
+ * Unified Wildwood: Wide map (86x48) with camera scrolled to player center.
+ * Proves horizontal scrolling works — image extends beyond viewport edges.
+ */
+private fun captureUnifiedWildwood() {
+    val def = ImageWorldDef.sylvanoriaWildwood()
+    korgeScreenshotTest(Size(2560.0, 1440.0)) {
+        val outputW = 2560.0
+        val outputH = 1440.0
+
+        val bgBitmap = resourcesVfs[def.imagePath].readBitmap()
+        val imgW = bgBitmap.width.toFloat()
+        val imgH = bgBitmap.height.toFloat()
+        val tmxContent = resourcesVfs[def.gridTmxPath].readString()
+        val tiledMap = rpg.tiled.TmxLoader.parse(tmxContent)
+        val grid = rpg.tiled.CollisionGrid.from(tiledMap)
+
+        val gridRows = grid.rows
+        val screenTile = (outputH / gridRows).toFloat()
+        val bgScale = (outputH / imgH).toDouble()
+        val worldW = imgW * bgScale.toFloat()
+        val worldH = outputH.toFloat()
+
+        val worldLayer = container {}
+        addChild(worldLayer)
+
+        val bg = worldLayer.image(bgBitmap)
+        bg.smoothing = true
+        bg.scaleX = bgScale
+        bg.scaleY = bgScale
+
+        val entityLayer = worldLayer.container {}
+        val tilesTall = 5
+        val layerTile = (64.0 / tilesTall).toInt().coerceAtLeast(1)
+        val charScale = screenTile / layerTile.toFloat()
+
+        val (spawnX, spawnY) = def.spawn ?: (grid.cols / 2 to grid.rows / 2)
+        val player = CharacterSprite(entityLayer, layerTile, layerTile)
+        player.loadSwordsman()
+        player.gridX = spawnX
+        player.gridY = spawnY
+        player.facing = Facing.RIGHT
+        player.play(SpriteAnimation.IDLE)
+
+        entityLayer.scaleX = charScale.toDouble()
+        entityLayer.scaleY = charScale.toDouble()
+
+        val doodleFilter = game.shader.DoodleLineFilter(time = 1.5f, lineStrength = 0.8f, jitter = 0.4f)
+        entityLayer.filter = doodleFilter
+
+        // Hotspot markers
+        for (npc in def.npcs) {
+            val markerX = npc.cellX * screenTile
+            val markerY = npc.cellY * screenTile
+            worldLayer.solidRect(
+                screenTile.toDouble() * 0.6,
+                screenTile.toDouble() * 0.6,
+                RGBA(0xff, 0xaa, 0x00, 0x66)
+            ).apply {
+                x = (markerX + screenTile * 0.2).toDouble()
+                y = (markerY + screenTile * 0.2).toDouble()
+            }
+        }
+
+        // Camera: follow player (scrolled — worldW > outputW for wide map)
+        val camera = Camera()
+        val playerScreenX = player.visualGridX.toFloat() * screenTile
+        val playerScreenY = player.visualGridY.toFloat() * screenTile
+        camera.follow(playerScreenX, playerScreenY, outputW.toFloat(), outputH.toFloat(), worldW, worldH)
+        worldLayer.x = -camera.x.toDouble()
+        worldLayer.y = -camera.y.toDouble()
+
+        // HUD
+        val hero = Combatant(id = "nib", name = "Nib", maxHp = 80, side = Side.PLAYER, attackPower = 12)
+        HudOverlay(this, hero, Inventory(initialGold = 50), def.displayName)
+
+        save("unified_wildwood")
+    }
+}
+
+/**
+ * Unified Dialog: Tavern with active DialogOverlay showing Barkeep's first line.
+ * Proves the interaction loop works in the unified runtime.
+ */
+private fun captureUnifiedDialog() {
+    val def = ImageWorldDef.tavernInterior()
+    korgeScreenshotTest(Size(2560.0, 1440.0)) {
+        val outputW = 2560.0
+        val outputH = 1440.0
+
+        val bgBitmap = resourcesVfs[def.imagePath].readBitmap()
+        val imgW = bgBitmap.width.toFloat()
+        val imgH = bgBitmap.height.toFloat()
+        val tmxContent = resourcesVfs[def.gridTmxPath].readString()
+        val tiledMap = rpg.tiled.TmxLoader.parse(tmxContent)
+        val grid = rpg.tiled.CollisionGrid.from(tiledMap)
+
+        val gridRows = grid.rows
+        val screenTile = (outputH / gridRows).toFloat()
+        val bgScale = (outputH / imgH).toDouble()
+        val worldW = imgW * bgScale.toFloat()
+        val worldH = outputH.toFloat()
+
+        val worldLayer = container {}
+        addChild(worldLayer)
+
+        val bg = worldLayer.image(bgBitmap)
+        bg.smoothing = true
+        bg.scaleX = bgScale
+        bg.scaleY = bgScale
+
+        val entityLayer = worldLayer.container {}
+        val tilesTall = 5
+        val layerTile = (64.0 / tilesTall).toInt().coerceAtLeast(1)
+        val charScale = screenTile / layerTile.toFloat()
+
+        val (spawnX, spawnY) = def.spawn ?: (grid.cols / 2 to grid.rows / 2)
+        val player = CharacterSprite(entityLayer, layerTile, layerTile)
+        player.loadSwordsman()
+        player.gridX = spawnX
+        player.gridY = spawnY
+        player.facing = Facing.UP
+        player.play(SpriteAnimation.IDLE)
+
+        entityLayer.scaleX = charScale.toDouble()
+        entityLayer.scaleY = charScale.toDouble()
+
+        val doodleFilter = game.shader.DoodleLineFilter(time = 1.5f, lineStrength = 0.8f, jitter = 0.4f)
+        entityLayer.filter = doodleFilter
+
+        // Camera
+        val camera = Camera()
+        val playerScreenX = player.visualGridX.toFloat() * screenTile
+        val playerScreenY = player.visualGridY.toFloat() * screenTile
+        camera.follow(playerScreenX, playerScreenY, outputW.toFloat(), outputH.toFloat(), worldW, worldH)
+        worldLayer.x = -camera.x.toDouble()
+        worldLayer.y = -camera.y.toDouble()
+
+        // HUD
+        val hero = Combatant(id = "nib", name = "Nib", maxHp = 80, side = Side.PLAYER, attackPower = 12)
+        HudOverlay(this, hero, Inventory(initialGold = 50), def.displayName)
+
+        // Dialog: show Barkeep's first line
+        DialogOverlay(this, outputW, outputH).show(def.npcs.first().dialog)
+
+        save("unified_dialog")
     }
 }

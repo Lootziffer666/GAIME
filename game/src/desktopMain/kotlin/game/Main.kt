@@ -9,10 +9,11 @@ import rpg.combat.EnemyArchetype   // :core reachability proof
 /**
  * KorGE entry point for the :game module.
  *
- * Step 13: boots into DoodleWorldScene at 1440p (2560x1440).
- * The painted background + invisible grid + doodle-character loop.
+ * Step 14: boots into DoodleWorldScene at 1440p (2560x1440) — the Unified World Runtime.
+ * Full gameplay: Bild+Grid, Doodle character, NPC hotspots, Dialog, Bark, HUD,
+ * Questbook, Battle, Camera, Map transitions (Tavern <-> Wildwood).
  *
- * WorldScene (tilemap-based gameplay) remains available as a reference scene.
+ * WorldScene (tilemap-based gameplay) is retired as boot path — deletion is a follow-up.
  */
 suspend fun main() = Korge(
     virtualSize = Size(2560, 1440),
