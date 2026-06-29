@@ -91,6 +91,7 @@ fun main() {
     captureDoodle1440p()
     captureGridOverlayDebug()
     captureDoodleUpscaleCompare()
+    captureDoodleWorld()
 }
 
 private fun captureWorld(config: MapConfig, name: String, withDialog: Boolean) {
@@ -1676,5 +1677,88 @@ private fun captureDoodleUpscaleCompare() {
         }
 
         save("doodle_upscale_compare")
+    }
+}
+
+/**
+ * Step 13: Playable doodle world — painted tavern bg + doodle character on grid.
+ * Aspect-preserving fit (square image → height-fit, centered, letterboxed).
+ */
+private fun captureDoodleWorld() {
+    korgeScreenshotTest(Size(2560.0, 1440.0)) {
+        val outputW = 2560.0
+        val outputH = 1440.0
+
+        // Background: aspect-preserving fit
+        val bgBitmap = resourcesVfs["assets/HD/backgrounds/tavern_interior.png"].readBitmap()
+        val imgW = bgBitmap.width.toDouble()
+        val imgH = bgBitmap.height.toDouble()
+        val bgScale = outputH / imgH
+        val bgDisplayW = imgW * bgScale
+        val bgOffsetX = (outputW - bgDisplayW) / 2.0
+
+        // Letterbox
+        if (bgOffsetX > 0) {
+            solidRect(bgOffsetX, outputH, Colors.BLACK).apply { x = 0.0 }
+            solidRect(bgOffsetX, outputH, Colors.BLACK).apply { x = outputW - bgOffsetX }
+        }
+
+        val bg = image(bgBitmap)
+        bg.smoothing = true
+        bg.scaleX = bgScale
+        bg.scaleY = bgScale
+        bg.x = bgOffsetX
+
+        // Grid
+        val tmxContent = resourcesVfs["assets/HD/backgrounds/tavern_interior.tmx"].readString()
+        val tiledMap = rpg.tiled.TmxLoader.parse(tmxContent)
+        val grid = rpg.tiled.CollisionGrid.from(tiledMap)
+        val gridRows = 78
+        val screenTile = outputH / gridRows
+
+        // Character layer with doodle
+        val charLayer = container {}
+        addChild(charLayer)
+
+        val tilesTall = 5
+        val charScl = (tilesTall * screenTile) / 64.0
+
+        // Find walkable spawn
+        var spawnX = grid.cols / 2 + grid.offsetX
+        var spawnY = grid.rows / 2 + grid.offsetY
+        for (radius in 0 until 40) {
+            var found = false
+            for (dy in -radius..radius) {
+                for (dx in -radius..radius) {
+                    if (kotlin.math.abs(dx) + kotlin.math.abs(dy) != radius) continue
+                    val cx = grid.cols / 2 + dx
+                    val cy = grid.rows / 2 + dy
+                    if (cx < 0 || cx >= grid.cols || cy < 0 || cy >= grid.rows) continue
+                    if (grid[cx, cy] == rpg.tiled.TileType.WALKABLE) {
+                        spawnX = cx + grid.offsetX
+                        spawnY = cy + grid.offsetY
+                        found = true; break
+                    }
+                }
+                if (found) break
+            }
+            if (found) break
+        }
+
+        val player = CharacterSprite(charLayer, screenTile.toInt().coerceAtLeast(1), screenTile.toInt().coerceAtLeast(1))
+        player.loadSwordsman()
+        player.gridX = spawnX
+        player.gridY = spawnY
+        player.facing = Facing.DOWN
+        player.play(SpriteAnimation.IDLE)
+
+        charLayer.scaleX = charScl
+        charLayer.scaleY = charScl
+        charLayer.x = bgOffsetX
+
+        val doodleFilter = game.shader.DoodleLineFilter(time = 1.5f, lineStrength = 0.8f, jitter = 0.4f)
+        charLayer.filter = doodleFilter
+
+        save("doodle_world_1440p")
     }
 }
