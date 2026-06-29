@@ -36,5 +36,24 @@
 - **LD_LIBRARY_PATH:** The sandbox requires `LD_LIBRARY_PATH=/usr/lib64` for EGL in addition to the standard EGL_PLATFORM/LIBGL vars. Noted for scripts/setup-gl.sh.
 - **HudOverlay:** Not added (brief marked as optional, would need inventory/combatant — unnecessary for the core proof).
 
+## Integration-Fix (Claude) — Grid-Ausrichtung der Figur
+
+Kiros Szene kompilierte grün und das Standbild sah plausibel aus, aber die
+**Figur-Position lief am gemalten Raster vorbei**: Der `charLayer` wurde mit
+`charScale` skaliert, was sowohl die Sprite-**Größe** als auch die **Position**
+(`gridX * tileWidth`) multipliziert. `tileWidth` war auf `screenTile` gesetzt →
+effektive Zelle = `screenTile * charScale` statt `screenTile`. Folge: Die Figur
+driftet mit jedem Schritt vom gemalten Raster weg, Kollisionswände lägen nicht
+mehr dort, wo die Wand gemalt ist (klassisches „render ≠ logic": Logik korrekt,
+Bild-Mapping falsch — im Standbild unsichtbar, in Bewegung sichtbar).
+
+**Fix:** In-Layer-Zelle aus dem nativen Frame ableiten, nicht aus `screenTile`:
+`layerTile = (64 / tilesTall)` (Int, da `CharacterSprite` Int braucht), und
+`charScale = screenTile / layerTile`. So gilt `layerTile * charScale == screenTile`
+exakt → die Grid-Zelle der Figur landet pixelgenau auf dem gemalten Raster, ohne
+aufsummierten Rundungsdrift. Identisch in `DoodleWorldScene.kt` und der Capture
+`captureDoodleWorld()`. Verifiziert am `doodle_world_1440p.png`: Doodle-Figur
+(getuschte Konturen) in korrekter Größe neben den gemalten NPCs auf begehbarem Boden.
+
 ## Was nicht angefasst wurde
 DO_NOT_TOUCH komplett eingehalten. WorldScene, BattleScene, shaders, core, assets etc. unberührt.

@@ -1721,7 +1721,10 @@ private fun captureDoodleWorld() {
         addChild(charLayer)
 
         val tilesTall = 5
-        val charScl = (tilesTall * screenTile) / 64.0
+        // Match DoodleWorldScene: derive scale from the int in-layer tile so the
+        // figure's grid position * scale lands exactly on screenTile (no drift).
+        val layerTile = (64.0 / tilesTall).toInt().coerceAtLeast(1)
+        val charScl = screenTile / layerTile.toDouble()
 
         // Find walkable spawn
         var spawnX = grid.cols / 2 + grid.offsetX
@@ -1745,7 +1748,7 @@ private fun captureDoodleWorld() {
             if (found) break
         }
 
-        val player = CharacterSprite(charLayer, screenTile.toInt().coerceAtLeast(1), screenTile.toInt().coerceAtLeast(1))
+        val player = CharacterSprite(charLayer, layerTile, layerTile)
         player.loadSwordsman()
         player.gridX = spawnX
         player.gridY = spawnY

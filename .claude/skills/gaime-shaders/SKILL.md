@@ -131,6 +131,16 @@ bash scripts/setup-gl.sh          # one-time: Mesa EGL headless GL
   `charScale = tilesTall * screenTile / 64` (CraftPix frame = 64px);
   `pos = cell * screenTile`. Same world proportion across maps despite different
   grids. No hardcoded pixel scales.
+- **Scaling a layer scales POSITION too (Step 13 trap).** A character lives in a
+  `charLayer` scaled by `charScale` so the 64px sprite reaches `tilesTall` cells.
+  But `CharacterSprite` positions at `gridX * tileWidth`, and that position is
+  *also* multiplied by the layer scale. If `tileWidth = screenTile`, the effective
+  cell becomes `screenTile * charScale` → the figure drifts off the painted grid as
+  it moves (collision walls no longer line up with painted walls). Fix: the in-layer
+  tile must be `layerTile = round(64 / tilesTall)` (Int — `CharacterSprite` takes
+  Int), and derive `charScale = screenTile / layerTile` so `layerTile * charScale ==
+  screenTile` exactly. Pure still-frame review can't catch this — the figure looks
+  fine standing still; only motion/collision exposes it. Reason about the scale math.
 - **Invisible logic grid under the image:** segment the image (tools/mapbuilder →
   TMX) → `CollisionGrid` is the logic substrate beneath the painting.
 - **Three map tiers:** World map (region, tiny figures, NO doodle) → local exterior

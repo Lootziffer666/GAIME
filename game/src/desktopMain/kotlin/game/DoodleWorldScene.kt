@@ -78,9 +78,18 @@ class DoodleWorldScene : Scene() {
         val charLayer = container {}
         addChild(charLayer)
 
-        // Grid-derived character scale (NEVER hardcoded)
+        // Grid-derived character sizing (NEVER hardcoded).
+        // The char layer is scaled by charScale, which multiplies BOTH the sprite
+        // size AND the in-layer position. So the in-layer tile (layerTile) must be
+        // chosen so layerTile * charScale == screenTile exactly — otherwise the
+        // figure drifts off the painted grid as it moves (collision walls would no
+        // longer line up with where the figure renders).
         val tilesTall = 5  // character height in tiles (matches painted NPC scale)
-        val charScale = (tilesTall * screenTile) / 64.0  // CraftPix sprite = 64px
+        // CraftPix frame = 64px, so the sprite spans tilesTall cells when one
+        // in-layer cell = 64/tilesTall px. Round to int (CharacterSprite needs Int)
+        // and derive charScale FROM it so position * scale lands exactly on screenTile.
+        val layerTile = (64.0 / tilesTall).toInt().coerceAtLeast(1)  // ~13 px in layer space
+        val charScale = screenTile / layerTile.toDouble()            // cell → exactly screenTile on screen
 
         // Find a walkable spawn cell (B004: derive from CollisionGrid)
         var spawnX = gridCols / 2
@@ -102,8 +111,9 @@ class DoodleWorldScene : Scene() {
             }
         }
 
-        // Create player character
-        val player = CharacterSprite(charLayer, screenTile.toInt().coerceAtLeast(1), screenTile.toInt().coerceAtLeast(1))
+        // Create player character (tile size = in-layer cell, NOT screenTile —
+        // the charLayer scale brings it up to screenTile on screen)
+        val player = CharacterSprite(charLayer, layerTile, layerTile)
         player.loadSwordsman()
         player.gridX = spawnX
         player.gridY = spawnY
