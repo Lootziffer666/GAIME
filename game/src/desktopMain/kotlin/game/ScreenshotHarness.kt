@@ -129,6 +129,8 @@ fun main() {
     captureMaterialWeather()
     // Village material-weather pipeline (Dorf-Bild with baked material segmentation)
     captureVillageMaterialWeather()
+    // Guild house material-weather
+    captureGuildMaterialWeather()
 }
 
 private fun captureWorld(config: MapConfig, name: String, withDialog: Boolean) {
@@ -2955,5 +2957,44 @@ private fun captureVillageMaterialWeather() {
         filter.setMaterialMap(matBitmap.toBMP32())
         bg.filter = filter
         save("village_weather_v6_storm")
+    }
+}
+
+// Guild house material weather test
+private fun captureGuildMaterialWeather() {
+    val guildPath = "ResizedImage_2026-06-30_10-36-27_1077[2].png"
+    val guildMatPath = "assets/materials/guild_material_fullres.png"
+
+    korgeScreenshotTest(Size(2560.0, 1440.0)) {
+        val bgBitmap = resourcesVfs[guildPath].readBitmap()
+        val matBitmap = resourcesVfs[guildMatPath].readBitmap()
+        val bg = image(bgBitmap)
+        bg.smoothing = true
+        val filter = game.shader.MaterialWeatherFilter(time = 1.0f, weatherState = 0.0f)
+        filter.setMaterialMap(matBitmap.toBMP32())
+        bg.filter = filter
+        save("guild_weather_v6_sun")
+    }
+
+    korgeScreenshotTest(Size(2560.0, 1440.0)) {
+        val bgBitmap = resourcesVfs[guildPath].readBitmap()
+        val matBitmap = resourcesVfs[guildMatPath].readBitmap()
+        val bg = image(bgBitmap)
+        bg.smoothing = true
+        val filter = game.shader.MaterialWeatherFilter(time = 4.0f, weatherState = 0.6f, windAngle = 0.3f)
+        filter.setMaterialMap(matBitmap.toBMP32())
+        bg.filter = filter
+        save("guild_weather_v6_rain")
+    }
+
+    korgeScreenshotTest(Size(2560.0, 1440.0)) {
+        val bgBitmap = resourcesVfs[guildPath].readBitmap()
+        val matBitmap = resourcesVfs[guildMatPath].readBitmap()
+        val bg = image(bgBitmap)
+        bg.smoothing = true
+        val filter = game.shader.MaterialWeatherFilter(time = 7.0f, weatherState = 1.0f, windAngle = 0.5f)
+        filter.setMaterialMap(matBitmap.toBMP32())
+        bg.filter = filter
+        save("guild_weather_v6_storm")
     }
 }
