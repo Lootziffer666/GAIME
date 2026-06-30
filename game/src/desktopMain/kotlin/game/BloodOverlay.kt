@@ -18,6 +18,9 @@ class BloodOverlay(
     private var bloodGridRef: BloodGrid? = null
     private var snowGridRef: SnowGrid? = null
 
+    /** Optional walkability mask — blood only stains the playable surface. */
+    var floorMask: ((Int, Int) -> Boolean)? = null
+
     private val overlay = GridOverlay(parent, tileWidth, tileHeight, sizeFraction = 1f) { value, wx, wy ->
         val bg = bloodGridRef ?: return@GridOverlay null
         val fresh = bg.isFresh(wx, wy)
@@ -31,6 +34,7 @@ class BloodOverlay(
     fun update(bloodGrid: BloodGrid, snowGrid: SnowGrid?) {
         bloodGridRef = bloodGrid
         snowGridRef = snowGrid
+        overlay.mask = floorMask
         overlay.update(bloodGrid.width, bloodGrid.height, bloodGrid.offsetX, bloodGrid.offsetY) { wx, wy ->
             val amount = bloodGrid.amountAt(wx, wy)
             if (amount > 0.01f) amount else 0f

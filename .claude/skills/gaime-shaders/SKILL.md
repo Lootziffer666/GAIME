@@ -93,6 +93,27 @@ now **1 `WorldSystem` + 1 `GridOverlay` config + 1 `registry.register(...)` line
   `tickAll(dt,ctx)` then `renderAll()` each frame. Overlays go in `worldLayer` (scroll with
   camera), never the scene root. `registry.get<T>(id)` to read a system's state for shaders.
 
+## Sparse vs full-coverage overlays — the alpha floor is NOT universal (Step 16)
+
+The alpha-floor rule (`110+v*140`) is **only for SPARSE overlays** (puddles, blood spots,
+footprints — a few cells). Applying it to a **full-coverage** system (snow on every cell,
+spring flowers at high density) paints an opaque blanket that **white-outs the painted art**
+(the whole point of "Bild = Haut" is the painted bg stays crisp). Caught by looking at the PNG:
+snow → frosted-glass white-out; spring → pink "measles" grid over water/trees/roofs.
+- **Full-coverage overlays:** NO alpha floor — proportional, capped low (snow used `v*130`,
+  cap 150). And keep coverage SPARSE (spring `initFlowers(0.25)`, not `0.8`); a system that
+  reads well sparse (autumn leaves) is the target density.
+- **Floor-mask every ground overlay** to WALKABLE cells (`GridOverlay.mask`): ground effects
+  annotate the *playable surface only*, never overpaint walls/water/trees/rooftops baked into
+  the image. Build the mask from the `CollisionGrid` in the scene; the overlay wrappers expose
+  `var floorMask`. **Caveat:** the mask is only as good as the TMX collision — the AI maps
+  (wildwood) are over-permissive (mapbuilder under-detects trees/water/buildings → most cells
+  WALKABLE), so masking barely bites there; density+alpha do the heavy lifting until the
+  collision data is tightened (see KNOWN_BUGS).
+- **Weather belongs outdoors.** Snow/rain/seasons in the tavern *interior* is nonsense — put
+  weather scenes on the exterior (wildwood). Interior maps get structural effects (material
+  fatigue cracks), not weather.
+
 ## Rendering state overlays (the Step 7d/8/9 recurring bug)
 
 `*Overlay` draws rects from a `:core` grid (`WaterOverlay.kt` is the reference).

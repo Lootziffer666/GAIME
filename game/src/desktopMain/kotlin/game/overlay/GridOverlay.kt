@@ -28,6 +28,14 @@ class GridOverlay(
     private val rects = mutableListOf<SolidRect>()
 
     /**
+     * Optional walkability mask. When set, cells for which it returns false are
+     * skipped — so ground effects (snow, flowers, water) only annotate the
+     * playable surface and never overpaint the painted background (walls, water,
+     * trees, rooftops baked into the image). "Bild = Haut": don't repaint the art.
+     */
+    var mask: ((wx: Int, wy: Int) -> Boolean)? = null
+
+    /**
      * Update visible rects from a grid.
      *
      * @param width Grid width (columns)
@@ -54,6 +62,7 @@ class GridOverlay(
             for (lx in 0 until width) {
                 val wx = lx + offsetX
                 val wy = ly + offsetY
+                if (mask?.invoke(wx, wy) == false) continue   // floor-mask: skip non-playable cells
                 val value = valueAt(wx, wy)
                 if (value <= 0f) continue
 

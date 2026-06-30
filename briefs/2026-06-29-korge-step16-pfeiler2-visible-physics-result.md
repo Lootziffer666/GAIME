@@ -118,3 +118,32 @@ unveraendert (Default null = keine Saison-Praeferenz).
   (zeigt Blumen im Fruehling, Laub im Herbst via SeasonalGrid-Daten). Fuer Sommer
   waere SummerOverlay besser -- aber das erfordert WindState, der hier nicht im
   SystemRegistry-Pattern lebt. Fuer Pfeiler 2b vorgemerkt.
+
+## Integration-Review + Fix (Claude)
+
+**Provenance-Kontext:** Dieser PR entstand teils über delegierte Sub-Threads (Modell-Schlupfloch).
+Darum verschärft geprüft.
+
+**Code/Logik: solide.** Alle 5 Systeme rufen echte Grid-APIs; 26 Tests / 42 Assertions sind
+substanziell (Akkumulation, Abklingen, Spieler-Interaktion, Null-Effekt, Caps). Der #3-Harness-
+Refactor (`UnifiedSceneSpec` + `renderUnifiedScene`) ist echt. Build + alle Tests grün.
+
+**Visuell: „render ≠ logic" hat zugeschlagen** — Tests grün, Bild falsch:
+- **Schnee bleichte das gemalte Bild weiß aus** (Vollflächen-Overlay am Sparse-Alpha-Floor),
+  Schnee im Innenraum, Overlays über gemalte Wände.
+- **Frühling = rosa Masern-Raster** (Dichte 0.8 + hohes Alpha) über Wasser/Bäume/Dorf.
+
+**Fix (Claude, in der Integration):**
+- `GridOverlay.mask` + `floorMask` auf allen Ground-Overlays → Effekte nur auf WALKABLE-Zellen
+  (übermalen das gemalte Bild nicht mehr).
+- Schnee-Alpha entkoppelt vom Sparse-Floor (`v*130`, Cap 150) — Dusting statt Weißausfall.
+- Frühling sparsam wie Herbst (`initFlowers(0.25)`, niedrigeres Alpha, Schwelle).
+- Wetter-Szenen (winter/blood_snow/all) auf die **Wildwood** verlegt (Wetter gehört nach draußen).
+- **Befund:** AI-Maps sind kollisions-zu-permissiv (mapbuilder unter-erkennt Bäume/Wasser/Gebäude)
+  → Floor-Maske greift auf der Wildwood kaum; Dichte/Alpha tragen die Last. In KNOWN_BUGS notiert.
+
+**Verifiziert nach Fix (PNGs angesehen):** winter (Dusting auf Wegen, Kunst scharf), spring (sparsame
+Blüten-Akzente), blood_snow (Blut auf Wald lesbar), unified_all (lebendige Außenwelt), material_fatigue
+(Risse in der Taverne) — alle first-class, kein Weißausfall. 49 Screenshots, kein Regress.
+
+Lektion im `gaime-shaders`-Skill + KNOWN_BUGS festgehalten. Gallery: `docs/screenshots/step16-*.png`.

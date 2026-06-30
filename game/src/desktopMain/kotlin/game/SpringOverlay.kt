@@ -15,7 +15,9 @@ class SpringOverlay(
     tileHeight: Int,
 ) {
     private val flowerOverlay = GridOverlay(parent, tileWidth, tileHeight, sizeFraction = 0.5f) { value, wx, wy ->
-        val alpha = (110 + value * 140).toInt().coerceIn(0, 255)
+        // Only paint cells that actually carry flowers (sparse accent, not a blanket).
+        if (value < 0.25f) return@GridOverlay null
+        val alpha = (60 + value * 120).toInt().coerceIn(0, 200)
         val hash = (wx * 7 + wy * 13) % 5
         if (hash < 3) RGBA(0xff, 0x88, 0xcc, alpha) else RGBA(0xff, 0xdd, 0x44, alpha)
     }
@@ -26,7 +28,12 @@ class SpringOverlay(
         RGBA(0xff, 0xee, 0xf0, alpha)
     }
 
+    /** Optional walkability mask — flowers only grow on the playable surface, not over painted water/trees/roofs. */
+    var floorMask: ((Int, Int) -> Boolean)? = null
+
     fun update(grid: SeasonalGrid) {
+        flowerOverlay.mask = floorMask
+        blossomOverlay.mask = floorMask
         flowerOverlay.update(grid.width, grid.height, grid.offsetX, grid.offsetY) { wx, wy ->
             val intensity = grid.flowerAt(wx, wy)
             if (intensity > 0.1f) intensity else 0f

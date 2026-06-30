@@ -283,6 +283,18 @@ class DoodleWorldScene : Scene() {
         val springOverlay = SpringOverlay(worldLayer, overlayTileSize, overlayTileSize)
         val fatigueOverlay = MaterialFatigueOverlay(worldLayer, overlayTileSize, overlayTileSize)
 
+        // Floor-mask: ground effects only annotate WALKABLE cells, never overpaint the
+        // painted background (walls/water/trees/roofs are baked into the image). "Bild = Haut".
+        val floorMask: (Int, Int) -> Boolean = { wx, wy ->
+            val c = grid[wx - grid.offsetX, wy - grid.offsetY]
+            c == TileType.WALKABLE || c == TileType.TRIGGER
+        }
+        waterOverlay.floorMask = floorMask
+        bloodOverlay.floorMask = floorMask
+        snowOverlay.floorMask = floorMask
+        footprintOverlay.floorMask = floorMask
+        springOverlay.floorMask = floorMask
+
         val registry = SystemRegistry()
         // Register in render order
         registry.register(waterSystem) { waterOverlay.update(waterGrid) }

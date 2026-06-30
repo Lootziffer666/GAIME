@@ -14,12 +14,16 @@ class FootprintOverlay(
     tileWidth: Int,
     tileHeight: Int,
 ) {
+    /** Optional walkability mask — footprints only mark the playable surface. */
+    var floorMask: ((Int, Int) -> Boolean)? = null
+
     private val overlay = GridOverlay(parent, tileWidth, tileHeight, sizeFraction = 0.6f) { value, _, _ ->
         val alpha = (value * 160).toInt().coerceIn(0, 255)
         RGBA(0x44, 0x33, 0x22, alpha)
     }
 
     fun update(footprintGrid: FootprintGrid) {
+        overlay.mask = floorMask
         overlay.update(footprintGrid.width, footprintGrid.height, footprintGrid.offsetX, footprintGrid.offsetY) { wx, wy ->
             val intensity = footprintGrid[wx, wy]
             if (intensity > 0.05f) intensity else 0f

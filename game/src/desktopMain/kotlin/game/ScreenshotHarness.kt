@@ -2233,6 +2233,17 @@ private fun renderUnifiedScene(spec: UnifiedSceneSpec) {
         val springOverlay = SpringOverlay(worldLayer, overlayTileSize, overlayTileSize)
         val fatigueOverlay = MaterialFatigueOverlay(worldLayer, overlayTileSize, overlayTileSize)
 
+        // Floor-mask: ground effects only annotate WALKABLE cells (never overpaint the art).
+        val floorMask: (Int, Int) -> Boolean = { wx, wy ->
+            val c = grid[wx - grid.offsetX, wy - grid.offsetY]
+            c == rpg.tiled.TileType.WALKABLE || c == rpg.tiled.TileType.TRIGGER
+        }
+        waterOverlay.floorMask = floorMask
+        bloodOverlay.floorMask = floorMask
+        snowOverlay.floorMask = floorMask
+        footprintOverlay.floorMask = floorMask
+        springOverlay.floorMask = floorMask
+
         // 6. SystemRegistry
         val registry = SystemRegistry()
         registry.register(waterSystem) { waterOverlay.update(waterGrid) }
@@ -2286,16 +2297,16 @@ private val UNIFIED_SPECS = listOf(
     // 1. unified_winter: Snow accumulated + player footprints in snow
     UnifiedSceneSpec(
         name = "unified_winter",
-        map = ImageMapId.TAVERN_INTERIOR,
+        map = ImageMapId.SYLVANORIA_WILDWOOD,   // weather belongs outdoors, not in the tavern
         season = Season.WINTER,
         weather = Weather.SNOW,
-        playerCell = 39 to 50,
+        playerCell = 40 to 24,
         prefill = { registry ->
             val snow = registry.get<SnowSystem>("snow")!!
-            // Accumulate snow across the grid
+            // Accumulate snow across the grid (floor-masked → only on walkable ground)
             snow.grid.accumulate(0.7f)
-            // Clear footprints trail approaching player from south
-            val px = 39; val py = 50
+            // Clear a footprint trail approaching the player from the south
+            val px = 40; val py = 24
             snow.grid.clearAt(px, py + 3, 0.5f)
             snow.grid.clearAt(px, py + 2, 0.5f)
             snow.grid.clearAt(px, py + 1, 0.5f)
@@ -2311,26 +2322,26 @@ private val UNIFIED_SPECS = listOf(
     // 2. unified_blood_snow: Fresh blood on snow (the 40-systems overlay thesis)
     UnifiedSceneSpec(
         name = "unified_blood_snow",
-        map = ImageMapId.TAVERN_INTERIOR,
+        map = ImageMapId.SYLVANORIA_WILDWOOD,
         season = Season.WINTER,
         weather = Weather.SNOW,
-        playerCell = 39 to 50,
+        playerCell = 40 to 24,
         prefill = { registry ->
             val snow = registry.get<SnowSystem>("snow")!!
             snow.grid.accumulate(0.75f)
             val blood = registry.get<BloodSystem>("blood")!!
             // Fresh blood at and near player
-            blood.spill(39, 50, 0.9f)
-            blood.spill(40, 50, 0.7f)
-            blood.spill(39, 49, 0.6f)
-            blood.spill(38, 50, 0.5f)
+            blood.spill(40, 24, 0.9f)
+            blood.spill(41, 24, 0.7f)
+            blood.spill(40, 23, 0.6f)
+            blood.spill(39, 24, 0.5f)
             // Older blood further out (age after spilling)
-            blood.spill(37, 51, 0.8f)
-            blood.spill(41, 49, 0.6f)
+            blood.spill(38, 25, 0.8f)
+            blood.spill(42, 23, 0.6f)
             blood.grid.age(0.7f)
             // Re-spill fresh blood near player
-            blood.spill(39, 50, 0.9f)
-            blood.spill(40, 50, 0.7f)
+            blood.spill(40, 24, 0.9f)
+            blood.spill(41, 24, 0.7f)
         },
     ),
     // 3. unified_spring: Spring overlay with flowers
@@ -2341,7 +2352,7 @@ private val UNIFIED_SPECS = listOf(
         playerCell = 40 to 24,
         prefill = { registry ->
             val season = registry.get<SeasonSystem>("season")!!
-            season.grid.initFlowers(0.8f)
+            season.grid.initFlowers(0.25f)   // sparse like autumn leaves — 0.8 measled the whole map
             // Trample near player to show interaction
             season.grid.trampleFlower(40, 24, 0.5f)
             season.grid.trampleFlower(41, 24, 0.3f)
@@ -2380,39 +2391,39 @@ private val UNIFIED_SPECS = listOf(
             fatigue.impactRadius(37, 49, 2, 0.75f) // radius impact, broken center
         },
     ),
-    // 6. unified_all: All systems active simultaneously
+    // 6. unified_all: All systems active simultaneously (the "living world" shot, outdoors)
     UnifiedSceneSpec(
         name = "unified_all",
-        map = ImageMapId.TAVERN_INTERIOR,
+        map = ImageMapId.SYLVANORIA_WILDWOOD,
         season = Season.WINTER,
         weather = Weather.SNOW,
-        playerCell = 39 to 50,
+        playerCell = 40 to 24,
         prefill = { registry ->
             // Snow
             val snow = registry.get<SnowSystem>("snow")!!
             snow.grid.accumulate(0.6f)
-            snow.grid.clearAt(39, 50, 0.4f)
-            snow.grid.clearAt(39, 51, 0.3f)
+            snow.grid.clearAt(40, 24, 0.4f)
+            snow.grid.clearAt(40, 25, 0.3f)
             // Blood on snow
             val blood = registry.get<BloodSystem>("blood")!!
-            blood.spill(40, 50, 0.8f)
-            blood.spill(41, 51, 0.6f)
+            blood.spill(41, 24, 0.8f)
+            blood.spill(42, 25, 0.6f)
             // Footprints
             val fp = registry.get<FootprintSystem>("footprint")!!
-            fp.grid.stamp(39, 52)
-            fp.grid.stamp(39, 51)
-            fp.grid.stamp(39, 50)
-            fp.grid.stamp(38, 50)
+            fp.grid.stamp(40, 26)
+            fp.grid.stamp(40, 25)
+            fp.grid.stamp(40, 24)
+            fp.grid.stamp(39, 24)
             // Material fatigue
             val fatigue = registry.get<MaterialFatigueSystem>("material_fatigue")!!
-            fatigue.impact(37, 49, 0.5f)
-            fatigue.impact(38, 48, 0.75f)
-            fatigue.impactRadius(41, 52, 1, 0.6f)
+            fatigue.impact(38, 23, 0.5f)
+            fatigue.impact(39, 22, 0.75f)
+            fatigue.impactRadius(42, 26, 1, 0.6f)
             // Water puddles
             val water = registry.get<WaterSystem>("water")!!
-            water.grid[35, 48] = 0.5f
-            water.grid[36, 48] = 0.4f
-            water.grid[35, 49] = 0.3f
+            water.grid[36, 22] = 0.5f
+            water.grid[37, 22] = 0.4f
+            water.grid[36, 23] = 0.3f
         },
     ),
 )

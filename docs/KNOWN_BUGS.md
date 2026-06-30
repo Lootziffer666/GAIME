@@ -154,3 +154,14 @@ zukünftige Parser-Erweiterungen (z. B. Object-Layers, Properties) relevant sind
 | **`moveProgress`-Tick vor Animation-Check** | Wenn `advanceAnimation()` mit `val frames = ... ?: return` beginnt und keine Animation geladen ist, friert `moveProgress` ein → Sprite bleibt mitten im Schritt stehen. | Move-Tick **vor** dem `frames`-early-return platzieren. |
 | **Property-Setter in `startMove()`** | `gridX = toGridX` ruft `updatePosition()` auf, das `visualGridX` liest. Bei `moveProgress=0` ergibt `visualGridX = fromGridX` (korrekt). `moveProgress` muss vor `gridX/Y` auf 0 gesetzt werden. | `moveProgress = 0f` zuerst, dann `gridX/Y` setzen. |
 | **`companion object var pendingConfig`** | Scene-Wechsel in KorGE ist async (suspend). Parameter-Übergabe an die neue Scene geht nicht über Konstruktor-Argumente. Workaround: `companion object var` das vor `changeTo` gesetzt wird. | Akzeptabel für aktuelle Architektur; spätere Alternative: DI/Inject-System. |
+
+---
+
+## Overlay-Render + AI-Collision (Step 16, Claude-Integration 2026-06-29)
+
+| Pitfall | Erklärung | Fix |
+|---|---|---|
+| **Alpha-Floor nur für Sparse-Overlays** | Der `110+v*140`-Alpha-Floor ist für *wenige* Zellen gedacht (Pfützen/Blut/Spuren). Auf Vollflächen-Systeme (Schnee auf jeder Zelle, Frühling bei hoher Dichte) angewendet → opake Decke, die das gemalte Bild **weiß ausbleicht**. | Vollflächen-Overlays: KEIN Floor, niedrig gedeckelt (Schnee `v*130`, Cap 150) + sparsame Dichte (`initFlowers(0.25)` statt `0.8`). |
+| **Overlays übermalen das gemalte Bild** | Ground-Overlays zeichneten über *alle* Zellen, auch über gemalte Wände/Wasser/Bäume/Dächer → „Bild = Haut" verletzt. | `GridOverlay.mask` (Floor-Maske auf WALKABLE-Zellen) — Wrapper exponieren `var floorMask`, aus der `CollisionGrid` gebaut. |
+| **AI-Maps sind kollisions-zu-permissiv** | `sylvanoria_wildwood.tmx` (mapbuilder/HSV) markiert fast alles WALKABLE — Bäume/Wasser/Gebäude unter-erkannt. Floor-Maske greift dort kaum → Effekte können trotzdem über „begehbares" Wasser/Bäume liegen. | Kurzfristig: Dichte+Alpha senken. Mittelfristig: mapbuilder-Segmentierung härten (Pfeiler-3-Thema) oder TMX manuell nachschärfen. |
+| **Wetter im Innenraum** | Schnee/Regen/Jahreszeit in der Taverne (interior) ist Unsinn. | Wetter-Szenen auf den Exterior (Wildwood); Innenräume bekommen strukturelle Effekte (Material-Ermüdung), kein Wetter. |
