@@ -123,6 +123,8 @@ fun main() {
     captureShaderDecay()
     // Weather composition triptych (same image, 3 weather states)
     captureWeatherTriptych()
+    // Material-aware weather (one shader, three states, material-differentiated)
+    captureMaterialWeather()
 }
 
 private fun captureWorld(config: MapConfig, name: String, withDialog: Boolean) {
@@ -2726,5 +2728,36 @@ private fun captureWeatherTriptych() {
         effects.enable(worldLayer, effects.causticFilter)
 
         save("weather_storm")
+    }
+}
+
+private fun captureMaterialWeather() {
+    val bgPath = "assets/HD/backgrounds/landscapes/28-19_1.png"
+
+    // Sun
+    korgeScreenshotTest(Size(2560.0, 1440.0)) {
+        val bgBitmap = resourcesVfs[bgPath].readBitmap()
+        val bg = image(bgBitmap)
+        bg.smoothing = true
+        bg.filter = game.shader.MaterialWeatherFilter(time = 2.0f, weatherState = 0.0f)
+        save("material_weather_sun")
+    }
+
+    // Rain
+    korgeScreenshotTest(Size(2560.0, 1440.0)) {
+        val bgBitmap = resourcesVfs[bgPath].readBitmap()
+        val bg = image(bgBitmap)
+        bg.smoothing = true
+        bg.filter = game.shader.MaterialWeatherFilter(time = 3.5f, weatherState = 0.55f, windAngle = 0.3f)
+        save("material_weather_rain")
+    }
+
+    // Storm
+    korgeScreenshotTest(Size(2560.0, 1440.0)) {
+        val bgBitmap = resourcesVfs[bgPath].readBitmap()
+        val bg = image(bgBitmap)
+        bg.smoothing = true
+        bg.filter = game.shader.MaterialWeatherFilter(time = 5.0f, weatherState = 1.0f, windAngle = 0.5f)
+        save("material_weather_storm")
     }
 }
