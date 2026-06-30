@@ -34,6 +34,9 @@ class ShaderEffects {
     val fogFilter = FogFilter()
     val doodleLineFilter = DoodleLineFilter()
     val worldMaterialFilter = WorldMaterialFilter()
+    val causticFilter = CausticFilter()
+    val wetSurfaceFilter = WetSurfaceFilter()
+    val decayFilter = DecayFilter()
 
     private var time = 0f
 
@@ -144,6 +147,9 @@ class ShaderEffects {
             fogFilter.time = time
             doodleLineFilter.time = time
             worldMaterialFilter.time = time
+            causticFilter.time = time
+            wetSurfaceFilter.time = time
+            decayFilter.time = time
         }
     }
 }
