@@ -2932,7 +2932,7 @@ private fun captureVillageMaterialWeather() {
         val filter = game.shader.MaterialWeatherFilter(time = 1.0f, weatherState = 0.0f)
         filter.setMaterialMap(matBitmap.toBMP32())
         bg.filter = filter
-        save("village_weather_v6_sun")
+        save("village_weather_v7_sun")
     }
 
     // Rain (moderate, wind from left)
@@ -2944,7 +2944,7 @@ private fun captureVillageMaterialWeather() {
         val filter = game.shader.MaterialWeatherFilter(time = 4.0f, weatherState = 0.6f, windAngle = 0.3f)
         filter.setMaterialMap(matBitmap.toBMP32())
         bg.filter = filter
-        save("village_weather_v6_rain")
+        save("village_weather_v7_rain")
     }
 
     // Storm (heavy rain, strong wind, maximum effects)
@@ -2956,7 +2956,7 @@ private fun captureVillageMaterialWeather() {
         val filter = game.shader.MaterialWeatherFilter(time = 7.0f, weatherState = 1.0f, windAngle = 0.5f)
         filter.setMaterialMap(matBitmap.toBMP32())
         bg.filter = filter
-        save("village_weather_v6_storm")
+        save("village_weather_v7_storm")
     }
 }
 
@@ -2973,7 +2973,7 @@ private fun captureGuildMaterialWeather() {
         val filter = game.shader.MaterialWeatherFilter(time = 1.0f, weatherState = 0.0f)
         filter.setMaterialMap(matBitmap.toBMP32())
         bg.filter = filter
-        save("guild_weather_v6_sun")
+        save("guild_weather_v7_sun")
     }
 
     korgeScreenshotTest(Size(2560.0, 1440.0)) {
@@ -2984,7 +2984,7 @@ private fun captureGuildMaterialWeather() {
         val filter = game.shader.MaterialWeatherFilter(time = 4.0f, weatherState = 0.6f, windAngle = 0.3f)
         filter.setMaterialMap(matBitmap.toBMP32())
         bg.filter = filter
-        save("guild_weather_v6_rain")
+        save("guild_weather_v7_rain")
     }
 
     korgeScreenshotTest(Size(2560.0, 1440.0)) {
@@ -2995,6 +2995,6 @@ private fun captureGuildMaterialWeather() {
         val filter = game.shader.MaterialWeatherFilter(time = 7.0f, weatherState = 1.0f, windAngle = 0.5f)
         filter.setMaterialMap(matBitmap.toBMP32())
         bg.filter = filter
-        save("guild_weather_v6_storm")
+        save("guild_weather_v7_storm")
     }
 }
