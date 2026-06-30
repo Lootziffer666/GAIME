@@ -65,9 +65,9 @@ canvas.vectoring{cursor:cell!important}
 <div class="c"><label>Puddle Spread<span class="v" id="d-pudSpread">50</span></label><input type="range" id="s-pudSpread" min="0" max="100" value="50"></div>
 <div class="c"><label>Ripple Intensity<span class="v" id="d-pudRipple">40</span></label><input type="range" id="s-pudRipple" min="0" max="100" value="40"></div>
 <h3>Puddle Color</h3>
-<div class="c"><label>R<span class="v" id="d-pudR">62</span></label><input type="range" id="s-pudR" min="0" max="255" value="62"></div>
-<div class="c"><label>G<span class="v" id="d-pudG">86</span></label><input type="range" id="s-pudG" min="0" max="255" value="86"></div>
-<div class="c"><label>B<span class="v" id="d-pudB">102</span></label><input type="range" id="s-pudB" min="0" max="255" value="102"></div>
+<div class="c"><label>R<span class="v" id="d-pudR">75</span></label><input type="range" id="s-pudR" min="0" max="255" value="75"></div>
+<div class="c"><label>G<span class="v" id="d-pudG">80</span></label><input type="range" id="s-pudG" min="0" max="255" value="80"></div>
+<div class="c"><label>B<span class="v" id="d-pudB">82</span></label><input type="range" id="s-pudB" min="0" max="255" value="82"></div>
 <div class="c"><label>Contrast<span class="v" id="d-pudCon">50</span></label><input type="range" id="s-pudCon" min="0" max="100" value="50"></div>
 <div class="c"><label>Brightness<span class="v" id="d-pudBri">50</span></label><input type="range" id="s-pudBri" min="0" max="100" value="50"></div>
 <div class="c"><label>Saturation<span class="v" id="d-pudSat">50</span></label><input type="range" id="s-pudSat" min="0" max="100" value="50"></div>
@@ -96,10 +96,12 @@ canvas.vectoring{cursor:cell!important}
 <div class="c"><label>Lightning<span class="v" id="d-lightning">0</span></label><input type="range" id="s-lightning" min="0" max="100" value="0"></div>
 <div class="c"><label>Rolling Fog<span class="v" id="d-rollingfog">0</span></label><input type="range" id="s-rollingfog" min="0" max="100" value="0"></div>
 <div class="c"><label>Cold / Frost<span class="v" id="d-cold">0</span></label><input type="range" id="s-cold" min="0" max="100" value="0"></div>
+<div class="c"><label>Overcast Dimmer<span class="v" id="d-overcast">0</span></label><input type="range" id="s-overcast" min="0" max="100" value="0"></div>
+<div class="c"><label>Contrast Boost<span class="v" id="d-contrastBoost">30</span></label><input type="range" id="s-contrastBoost" min="0" max="100" value="30"></div>
 <h3>Fog Color</h3>
-<div class="c"><label>R<span class="v" id="d-fogR">200</span></label><input type="range" id="s-fogR" min="0" max="255" value="200"></div>
-<div class="c"><label>G<span class="v" id="d-fogG">210</span></label><input type="range" id="s-fogG" min="0" max="255" value="210"></div>
-<div class="c"><label>B<span class="v" id="d-fogB">225</span></label><input type="range" id="s-fogB" min="0" max="255" value="225"></div>
+<div class="c"><label>R<span class="v" id="d-fogR">180</span></label><input type="range" id="s-fogR" min="0" max="255" value="180"></div>
+<div class="c"><label>G<span class="v" id="d-fogG">185</span></label><input type="range" id="s-fogG" min="0" max="255" value="185"></div>
+<div class="c"><label>B<span class="v" id="d-fogB">182</span></label><input type="range" id="s-fogB" min="0" max="255" value="182"></div>
 <div class="c"><label>Contrast<span class="v" id="d-fogCon">50</span></label><input type="range" id="s-fogCon" min="0" max="100" value="50"></div>
 <div class="c"><label>Brightness<span class="v" id="d-fogBri">50</span></label><input type="range" id="s-fogBri" min="0" max="100" value="50"></div>
 <div class="c"><label>Saturation<span class="v" id="d-fogSat">40</span></label><input type="range" id="s-fogSat" min="0" max="100" value="40"></div>
@@ -366,6 +368,7 @@ uniform vec3 u_wetColor;
 uniform float u_wetCon, u_wetBri, u_wetSat;
 
 uniform float u_rain, u_wind, u_lightning, u_rollingFog, u_cold;
+uniform float u_overcast, u_contrastBoost;
 uniform vec3 u_fogColor;
 uniform float u_fogCon, u_fogBri, u_fogSat;
 
@@ -471,12 +474,14 @@ void main(){
   vec3 duskCol = vec3(1.0, 0.3, 0.1);
   vec3 nightCol = vec3(0.1, 0.15, 0.35);
 
-  float isDay = smoothstep(0.1, 0.4, sunHeight);
-  float isNight = 1.0 - smoothstep(-0.4, -0.1, sunHeight);
-  float isDawn = smoothstep(-0.2, 0.2, sunHeight) * smoothstep(12.0, 0.0, tOD);
-  float isDusk = smoothstep(-0.2, 0.2, sunHeight) * smoothstep(12.0, 24.0, tOD);
+  float isDay = smoothstep(-0.1, 0.5, sunHeight);
+  float isNight = 1.0 - smoothstep(-0.6, 0.0, sunHeight);
+  float isDawn = smoothstep(-0.3, 0.1, sunHeight) * (1.0 - smoothstep(0.1, 0.5, sunHeight)) * smoothstep(12.0, 0.0, tOD);
+  float isDusk = smoothstep(-0.3, 0.1, sunHeight) * (1.0 - smoothstep(0.1, 0.5, sunHeight)) * smoothstep(12.0, 24.0, tOD);
 
   vec3 globalLight = nightCol*isNight + dayCol*isDay + dawnCol*isDawn + duskCol*isDusk;
+  // FIX: Overcast dimmer independent of time-of-day
+  globalLight *= (1.0 - u_overcast * 0.65);
   fin *= mix(vec3(1.0), globalLight, 0.85);
 
   // === MATERIAL GRADING ===
@@ -587,12 +592,21 @@ void main(){
 
   // === WEATHER: LIGHTNING ===
   if (u_lightning > 0.0) {
-    float flash = step(0.98, fract(sin(floor(t*5.0))*43758.5453));
-    fin += vec3(0.8, 0.9, 1.0) * flash * u_lightning;
+    // FIX: proper temporal trigger — flash every 3-8 seconds, duration 0.1s
+    float flashCycle = mod(t, 5.0 + 3.0 * fract(sin(floor(t/5.0)*127.1)*43758.5));
+    float flash = step(flashCycle, 0.12) * step(0.0, flashCycle);
+    // Second bolt for naturalism
+    float flash2 = step(abs(flashCycle - 0.3), 0.05);
+    float totalFlash = max(flash, flash2 * 0.6) * u_lightning;
+    fin += vec3(0.8, 0.9, 1.0) * totalFlash;
   }
 
   // No-material fallback
   fin = mix(fin, dry * globalLight, 1.0 - u_hasMat);
+
+  // FIX: Post-grading contrast boost (addresses contrast ceiling of ~33)
+  float finLum = dot(fin, vec3(0.299, 0.587, 0.114));
+  fin = mix(vec3(finLum), fin, 1.0 + u_contrastBoost * 0.8);
 
   // FIX: premultiplied alpha output
   gl_FragColor = vec4(clamp(fin, 0.0, 1.0), 1.0);
@@ -650,6 +664,7 @@ const uniformNames = [
   'u_pudDepth','u_pudSpread','u_pudRipple','u_pudColor','u_pudCon','u_pudBri','u_pudSat',
   'u_wetness','u_wetGloss','u_wetDarken','u_wetColor','u_wetCon','u_wetBri','u_wetSat',
   'u_rain','u_wind','u_lightning','u_rollingFog','u_cold',
+  'u_overcast','u_contrastBoost',
   'u_fogColor','u_fogCon','u_fogBri','u_fogSat',
   'u_timeOfDay','u_season','u_age',
   'u_cRoof','u_cStone','u_cGrass','u_cWood','u_cFoliage','u_cWindow',
@@ -746,6 +761,8 @@ function render(now) {
   gl.uniform1f(U.u_lightning, gv('s-lightning', 100));
   gl.uniform1f(U.u_rollingFog, gv('s-rollingfog', 100));
   gl.uniform1f(U.u_cold, gv('s-cold', 100));
+  gl.uniform1f(U.u_overcast, gv('s-overcast', 100));
+  gl.uniform1f(U.u_contrastBoost, gv('s-contrastBoost', 100));
   gl.uniform3f(U.u_fogColor, gv('s-fogR',1), gv('s-fogG',1), gv('s-fogB',1));
   gl.uniform1f(U.u_fogCon, gv('s-fogCon', 100));
   gl.uniform1f(U.u_fogBri, gv('s-fogBri', 100));
