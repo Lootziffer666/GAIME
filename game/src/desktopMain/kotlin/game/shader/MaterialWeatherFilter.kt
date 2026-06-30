@@ -7,19 +7,23 @@ import korlibs.korge.render.*
 import korlibs.korge.view.filter.ShaderFilter
 
 /**
- * Material-aware weather system — Multi-Texture, pixel-accurate.
+ * Material-aware weather v5 — Multi-Texture, pixel-accurate, physically motivated.
  *
- * Material map is RGB:
- *   R = Material ID (0-255, decode: floor(R/255*7+0.5) → 0=Grass..7=Unknown)
- *   G = Flow angle on roof pixels (0-255 → 0°-360° direction of steepest descent)
- *   B = Drip zone intensity (0=none, 255=directly below roof edge, puddles form first here)
+ * Material map RGB channels:
+ *   R = Material ID (decode: floor(R/255*7+0.5))
+ *   G = Flow angle on roof (per-face, from ridge detection: left=108°, right=72°)
+ *   B = Drip zone (0-180=intensity below traufe) OR Window marker (220=window)
  *
- * Key behaviors:
- * - Roof rivulets flow in the direction computed from the roof slope (G channel)
- * - Puddles form FIRST in drip zones (below roof edges, no gutters)
- * - Water on stone collects in joints first (darker pixels = cracks)
- * - Rain streaks are global (visible everywhere)
- * - Grass effect: darken + saturate existing color, never adds green
+ * v5 improvements:
+ * - Roof rivulets follow geometrically computed slope (first→traufe)
+ * - Puddles form first in drip zones (no gutter → water drips down)
+ * - Stone: joints wet first (darker pixels = cracks fill first)
+ * - Grass: darken+contrast only, never green tint
+ * - Fog restricted to ground level only
+ * - Cloud reflections on roofs and puddles
+ * - Interior lights glow through windows
+ * - Shadows softened (diffuse overcast = no hard shadows)
+ * - Contrast boost (wet scene is more contrasty)
  */
 class MaterialWeatherFilter(
     var time: Float = 0f,
@@ -68,18 +72,23 @@ class MaterialWeatherFilter(
             SET(uvX, coords.x / texSize.x)
             SET(uvY, coords.y / texSize.y)
 
-            // === MATERIAL MAP LOOKUP (RGB) ===
+            // === MATERIAL MAP ===
             val matSample = createTemp(Float4)
             SET(matSample, texture2D(u_MaterialMap, vec2(uvX, uvY)))
-            // R channel = material ID
             val matId = createTemp(Float1)
             SET(matId, floor(matSample.x * 7f.lit + 0.5f.lit))
-            // G channel = flow angle (0-1 → 0-2π)
+            // G = flow angle (0-1 → 0-2π)
             val flowAngle = createTemp(Float1)
-            SET(flowAngle, matSample.y * 6.2832f.lit)  // 0-1 → 0-2π
-            // B channel = drip zone intensity (0-1, higher = more drip influence)
+            SET(flowAngle, matSample.y * 6.2832f.lit)
+            // B = drip/window info
+            val bChannel = createTemp(Float1)
+            SET(bChannel, matSample.z)
+            // Drip zone: B < 0.75 (0-180/255)
             val dripIntensity = createTemp(Float1)
-            SET(dripIntensity, matSample.z)
+            SET(dripIntensity, clamp(bChannel / 0.71f.lit, 0f.lit, 1f.lit) * step(bChannel, 0.75f.lit))
+            // Window: B ≈ 0.86 (220/255)
+            val isWindow = createTemp(Float1)
+            SET(isWindow, step(0.8f.lit, bChannel) * step(bChannel, 0.92f.lit) * hasMat)
 
             // Material masks
             val isGrass = createTemp(Float1)
@@ -95,268 +104,211 @@ class MaterialWeatherFilter(
             SET(isFoliage, step(3.5f.lit, matId) * step(matId, 4.5f.lit) * hasMat)
             SET(isWater, step(4.5f.lit, matId) * step(matId, 5.5f.lit) * hasMat)
 
-            // === HSV FALLBACK (no material map) ===
-            val maxC = createTemp(Float1)
-            val minC = createTemp(Float1)
-            SET(maxC, max(max(r, g), b))
-            SET(minC, min(min(r, g), b))
-            val delta = createTemp(Float1)
-            SET(delta, maxC - minC)
+            // HSV fallback (no map)
+            val maxC = createTemp(Float1); val minC = createTemp(Float1)
+            SET(maxC, max(max(r, g), b)); SET(minC, min(min(r, g), b))
+            val delta = createTemp(Float1); SET(delta, maxC - minC)
             val vv = createTemp(Float1); SET(vv, maxC)
             val sat = createTemp(Float1); SET(sat, delta / max(maxC, 0.001f.lit))
             val hue = createTemp(Float1)
             val isRM = createTemp(Float1); val isGM = createTemp(Float1)
             SET(isRM, step(g, r) * step(b, r))
             SET(isGM, step(r, g) * step(b, g) * (1f.lit - isRM))
-            SET(hue, fract(
-                isRM * ((g - b) / max(delta, 0.001f.lit) / 6f.lit) +
+            SET(hue, fract(isRM * ((g - b) / max(delta, 0.001f.lit) / 6f.lit) +
                 isGM * (0.333f.lit + (b - r) / max(delta, 0.001f.lit) / 6f.lit) +
-                (1f.lit - isRM) * (1f.lit - isGM) * (0.666f.lit + (r - g) / max(delta, 0.001f.lit) / 6f.lit)
-            ))
+                (1f.lit - isRM) * (1f.lit - isGM) * (0.666f.lit + (r - g) / max(delta, 0.001f.lit) / 6f.lit)))
             val noMat = createTemp(Float1); SET(noMat, 1f.lit - hasMat)
-            val fbGrass = createTemp(Float1)
-            SET(fbGrass, step(0.13f.lit, hue) * step(hue, 0.48f.lit) * step(0.15f.lit, sat) * step(0.40f.lit, vv) * noMat)
-            val fbStone = createTemp(Float1)
-            SET(fbStone, clamp(step(sat, 0.22f.lit) * step(0.6f.lit, vv) * noMat, 0f.lit, 1f.lit))
-            val fbWood = createTemp(Float1)
-            SET(fbWood, step(0.035f.lit, hue) * step(hue, 0.12f.lit) * step(0.25f.lit, vv) * step(vv, 0.66f.lit) * step(0.30f.lit, sat) * noMat)
-            val fbRoof = createTemp(Float1)
-            SET(fbRoof, step(0.035f.lit, hue) * step(hue, 0.085f.lit) * step(0.50f.lit, sat) * step(0.55f.lit, vv) * step(vv, 0.90f.lit) * noMat)
-            val fbFoliage = createTemp(Float1)
-            SET(fbFoliage, step(0.13f.lit, hue) * step(hue, 0.56f.lit) * step(0.10f.lit, sat) * step(vv, 0.43f.lit) * noMat)
+            val mG = createTemp(Float1); SET(mG, isGrass + step(0.13f.lit, hue) * step(hue, 0.48f.lit) * step(0.15f.lit, sat) * step(0.40f.lit, vv) * noMat)
+            val mS = createTemp(Float1); SET(mS, isStone + clamp(step(sat, 0.22f.lit) * step(0.6f.lit, vv) * noMat, 0f.lit, 1f.lit))
+            val mW = createTemp(Float1); SET(mW, isWood + step(0.035f.lit, hue) * step(hue, 0.12f.lit) * step(0.25f.lit, vv) * step(vv, 0.66f.lit) * step(0.30f.lit, sat) * noMat)
+            val mR = createTemp(Float1); SET(mR, isRoof + step(0.035f.lit, hue) * step(hue, 0.085f.lit) * step(0.50f.lit, sat) * step(0.55f.lit, vv) * step(vv, 0.90f.lit) * noMat)
+            val mF = createTemp(Float1); SET(mF, isFoliage + step(0.13f.lit, hue) * step(hue, 0.56f.lit) * step(0.10f.lit, sat) * step(vv, 0.43f.lit) * noMat)
 
-            val mG = createTemp(Float1); SET(mG, isGrass + fbGrass)
-            val mS = createTemp(Float1); SET(mS, isStone + fbStone)
-            val mW = createTemp(Float1); SET(mW, isWood + fbWood)
-            val mR = createTemp(Float1); SET(mR, isRoof + fbRoof)
-            val mF = createTemp(Float1); SET(mF, isFoliage + fbFoliage)
-            val mWa = createTemp(Float1); SET(mWa, isWater)
-
-            // === WEATHER EFFECTS ===
+            // === EFFECTS ===
             val finalR = createTemp(Float1)
             val finalG = createTemp(Float1)
             val finalB = createTemp(Float1)
-            SET(finalR, r)
-            SET(finalG, g)
-            SET(finalB, b)
+            SET(finalR, r); SET(finalG, g); SET(finalB, b)
 
-            // --- GLOBAL: overcast + desaturation ---
-            SET(finalR, finalR * (1f.lit - weather * 0.45f.lit))
-            SET(finalG, finalG * (1f.lit - weather * 0.45f.lit))
-            SET(finalB, finalB * (1f.lit - weather * 0.45f.lit))
+            // --- SHADOW SOFTENING: lighten dark areas (diffuse overcast) ---
+            val pixLum = createTemp(Float1)
+            SET(pixLum, finalR * 0.299f.lit + finalG * 0.587f.lit + finalB * 0.114f.lit)
+            val shadowLift = createTemp(Float1)
+            // Darker pixels get lifted more (shadows become less harsh)
+            SET(shadowLift, (1f.lit - pixLum) * weather * 0.15f.lit)
+            SET(finalR, finalR + shadowLift)
+            SET(finalG, finalG + shadowLift)
+            SET(finalB, finalB + shadowLift)
+
+            // --- OVERCAST: darken midtones/highlights (but shadows already lifted) ---
+            SET(finalR, finalR * (1f.lit - weather * 0.38f.lit))
+            SET(finalG, finalG * (1f.lit - weather * 0.38f.lit))
+            SET(finalB, finalB * (1f.lit - weather * 0.38f.lit))
+
+            // --- DESATURATION ---
             val lum = createTemp(Float1)
             SET(lum, finalR * 0.299f.lit + finalG * 0.587f.lit + finalB * 0.114f.lit)
-            SET(finalR, mix(finalR, lum, weather * 0.2f.lit))
-            SET(finalG, mix(finalG, lum, weather * 0.2f.lit))
-            SET(finalB, mix(finalB, lum, weather * 0.2f.lit))
+            SET(finalR, mix(finalR, lum, weather * 0.18f.lit))
+            SET(finalG, mix(finalG, lum, weather * 0.18f.lit))
+            SET(finalB, mix(finalB, lum, weather * 0.18f.lit))
+
+            // --- CONTRAST BOOST (wet scenes are more contrasty) ---
+            val contrast = createTemp(Float1)
+            SET(contrast, 1f.lit + weather * 0.15f.lit)
+            SET(finalR, (finalR - 0.5f.lit) * contrast + 0.5f.lit)
+            SET(finalG, (finalG - 0.5f.lit) * contrast + 0.5f.lit)
+            SET(finalB, (finalB - 0.5f.lit) * contrast + 0.5f.lit)
 
             // =================================================================
-            // STONE: Water in JOINTS first, then puddles
+            // STONE: joints wet first → puddles
             // =================================================================
-            val stoneWet = createTemp(Float1)
-            SET(stoneWet, mS * weather)
-            // Pixel brightness determines joint vs face
-            val pixBright = createTemp(Float1)
-            SET(pixBright, (r + g + b) / 3f.lit)
-            // Darker pixels (joints) wet first, threshold rises with weather
-            val jointThresh = createTemp(Float1)
-            SET(jointThresh, 0.4f.lit + weather * 0.5f.lit)
-            val jointWet = createTemp(Float1)
-            SET(jointWet, stoneWet * step(pixBright, jointThresh))
-            SET(finalR, finalR * (1f.lit - jointWet * 0.35f.lit))
-            SET(finalG, finalG * (1f.lit - jointWet * 0.35f.lit))
-            SET(finalB, finalB * (1f.lit - jointWet * 0.3f.lit))
+            val stoneWet = createTemp(Float1); SET(stoneWet, mS * weather)
+            val pixBr = createTemp(Float1); SET(pixBr, (r + g + b) / 3f.lit)
+            val jointTh = createTemp(Float1); SET(jointTh, 0.4f.lit + weather * 0.5f.lit)
+            val jointW = createTemp(Float1); SET(jointW, stoneWet * step(pixBr, jointTh))
+            SET(finalR, finalR * (1f.lit - jointW * 0.3f.lit))
+            SET(finalG, finalG * (1f.lit - jointW * 0.3f.lit))
+            SET(finalB, finalB * (1f.lit - jointW * 0.25f.lit))
 
-            // Puddle field (organic shapes)
-            val pn1 = createTemp(Float1)
-            val pn2 = createTemp(Float1)
-            val pn3 = createTemp(Float1)
+            // Puddle field
+            val pn1 = createTemp(Float1); val pn2 = createTemp(Float1)
             SET(pn1, sin(uvX * 19f.lit + uvY * 13f.lit + 1.7f.lit) * sin(uvX * 29f.lit - uvY * 7f.lit))
             SET(pn2, sin(uvX * 5f.lit + uvY * 37f.lit + 3.1f.lit) * 0.7f.lit)
-            SET(pn3, sin(uvX * 43f.lit + uvY * 23f.lit) * 0.3f.lit)
-            val puddleField = createTemp(Float1)
-            SET(puddleField, clamp((pn1 + pn2 + pn3) * 0.35f.lit + 0.4f.lit, 0f.lit, 1f.lit))
+            val pField = createTemp(Float1)
+            SET(pField, clamp((pn1 + pn2) * 0.4f.lit + 0.4f.lit, 0f.lit, 1f.lit))
 
-            // =================================================================
-            // DRIP ZONE: puddles form FIRST below roof edges
-            // =================================================================
-            // dripIntensity from B channel: 1.0 directly below traufe, fades out
-            // Puddle threshold is LOWER in drip zones (puddles appear earlier)
-            val puddleThresh = createTemp(Float1)
-            // Normal: needs weather*0.6 to form. Drip zone: needs much less
-            SET(puddleThresh, mix(weather * 0.6f.lit, weather * 1.2f.lit, dripIntensity * hasMat))
+            // Drip zone puddles form earlier
+            val pThresh = createTemp(Float1)
+            SET(pThresh, mix(weather * 0.55f.lit, weather * 1.3f.lit, dripIntensity * hasMat))
+            val puddleStone = createTemp(Float1)
+            SET(puddleStone, mS * step(pField, pThresh))
 
-            // Puddles on stone (including drip-zone boost)
-            val puddleOnStone = createTemp(Float1)
-            SET(puddleOnStone, mS * step(puddleField, puddleThresh))
+            // Bleed onto grass
+            val tOff = createTemp(Float1); SET(tOff, 12f.lit / texSize.x)
+            val ns1 = createTemp(Float4); SET(ns1, texture2D(u_MaterialMap, vec2(uvX + tOff, uvY)))
+            val ns2 = createTemp(Float4); SET(ns2, texture2D(u_MaterialMap, vec2(uvX - tOff, uvY)))
+            val ns3 = createTemp(Float4); SET(ns3, texture2D(u_MaterialMap, vec2(uvX, uvY + tOff)))
+            val ns4 = createTemp(Float4); SET(ns4, texture2D(u_MaterialMap, vec2(uvX, uvY - tOff)))
+            val nearS = createTemp(Float1)
+            SET(nearS, clamp(
+                step(0.5f.lit, floor(ns1.x*7f.lit+0.5f.lit)) * step(floor(ns1.x*7f.lit+0.5f.lit), 1.5f.lit) +
+                step(0.5f.lit, floor(ns2.x*7f.lit+0.5f.lit)) * step(floor(ns2.x*7f.lit+0.5f.lit), 1.5f.lit) +
+                step(0.5f.lit, floor(ns3.x*7f.lit+0.5f.lit)) * step(floor(ns3.x*7f.lit+0.5f.lit), 1.5f.lit) +
+                step(0.5f.lit, floor(ns4.x*7f.lit+0.5f.lit)) * step(floor(ns4.x*7f.lit+0.5f.lit), 1.5f.lit), 0f.lit, 1f.lit))
+            val pBleed = createTemp(Float1)
+            SET(pBleed, mG * nearS * hasMat * step(pField, pThresh * 0.8f.lit))
+            val dripP = createTemp(Float1)
+            SET(dripP, mG * dripIntensity * hasMat * step(pField, weather * 0.8f.lit))
 
-            // Puddles bleed onto grass near stone
-            val texelOff = createTemp(Float1)
-            SET(texelOff, 10f.lit / texSize.x)
-            val nS1 = createTemp(Float4); SET(nS1, texture2D(u_MaterialMap, vec2(uvX + texelOff, uvY)))
-            val nS2 = createTemp(Float4); SET(nS2, texture2D(u_MaterialMap, vec2(uvX - texelOff, uvY)))
-            val nS3 = createTemp(Float4); SET(nS3, texture2D(u_MaterialMap, vec2(uvX, uvY + texelOff)))
-            val nS4 = createTemp(Float4); SET(nS4, texture2D(u_MaterialMap, vec2(uvX, uvY - texelOff)))
-            val nId1 = createTemp(Float1); SET(nId1, floor(nS1.x * 7f.lit + 0.5f.lit))
-            val nId2 = createTemp(Float1); SET(nId2, floor(nS2.x * 7f.lit + 0.5f.lit))
-            val nId3 = createTemp(Float1); SET(nId3, floor(nS3.x * 7f.lit + 0.5f.lit))
-            val nId4 = createTemp(Float1); SET(nId4, floor(nS4.x * 7f.lit + 0.5f.lit))
-            val nearStone = createTemp(Float1)
-            SET(nearStone, clamp(
-                step(0.5f.lit, nId1) * step(nId1, 1.5f.lit) +
-                step(0.5f.lit, nId2) * step(nId2, 1.5f.lit) +
-                step(0.5f.lit, nId3) * step(nId3, 1.5f.lit) +
-                step(0.5f.lit, nId4) * step(nId4, 1.5f.lit), 0f.lit, 1f.lit))
-            val puddleBleed = createTemp(Float1)
-            SET(puddleBleed, mG * nearStone * hasMat * step(puddleField, puddleThresh * 0.8f.lit))
+            val hasPud = createTemp(Float1)
+            SET(hasPud, clamp(puddleStone + pBleed + dripP, 0f.lit, 1f.lit))
 
-            // Drip zone puddles on GRASS (even without nearby stone)
-            val dripPuddle = createTemp(Float1)
-            SET(dripPuddle, mG * dripIntensity * hasMat * step(puddleField, weather * 0.9f.lit))
-
-            val hasPuddle = createTemp(Float1)
-            SET(hasPuddle, clamp(puddleOnStone + puddleBleed + dripPuddle, 0f.lit, 1f.lit))
-
-            // Puddle rendering
+            // Puddle rendering + CLOUD REFLECTIONS
             val ripple = createTemp(Float1)
-            SET(ripple, sin(uvX * 100f.lit + time * 2.8f.lit) * sin(uvY * 75f.lit + time * 2f.lit))
-            SET(ripple, clamp(ripple * ripple, 0f.lit, 1f.lit) * 0.12f.lit)
-            val impSeed = createTemp(Float1)
-            SET(impSeed, fract(sin(uvX * 97f.lit + uvY * 53f.lit) * 43758.5f.lit))
-            val impPhase = createTemp(Float1)
-            SET(impPhase, fract(time * 1.5f.lit + impSeed * 6.28f.lit))
-            val impRing = createTemp(Float1)
-            SET(impRing, step(0.92f.lit, impSeed) * sin(impPhase * 12f.lit) * (1f.lit - impPhase))
-            SET(impRing, clamp(impRing * 0.12f.lit, 0f.lit, 0.12f.lit))
+            SET(ripple, sin(uvX * 90f.lit + time * 2.5f.lit) * sin(uvY * 70f.lit + time * 1.8f.lit))
+            SET(ripple, clamp(ripple * ripple, 0f.lit, 1f.lit) * 0.1f.lit)
+            // Cloud reflection: slow-moving large-scale bright patches
+            val cloudRef = createTemp(Float1)
+            SET(cloudRef, sin((uvX + time * 0.02f.lit) * 3f.lit) * sin((uvY + time * 0.015f.lit) * 2f.lit))
+            SET(cloudRef, clamp(cloudRef * 0.5f.lit + 0.3f.lit, 0f.lit, 0.5f.lit) * 0.12f.lit)
 
-            val pudW = createTemp(Float1)
-            SET(pudW, hasPuddle * weather)
-            SET(finalR, mix(finalR, 0.10f.lit + ripple * 0.3f.lit + impRing, pudW))
-            SET(finalG, mix(finalG, 0.13f.lit + ripple * 0.4f.lit + impRing, pudW))
-            SET(finalB, mix(finalB, 0.20f.lit + ripple * 0.6f.lit + impRing * 1.3f.lit, pudW))
+            val pudW = createTemp(Float1); SET(pudW, hasPud * weather)
+            SET(finalR, mix(finalR, 0.08f.lit + ripple * 0.2f.lit + cloudRef * 0.8f.lit, pudW))
+            SET(finalG, mix(finalG, 0.11f.lit + ripple * 0.3f.lit + cloudRef * 0.9f.lit, pudW))
+            SET(finalB, mix(finalB, 0.18f.lit + ripple * 0.5f.lit + cloudRef * 1.0f.lit, pudW))
 
-            // --- GRASS: darken + contrast, no green tint ---
-            val grassWet = createTemp(Float1)
-            SET(grassWet, mG * weather * (1f.lit - clamp(puddleBleed + dripPuddle, 0f.lit, 1f.lit)))
-            SET(finalR, finalR * (1f.lit - grassWet * 0.3f.lit))
-            SET(finalG, finalG * (1f.lit - grassWet * 0.15f.lit))
-            SET(finalB, finalB * (1f.lit - grassWet * 0.25f.lit))
-            val gLum = createTemp(Float1)
-            SET(gLum, finalR * 0.299f.lit + finalG * 0.587f.lit + finalB * 0.114f.lit)
-            SET(finalR, mix(finalR, finalR + (finalR - gLum) * 0.3f.lit, grassWet))
-            SET(finalG, mix(finalG, finalG + (finalG - gLum) * 0.3f.lit, grassWet))
-            SET(finalB, mix(finalB, finalB + (finalB - gLum) * 0.3f.lit, grassWet))
+            // --- GRASS: darken + contrast only ---
+            val gW = createTemp(Float1); SET(gW, mG * weather * (1f.lit - clamp(pBleed + dripP, 0f.lit, 1f.lit)))
+            SET(finalR, finalR * (1f.lit - gW * 0.28f.lit))
+            SET(finalG, finalG * (1f.lit - gW * 0.12f.lit))
+            SET(finalB, finalB * (1f.lit - gW * 0.22f.lit))
 
-            // --- WOOD: soaked dark + sheen ---
-            val woodWet = createTemp(Float1)
-            SET(woodWet, mW * weather)
-            SET(finalR, finalR * (1f.lit - woodWet * 0.45f.lit))
-            SET(finalG, finalG * (1f.lit - woodWet * 0.4f.lit))
-            SET(finalB, finalB * (1f.lit - woodWet * 0.3f.lit))
-            val wSheen = createTemp(Float1)
-            SET(wSheen, sin(uvX * 60f.lit + uvY * 30f.lit + time * 0.4f.lit))
-            SET(wSheen, clamp(wSheen * 0.4f.lit + 0.3f.lit, 0f.lit, 0.5f.lit) * woodWet * 0.08f.lit)
-            SET(finalR, finalR + wSheen)
-            SET(finalG, finalG + wSheen)
-            SET(finalB, finalB + wSheen * 1.2f.lit)
+            // --- WOOD: soaked dark ---
+            val wW = createTemp(Float1); SET(wW, mW * weather * (1f.lit - isWindow))
+            SET(finalR, finalR * (1f.lit - wW * 0.4f.lit))
+            SET(finalG, finalG * (1f.lit - wW * 0.35f.lit))
+            SET(finalB, finalB * (1f.lit - wW * 0.25f.lit))
 
             // =================================================================
-            // ROOF: uniformly wet + flow-directed rivulets
+            // WINDOWS: warm interior light glows through
             // =================================================================
-            val roofWet = createTemp(Float1)
-            SET(roofWet, mR * weather)
-            // Uniform wet base (entire roof)
-            SET(finalR, finalR * (1f.lit - roofWet * 0.35f.lit))
-            SET(finalG, finalG * (1f.lit - roofWet * 0.32f.lit))
-            SET(finalB, finalB * (1f.lit - roofWet * 0.22f.lit))
-            // Uniform gloss
-            val rGloss = createTemp(Float1)
-            SET(rGloss, clamp(sin(uvX * 20f.lit + time * 0.3f.lit) * sin(uvY * 15f.lit + time * 0.2f.lit) * 0.3f.lit + 0.15f.lit, 0f.lit, 0.3f.lit))
-            SET(finalR, finalR + rGloss * roofWet * 0.08f.lit)
-            SET(finalG, finalG + rGloss * roofWet * 0.09f.lit)
-            SET(finalB, finalB + rGloss * roofWet * 0.12f.lit)
+            val winGlow = createTemp(Float1)
+            SET(winGlow, isWindow * weather)
+            // Warm orange glow
+            SET(finalR, mix(finalR, 0.9f.lit, winGlow * 0.7f.lit))
+            SET(finalG, mix(finalG, 0.6f.lit, winGlow * 0.6f.lit))
+            SET(finalB, mix(finalB, 0.2f.lit, winGlow * 0.5f.lit))
 
-            // Rivulets: flow in the direction of the computed slope (flowAngle from G channel)
-            // Project UV along flow direction to create streaks aligned with roof slope
-            val flowDirX = createTemp(Float1)
-            val flowDirY = createTemp(Float1)
-            SET(flowDirX, cos(flowAngle))
-            SET(flowDirY, sin(flowAngle))
-            // Project fragment position onto flow direction
-            val flowProj = createTemp(Float1)
-            SET(flowProj, uvX * flowDirX + uvY * flowDirY)
-            // Perpendicular = across the rivulet (thin)
-            val flowPerp = createTemp(Float1)
-            SET(flowPerp, uvX * (-flowDirY) + uvY * flowDirX)
+            // =================================================================
+            // ROOF: uniformly wet + cloud reflections + flow-directed rivulets
+            // =================================================================
+            val rW = createTemp(Float1); SET(rW, mR * weather)
+            SET(finalR, finalR * (1f.lit - rW * 0.3f.lit))
+            SET(finalG, finalG * (1f.lit - rW * 0.28f.lit))
+            SET(finalB, finalB * (1f.lit - rW * 0.2f.lit))
+            // Cloud reflection on wet roof
+            val roofCloud = createTemp(Float1)
+            SET(roofCloud, sin((uvX + time * 0.025f.lit) * 4f.lit) * sin((uvY + time * 0.02f.lit) * 3f.lit))
+            SET(roofCloud, clamp(roofCloud * 0.4f.lit + 0.2f.lit, 0f.lit, 0.4f.lit) * rW * 0.1f.lit)
+            SET(finalR, finalR + roofCloud * 0.7f.lit)
+            SET(finalG, finalG + roofCloud * 0.8f.lit)
+            SET(finalB, finalB + roofCloud * 1.0f.lit)
 
-            // Rivulet pattern: thin streaks along flow, spaced by perpendicular
-            val rivuletX = createTemp(Float1)
-            SET(rivuletX, fract(flowPerp * 40f.lit + sin(flowProj * 10f.lit) * 0.1f.lit))
-            val isRivulet = createTemp(Float1)
-            SET(isRivulet, step(0.45f.lit, rivuletX) * step(rivuletX, 0.55f.lit))
-            // Animate along flow direction
-            val rivFlow = createTemp(Float1)
-            SET(rivFlow, fract(flowProj * 5f.lit + time * 4f.lit))
-            val rivVis = createTemp(Float1)
-            SET(rivVis, step(0.2f.lit, rivFlow) * step(rivFlow, 0.7f.lit))
-            val rivulet = createTemp(Float1)
-            SET(rivulet, isRivulet * rivVis * roofWet * 0.18f.lit)
-            SET(finalR, finalR + rivulet * 0.4f.lit)
-            SET(finalG, finalG + rivulet * 0.5f.lit)
-            SET(finalB, finalB + rivulet * 0.8f.lit)
+            // Rivulets: flow along computed direction (from G channel)
+            val fDirX = createTemp(Float1); SET(fDirX, cos(flowAngle))
+            val fDirY = createTemp(Float1); SET(fDirY, sin(flowAngle))
+            val fProj = createTemp(Float1); SET(fProj, uvX * fDirX + uvY * fDirY)
+            val fPerp = createTemp(Float1); SET(fPerp, uvX * (-fDirY) + uvY * fDirX)
+            val rivX = createTemp(Float1)
+            SET(rivX, fract(fPerp * 35f.lit + sin(fProj * 8f.lit) * 0.08f.lit))
+            val isRiv = createTemp(Float1)
+            SET(isRiv, step(0.44f.lit, rivX) * step(rivX, 0.56f.lit))
+            val rivF = createTemp(Float1); SET(rivF, fract(fProj * 4f.lit + time * 3.5f.lit))
+            val rivV = createTemp(Float1); SET(rivV, step(0.2f.lit, rivF) * step(rivF, 0.7f.lit))
+            val riv = createTemp(Float1); SET(riv, isRiv * rivV * rW * 0.15f.lit)
+            SET(finalR, finalR + riv * 0.4f.lit)
+            SET(finalG, finalG + riv * 0.5f.lit)
+            SET(finalB, finalB + riv * 0.7f.lit)
 
-            // --- FOLIAGE: dark, heavy ---
-            val folWet = createTemp(Float1)
-            SET(folWet, mF * weather)
-            SET(finalR, finalR * (1f.lit - folWet * 0.4f.lit))
-            SET(finalG, finalG * (1f.lit - folWet * 0.25f.lit))
-            SET(finalB, finalB * (1f.lit - folWet * 0.35f.lit))
+            // --- FOLIAGE ---
+            val fW = createTemp(Float1); SET(fW, mF * weather)
+            SET(finalR, finalR * (1f.lit - fW * 0.35f.lit))
+            SET(finalG, finalG * (1f.lit - fW * 0.2f.lit))
+            SET(finalB, finalB * (1f.lit - fW * 0.3f.lit))
 
-            // --- DROPLETS: clustered, random ---
+            // --- DROPLETS: clustered random ---
             val clN = createTemp(Float1)
             SET(clN, sin(uvX * 11f.lit + uvY * 7f.lit + time * 0.2f.lit) * sin(uvX * 5f.lit - uvY * 13f.lit + 2.1f.lit))
             SET(clN, clamp(clN + 0.15f.lit, 0f.lit, 1f.lit))
-            val dSeed = createTemp(Float1)
-            SET(dSeed, fract(sin(uvX * 347f.lit + uvY * 193f.lit + floor(time * 3f.lit) * 7.3f.lit) * 43758.5f.lit))
-            val dTh = createTemp(Float1)
-            SET(dTh, 1f.lit - weather * 0.012f.lit * clN)
+            val dSd = createTemp(Float1)
+            SET(dSd, fract(sin(uvX * 347f.lit + uvY * 193f.lit + floor(time * 3f.lit) * 7.3f.lit) * 43758.5f.lit))
             val dAct = createTemp(Float1)
-            SET(dAct, step(dTh, dSeed) * (mG + mF + mR + mW) * weather)
-            val dBr = createTemp(Float1)
-            SET(dBr, fract(dSeed * 7.77f.lit) * 0.25f.lit + 0.1f.lit)
-            SET(finalR, finalR + dAct * dBr * 0.5f.lit)
-            SET(finalG, finalG + dAct * dBr * 0.6f.lit)
-            SET(finalB, finalB + dAct * dBr * 0.9f.lit)
+            SET(dAct, step(1f.lit - weather * 0.012f.lit * clN, dSd) * (mG + mF + mR + mW) * weather)
+            val dBr = createTemp(Float1); SET(dBr, fract(dSd * 7.77f.lit) * 0.2f.lit + 0.08f.lit)
+            SET(finalR, finalR + dAct * dBr * 0.4f.lit)
+            SET(finalG, finalG + dAct * dBr * 0.5f.lit)
+            SET(finalB, finalB + dAct * dBr * 0.8f.lit)
 
-            // --- WATER: ripples ---
-            val wE = createTemp(Float1)
-            SET(wE, mWa * weather)
-            val wR2 = createTemp(Float1)
-            SET(wR2, sin(uvX * 100f.lit + time * 3f.lit) * sin(uvY * 80f.lit + time * 2.5f.lit))
-            SET(wR2, clamp(wR2 * 3f.lit, -1f.lit, 1f.lit) * 0.1f.lit * wE)
-            SET(finalR, finalR + wR2)
-            SET(finalG, finalG + wR2)
-            SET(finalB, finalB + wR2 * 1.5f.lit)
-
-            // --- FOG ---
+            // --- FOG: GROUND LEVEL ONLY (bottom 40% of image) ---
+            val fogZone = createTemp(Float1)
+            // Only below 60% of image height (uvY > 0.6), fade in from 0.5
+            SET(fogZone, clamp((uvY - 0.5f.lit) * 2.5f.lit, 0f.lit, 1f.lit))
             val fogD = createTemp(Float1)
-            SET(fogD, weather * weather * (0.3f.lit + (1f.lit - uvY) * 0.18f.lit))
-            SET(finalR, mix(finalR, 0.50f.lit, fogD))
-            SET(finalG, mix(finalG, 0.53f.lit, fogD))
-            SET(finalB, mix(finalB, 0.60f.lit, fogD))
+            SET(fogD, weather * weather * fogZone * 0.35f.lit)
+            SET(finalR, mix(finalR, 0.52f.lit, fogD))
+            SET(finalG, mix(finalG, 0.55f.lit, fogD))
+            SET(finalB, mix(finalB, 0.62f.lit, fogD))
 
-            // --- RAIN: global diagonal streaks ---
-            val rainD = createTemp(Float1)
-            SET(rainD, weather * weather)
+            // --- RAIN: global ---
+            val rainD = createTemp(Float1); SET(rainD, weather * weather)
             val rn1 = createTemp(Float1)
             SET(rn1, step(0.993f.lit, fract(sin(uvX * 280f.lit + uvY * 550f.lit + time * 18f.lit + wind * uvX * 140f.lit) * 43758.5f.lit)))
             val rn2 = createTemp(Float1)
             SET(rn2, step(0.994f.lit, fract(sin(uvX * 180f.lit + uvY * 400f.lit + time * 14f.lit + wind * uvX * 100f.lit + 5.7f.lit) * 43758.5f.lit)))
-            val rnTot = createTemp(Float1)
-            SET(rnTot, clamp(rn1 + rn2, 0f.lit, 1f.lit) * rainD * 0.35f.lit)
-            SET(finalR, finalR + rnTot * 0.65f.lit)
-            SET(finalG, finalG + rnTot * 0.75f.lit)
-            SET(finalB, finalB + rnTot * 1.0f.lit)
+            val rnT = createTemp(Float1); SET(rnT, clamp(rn1 + rn2, 0f.lit, 1f.lit) * rainD * 0.3f.lit)
+            SET(finalR, finalR + rnT * 0.6f.lit)
+            SET(finalG, finalG + rnT * 0.7f.lit)
+            SET(finalB, finalB + rnT * 0.9f.lit)
 
             SET(out, vec4(
                 clamp(finalR, 0f.lit, 1f.lit),
@@ -372,9 +324,7 @@ class MaterialWeatherFilter(
     override fun updateUniforms(ctx: RenderContext, filterScale: Double) {
         super.updateUniforms(ctx, filterScale)
         val matTex = materialTexture
-        if (matTex != null) {
-            setTex(ctx, u_MaterialMap, matTex)
-        }
+        if (matTex != null) { setTex(ctx, u_MaterialMap, matTex) }
         ctx[MatWeatherUB].push {
             it[u_Time] = time
             it[u_Weather] = weatherState

@@ -2930,7 +2930,7 @@ private fun captureVillageMaterialWeather() {
         val filter = game.shader.MaterialWeatherFilter(time = 1.0f, weatherState = 0.0f)
         filter.setMaterialMap(matBitmap.toBMP32())
         bg.filter = filter
-        save("village_weather_v4_sun")
+        save("village_weather_v5_sun")
     }
 
     // Rain (moderate, wind from left)
@@ -2942,7 +2942,7 @@ private fun captureVillageMaterialWeather() {
         val filter = game.shader.MaterialWeatherFilter(time = 4.0f, weatherState = 0.6f, windAngle = 0.3f)
         filter.setMaterialMap(matBitmap.toBMP32())
         bg.filter = filter
-        save("village_weather_v4_rain")
+        save("village_weather_v5_rain")
     }
 
     // Storm (heavy rain, strong wind, maximum effects)
@@ -2954,6 +2954,6 @@ private fun captureVillageMaterialWeather() {
         val filter = game.shader.MaterialWeatherFilter(time = 7.0f, weatherState = 1.0f, windAngle = 0.5f)
         filter.setMaterialMap(matBitmap.toBMP32())
         bg.filter = filter
-        save("village_weather_v4_storm")
+        save("village_weather_v5_storm")
     }
 }
