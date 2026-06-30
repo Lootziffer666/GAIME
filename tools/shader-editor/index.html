@@ -33,10 +33,14 @@ input[type=file]{font-size:9px;width:100%;margin:2px 0}.file-label{display:block
 <body>
 <div id="sidebar">
 <div id="title">GAIME Shader Editor v2</div>
-<label class="file-label">Bild 1 / Ausgang</label><input type="file" id="f-scene" accept="image/*">
-<label class="file-label">Bild 4 / Materialmap</label><input type="file" id="f-mat" accept="image/*">
-<label class="file-label">Bild 3 / Zielreferenz</label><input type="file" id="f-target" accept="image/*">
-<div class="tabs"><button id="preset-storm">Preset Sturm → Bild 3</button><button id="view-result" class="sel">Result</button><button id="view-target">Target</button><button id="view-split">Split</button></div>
+<label class="file-label">Startbild</label><input type="file" id="f-scene" accept="image/*">
+<label class="file-label">Zielbild</label><input type="file" id="f-target" accept="image/*">
+<label class="file-label">Materialmap</label><input type="file" id="f-mat" accept="image/*">
+<label class="file-label">Physik 1 / Flowmap</label><input type="file" id="f-phys1" accept="image/*">
+<label class="file-label">Physik 2 / Höhen-/Maskenmap</label><input type="file" id="f-phys2" accept="image/*">
+<div class="tabs" id="asset-tabs"></div>
+<div class="tabs" id="preset-tabs"></div>
+<div class="tabs"><button id="save-asset-set">Bild-Set speichern</button><button id="view-result" class="sel">Result</button><button id="view-target">Target</button><button id="view-split">Split</button></div>
 <h2>Global</h2>
 <div class="c"><label>Weather<span class="v" id="d-w">0</span></label><input type="range" id="s-w" min="0" max="100" value="0"></div>
 <div class="c"><label>Wind<span class="v" id="d-wind">30</span></label><input type="range" id="s-wind" min="0" max="100" value="30"></div>
@@ -96,8 +100,8 @@ document.getElementById("btn-kf-play").onclick=()=>{if(kfs.length<2)return;playi
 const VS=`attribute vec2 a;varying vec2 v;void main(){v=a*0.5+0.5;v.y=1.0-v.y;gl_Position=vec4(a,0,1);}`;
 const FS=`precision highp float;
 varying vec2 v;
-uniform sampler2D S,M,T;
-uniform float t,w,wind,hasMat,hasTarget,viewMode;
+uniform sampler2D S,M,T,P1,P2;
+uniform float t,w,wind,hasMat,hasTarget,hasPhys1,hasPhys2,viewMode;
 uniform vec3 cR,cS,cG,cW,cF,cP,cFg,cWn;
 uniform vec4 pR,pS,pG,pW,pF;
 uniform float pud,rain,shad,riv,fog,age,moss,inv;
@@ -132,8 +136,12 @@ void main(){
   float isW2=step(dWin,best+.001)*hasMat;
   float mP0=step(dPud,best+.001)*hasMat;
   float mGr=clamp(hasMat-mRo-mSt-mWo-mFo-isW2-mP0,0.,1.);
-  float fa=atan(mm.g-.5,mm.r-.5),bCh=mm.b;
-  float drip=max(mP0, max(mSt*.45, mGr*.35));
+  vec3 ph1=texture2D(P1,uv).rgb;
+  vec3 ph2=texture2D(P2,uv).rgb;
+  float fa=mix(atan(mm.g-.5,mm.r-.5),atan(ph1.g-.5,ph1.r-.5),hasPhys1);
+  float bCh=mix(mm.b,ph2.b,hasPhys2);
+  float physWet=hasPhys2*clamp(1.0-ph2.r,0.,1.);
+  float drip=max(mP0, max(mSt*.45, mGr*.35))+physWet*.35;
   float nm=1.-hasMat;
   float lum=dot(dry,vec3(.299,.587,.114));
   vec3 fin=dry+vec3((1.-lum)*w*shad);
@@ -146,8 +154,8 @@ void main(){
   // Puddles
   float pn=sin(uv.x*19.+uv.y*13.+1.7)*sin(uv.x*29.-uv.y*7.)+sin(uv.x*5.+uv.y*37.+3.1)*.7;
   float pFld=clamp(pn*.4+.4,0.,1.);
-  float pTh=mix(w*pud,w*1.3,drip*hasMat);
-  float hp=clamp(mSt*step(pFld,pTh)+mGr*drip*hasMat*step(pFld,w*.8),0.,1.);
+  float pTh=mix(w*pud,w*1.3,clamp(drip,0.,1.));
+  float hp=clamp(mSt*step(pFld,pTh)+mGr*drip*step(pFld,w*.8)+physWet*w*pud,0.,1.);
   float rpl=sin(uv.x*90.+t*2.5)*sin(uv.y*70.+t*1.8);rpl=clamp(rpl*rpl,0.,1.)*.1;
   fin=mix(fin,cP+vec3(rpl),max(hp,mP0)*w);
   // Rivulets
@@ -189,28 +197,46 @@ gl.useProgram(pg);
 const bf=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,bf);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),gl.STATIC_DRAW);
 const aP=gl.getAttribLocation(pg,"a");gl.enableVertexAttribArray(aP);gl.vertexAttribPointer(aP,2,gl.FLOAT,false,0,0);
 function mkT(u){const tx=gl.createTexture();gl.activeTexture(gl.TEXTURE0+u);gl.bindTexture(gl.TEXTURE_2D,tx);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.NEAREST);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.NEAREST);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,1,1,0,gl.RGBA,gl.UNSIGNED_BYTE,new Uint8Array([128,128,128,255]));return tx;}
-const sT=mkT(0),mT=mkT(1),tT=mkT(2);
-gl.uniform1i(gl.getUniformLocation(pg,"S"),0);gl.uniform1i(gl.getUniformLocation(pg,"M"),1);gl.uniform1i(gl.getUniformLocation(pg,"T"),2);
-const U={};["t","w","wind","hasMat","hasTarget","viewMode","cR","cS","cG","cW","cF","cP","cFg","cWn","pR","pS","pG","pW","pF","pud","rain","shad","riv","fog","age","moss","inv"].forEach(n=>U[n]=gl.getUniformLocation(pg,n));
-let hasMat=0,hasTarget=0,viewMode=0,time=0,lastT=0,ok=false;
-function loadI(f,u,tx){const i=new Image();i.onload=()=>{gl.activeTexture(gl.TEXTURE0+u);gl.bindTexture(gl.TEXTURE_2D,tx);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,i);if(!u){canvas.width=i.width;canvas.height=i.height;gl.viewport(0,0,i.width,i.height);ok=true;}else if(u===1)hasMat=1;};i.src=URL.createObjectURL(f);}
-document.getElementById("f-scene").onchange=e=>{if(e.target.files[0])loadI(e.target.files[0],0,sT);};
-document.getElementById("f-mat").onchange=e=>{if(e.target.files[0])loadI(e.target.files[0],1,mT);};
-document.getElementById("f-target").onchange=e=>{if(e.target.files[0]){loadI(e.target.files[0],2,tT);hasTarget=1;}};
+const sT=mkT(0),mT=mkT(1),tT=mkT(2),p1T=mkT(3),p2T=mkT(4);
+gl.uniform1i(gl.getUniformLocation(pg,"S"),0);gl.uniform1i(gl.getUniformLocation(pg,"M"),1);gl.uniform1i(gl.getUniformLocation(pg,"T"),2);gl.uniform1i(gl.getUniformLocation(pg,"P1"),3);gl.uniform1i(gl.getUniformLocation(pg,"P2"),4);
+const U={};["t","w","wind","hasMat","hasTarget","hasPhys1","hasPhys2","viewMode","cR","cS","cG","cW","cF","cP","cFg","cWn","pR","pS","pG","pW","pF","pud","rain","shad","riv","fog","age","moss","inv"].forEach(n=>U[n]=gl.getUniformLocation(pg,n));
+let hasMat=0,hasTarget=0,hasPhys1=0,hasPhys2=0,viewMode=0,time=0,lastT=0,ok=false;
+const SLOT={scene:{input:"f-scene",unit:0,tex:sT,flag:null},target:{input:"f-target",unit:2,tex:tT,flag:"target"},mat:{input:"f-mat",unit:1,tex:mT,flag:"mat"},phys1:{input:"f-phys1",unit:3,tex:p1T,flag:"phys1"},phys2:{input:"f-phys2",unit:4,tex:p2T,flag:"phys2"}};
+const selectedSources={};
+function markLoaded(flag){if(flag==="mat")hasMat=1;else if(flag==="target")hasTarget=1;else if(flag==="phys1")hasPhys1=1;else if(flag==="phys2")hasPhys2=1;}
+function clearFlags(){hasMat=0;hasTarget=0;hasPhys1=0;hasPhys2=0;}
+function loadSrc(src,u,tx,onLoaded){const i=new Image();i.onload=()=>{gl.activeTexture(gl.TEXTURE0+u);gl.bindTexture(gl.TEXTURE_2D,tx);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,i);if(!u){canvas.width=i.width;canvas.height=i.height;gl.viewport(0,0,i.width,i.height);ok=true;}if(onLoaded)onLoaded();};i.src=src;}
+function fileToDataURL(f,cb){const r=new FileReader();r.onload=()=>cb(r.result);r.readAsDataURL(f);}
+function loadSlot(slot,src){const cfg=SLOT[slot];selectedSources[slot]=src;loadSrc(src,cfg.unit,cfg.tex,()=>markLoaded(cfg.flag));}
+Object.entries(SLOT).forEach(([slot,cfg])=>{document.getElementById(cfg.input).onchange=e=>{const f=e.target.files[0];if(f)fileToDataURL(f,src=>loadSlot(slot,src));};});
+const ASSET_SETS={
+  "Dorf":{"preset":"Sturm → Bild 3 (Dorf)","slots":{"scene":"../../1782823262240.png","target":"../../1782823374309.png","mat":"../../1782824829119.png","phys1":"../../1782824578280.png","phys2":"../../1782825643340.png"}},
+  "Taverne":{"preset":"Taverne → Zielbild","slots":{"scene":"../../ResizedImage_2026-06-30_10-28-37_2335[13].png","target":"../../ResizedImage_2026-06-30_10-30-11_7057[76].png","mat":"../../ResizedImage_2026-06-30_10-50-37_3922[2].png","phys1":"../../ResizedImage_2026-06-30_10-28-22_1534[3].png","phys2":"../../ResizedImage_2026-06-30_10-50-35_6349[1].png"}}
+};
+function normalizeSet(set){return set.slots?set:{slots:set};}
+function loadAssetSet(set){const cfg=normalizeSet(set);clearFlags();Object.keys(SLOT).forEach(k=>{if(cfg.slots[k])loadSlot(k,cfg.slots[k]);});if(cfg.preset&&PRESETS[cfg.preset])setState(PRESETS[cfg.preset]);}
+function addAssetButton(name,set,store){const b=document.createElement("button");b.textContent=name+" laden";b.onclick=()=>loadAssetSet(set);document.getElementById("asset-tabs").appendChild(b);if(store)localStorage.setItem("shaderAssetSets",JSON.stringify(store));}
+const savedSets=JSON.parse(localStorage.getItem("shaderAssetSets")||"{}");
+Object.entries(ASSET_SETS).forEach(([name,set])=>addAssetButton(name,set));
+Object.entries(savedSets).forEach(([name,set])=>addAssetButton(name,set));
+document.getElementById("save-asset-set").onclick=()=>{const name=prompt("Name für dieses Bild-Set:","Eigenes Set");if(!name)return;savedSets[name]={slots:{...selectedSources},preset:null};addAssetButton(name,savedSets[name],savedSets);};
 function activateView(id,mode){viewMode=mode;["view-result","view-target","view-split"].forEach(x=>document.getElementById(x).classList.toggle("sel",x===id));}
 document.getElementById("view-result").onclick=()=>activateView("view-result",0);
 document.getElementById("view-target").onclick=()=>activateView("view-target",1);
 document.getElementById("view-split").onclick=()=>activateView("view-split",2);
-const STORM_PRESET={"s-w":76,"s-wind":38,"s-shad":24,"s-pud":84,"s-rain":8,"s-riv":46,"s-fog":24,"s-age":10,"s-moss":72,"s-inv":60,"s-roof-r":138,"s-roof-g":82,"s-roof-b":45,"s-roof-con":70,"s-roof-bri":48,"s-roof-opa":78,"s-stone-r":172,"s-stone-g":166,"s-stone-b":148,"s-stone-con":82,"s-stone-bri":72,"s-stone-opa":86,"s-grass-r":62,"s-grass-g":112,"s-grass-b":45,"s-grass-con":66,"s-grass-bri":56,"s-grass-opa":78,"s-wood-r":80,"s-wood-g":54,"s-wood-b":34,"s-wood-con":72,"s-wood-bri":42,"s-wood-opa":82,"s-fol-r":42,"s-fol-g":90,"s-fol-b":34,"s-fol-con":72,"s-fol-bri":48,"s-fol-opa":82,"s-puddle-r":92,"s-puddle-g":126,"s-puddle-b":138,"s-fog-r":150,"s-fog-g":158,"s-fog-b":142,"s-win-r":235,"s-win-g":132,"s-win-b":78};
-document.getElementById("preset-storm").onclick=()=>setState(STORM_PRESET);
-setState(STORM_PRESET);
+const PRESETS={
+  "Sturm → Bild 2 (Dorf)":{"s-w":88,"s-wind":62,"s-shad":10,"s-pud":92,"s-rain":68,"s-riv":76,"s-fog":58,"s-age":18,"s-moss":76,"s-inv":68,"s-roof-r":96,"s-roof-g":56,"s-roof-b":38,"s-roof-con":76,"s-roof-bri":34,"s-roof-opa":86,"s-stone-r":88,"s-stone-g":92,"s-stone-b":94,"s-stone-con":72,"s-stone-bri":42,"s-stone-opa":88,"s-grass-r":38,"s-grass-g":70,"s-grass-b":34,"s-grass-con":68,"s-grass-bri":35,"s-grass-opa":84,"s-wood-r":54,"s-wood-g":36,"s-wood-b":26,"s-wood-con":70,"s-wood-bri":30,"s-wood-opa":86,"s-fol-r":28,"s-fol-g":56,"s-fol-b":30,"s-fol-con":70,"s-fol-bri":32,"s-fol-opa":86,"s-puddle-r":62,"s-puddle-g":86,"s-puddle-b":102,"s-fog-r":104,"s-fog-g":116,"s-fog-b":126,"s-win-r":190,"s-win-g":112,"s-win-b":58},
+  "Sturm → Bild 3 (Dorf)":{"s-w":76,"s-wind":38,"s-shad":24,"s-pud":84,"s-rain":8,"s-riv":46,"s-fog":24,"s-age":10,"s-moss":72,"s-inv":60,"s-roof-r":138,"s-roof-g":82,"s-roof-b":45,"s-roof-con":70,"s-roof-bri":48,"s-roof-opa":78,"s-stone-r":172,"s-stone-g":166,"s-stone-b":148,"s-stone-con":82,"s-stone-bri":72,"s-stone-opa":86,"s-grass-r":62,"s-grass-g":112,"s-grass-b":45,"s-grass-con":66,"s-grass-bri":56,"s-grass-opa":78,"s-wood-r":80,"s-wood-g":54,"s-wood-b":34,"s-wood-con":72,"s-wood-bri":42,"s-wood-opa":82,"s-fol-r":42,"s-fol-g":90,"s-fol-b":34,"s-fol-con":72,"s-fol-bri":48,"s-fol-opa":82,"s-puddle-r":92,"s-puddle-g":126,"s-puddle-b":138,"s-fog-r":150,"s-fog-g":158,"s-fog-b":142,"s-win-r":235,"s-win-g":132,"s-win-b":78},
+  "Taverne → Zielbild":{"s-w":64,"s-wind":22,"s-shad":18,"s-pud":58,"s-rain":0,"s-riv":28,"s-fog":12,"s-age":8,"s-moss":38,"s-inv":30,"s-roof-r":128,"s-roof-g":72,"s-roof-b":42,"s-roof-con":68,"s-roof-bri":50,"s-roof-opa":72,"s-stone-r":150,"s-stone-g":142,"s-stone-b":128,"s-stone-con":76,"s-stone-bri":62,"s-stone-opa":78,"s-grass-r":54,"s-grass-g":98,"s-grass-b":44,"s-grass-con":62,"s-grass-bri":52,"s-grass-opa":70,"s-wood-r":88,"s-wood-g":58,"s-wood-b":34,"s-wood-con":76,"s-wood-bri":44,"s-wood-opa":84,"s-fol-r":40,"s-fol-g":78,"s-fol-b":34,"s-fol-con":66,"s-fol-bri":44,"s-fol-opa":76,"s-puddle-r":78,"s-puddle-g":102,"s-puddle-b":112,"s-fog-r":132,"s-fog-g":136,"s-fog-b":126,"s-win-r":240,"s-win-g":154,"s-win-b":80}
+};
+Object.entries(PRESETS).forEach(([name,state])=>{const b=document.createElement("button");b.textContent="Preset "+name;b.onclick=()=>setState(state);document.getElementById("preset-tabs").appendChild(b);});
 function gv(id){return+document.getElementById(id).value;}
 function render(now){
   if(!lastT)lastT=now;const dt=(now-lastT)/1000;lastT=now;
   if(document.getElementById("s-anim").checked)time+=dt;
   if(playing&&kfs.length>=2){playT+=dt*.3;if(playT>kfs.length-1)playT=0;setState(lerp(kfs[Math.floor(playT)],kfs[Math.min(Math.floor(playT)+1,kfs.length-1)],playT-Math.floor(playT)));}
   if(!ok){requestAnimationFrame(render);return;}
-  gl.uniform1f(U.t,time);gl.uniform1f(U.w,gv("s-w")/100);gl.uniform1f(U.wind,gv("s-wind")/100);gl.uniform1f(U.hasMat,hasMat);gl.uniform1f(U.hasTarget,hasTarget);gl.uniform1f(U.viewMode,viewMode);
+  gl.uniform1f(U.t,time);gl.uniform1f(U.w,gv("s-w")/100);gl.uniform1f(U.wind,gv("s-wind")/100);gl.uniform1f(U.hasMat,hasMat);gl.uniform1f(U.hasTarget,hasTarget);gl.uniform1f(U.hasPhys1,hasPhys1);gl.uniform1f(U.hasPhys2,hasPhys2);gl.uniform1f(U.viewMode,viewMode);
   gl.uniform1f(U.pud,gv("s-pud")/100);gl.uniform1f(U.rain,gv("s-rain")/100);gl.uniform1f(U.shad,gv("s-shad")/100);
   gl.uniform1f(U.riv,gv("s-riv")/100);gl.uniform1f(U.fog,gv("s-fog")/100);
   gl.uniform1f(U.age,gv("s-age")/100);gl.uniform1f(U.moss,gv("s-moss")/100);gl.uniform1f(U.inv,gv("s-inv")/100);
