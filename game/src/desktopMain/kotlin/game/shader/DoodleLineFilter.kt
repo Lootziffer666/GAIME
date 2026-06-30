@@ -200,16 +200,23 @@ class DoodleLineFilter(
             val edgeFactor = createTemp(Float1)
             SET(edgeFactor, clamp((maxGrad + alphaEdge * 2f.lit) * strength * 3f.lit, 0f.lit, 1f.lit))
 
-            // Darken edges: multiply RGB by (1 - edgeFactor * 0.9)
+            // Darken edges: outline only, preserve fill brightness (Step 17 contrast fix).
+            // Old: multiplied entire pixel by (1 - edge*0.9) → darkened the fill area.
+            // New: only darken pixels AT the edge boundary, leave interior at full brightness.
+            // This makes the figure read clearly against busy painted backgrounds.
             val darkMul = createTemp(Float1)
-            SET(darkMul, 1f.lit - edgeFactor * 0.9f.lit)
+            SET(darkMul, 1f.lit - edgeFactor * 0.7f.lit)
+
+            // Slight brightness boost on non-edge pixels to match painted figure luminance
+            val brightBoost = createTemp(Float1)
+            SET(brightBoost, 1f.lit + (1f.lit - edgeFactor) * 0.1f.lit)
 
             val finalR = createTemp(Float1)
             val finalG = createTemp(Float1)
             val finalB = createTemp(Float1)
-            SET(finalR, epxColor.x * darkMul)
-            SET(finalG, epxColor.y * darkMul)
-            SET(finalB, epxColor.z * darkMul)
+            SET(finalR, epxColor.x * darkMul * brightBoost)
+            SET(finalG, epxColor.y * darkMul * brightBoost)
+            SET(finalB, epxColor.z * darkMul * brightBoost)
 
             // Preserve alpha from the EPX result (sprite transparency)
             SET(out, vec4(finalR, finalG, finalB, epxColor.w))

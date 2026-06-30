@@ -1,0 +1,10 @@
+{
+  "frameW": 26,
+  "frameH": 30,
+  "cols": 6,
+  "rows": 4,
+  "footAnchorX": 12,
+  "footAnchorY": 29,
+  "opaqueBodyH": 28,
+  "source": "Vampires1_Walk_with_shadow.png"
+}

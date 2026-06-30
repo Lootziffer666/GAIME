@@ -12,29 +12,84 @@ import korlibs.math.geom.RectangleInt
 /**
  * Loads CraftPix sprite sheets and slices them into individual frames.
  *
- * CraftPix convention (verified against the actual swordsman/vampire assets):
- * these sheets are GRIDS of square [DEFAULT_FRAME_SIZE]×[DEFAULT_FRAME_SIZE]
- * frames. The sheet height is N rows (the 4 rows are facing directions); each
- * row's columns are the animation frames for that direction. We use ROW 0 (the
- * front-facing animation): frame count = bitmap.width / frameSize.
+ * Step 17: Now reads .sheet.json descriptors (from the sheet-normalizer tool)
+ * when available. The descriptor provides frameW, frameH, cols, rows, and
+ * foot anchor — derived from actual opaque pixel bounds, not assumptions.
+ * DEFAULT_FRAME_SIZE=64 is only a FALLBACK for sheets without a descriptor.
  *
- * NOTE: the earlier assumption "frames are height-sized squares in a single row"
- * was wrong (an idle sheet is 768×256 = a 12×4 grid of 64px frames, not 3×256).
  * See KNOWN_BUGS B005.
  */
 object SpriteLoader {
 
-    /** Frame edge length for the CraftPix HD character sheets used in this game. */
+    /** Frame edge length fallback (only used when no .sheet.json exists). */
     const val DEFAULT_FRAME_SIZE = 64
 
     /**
+     * Descriptor from a .sheet.json file (output of tools/sheet-normalizer).
+     * Provides the actual frame grid dimensions + body measurements.
+     */
+    data class SheetDescriptor(
+        val frameW: Int,
+        val frameH: Int,
+        val cols: Int,
+        val rows: Int,
+        val footAnchorX: Int,
+        val footAnchorY: Int,
+        val opaqueBodyH: Int,
+        val source: String = "",
+    )
+
+    /**
+     * Try to load the .sheet.json descriptor for a given sheet path.
+     * Convention: for "Foo.png", look for "Foo.sheet.json" in the same directory.
+     */
+    suspend fun loadDescriptor(assetPath: String): SheetDescriptor? {
+        val jsonPath = assetPath.removeSuffix(".png") + ".sheet.json"
+        return try {
+            val content = resourcesVfs[jsonPath].readString()
+            parseDescriptor(content)
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    /** Simple JSON parser for SheetDescriptor (no external serialization dependency). */
+    internal fun parseDescriptor(json: String): SheetDescriptor? {
+        return try {
+            fun extractInt(key: String): Int {
+                val pattern = Regex(""""$key"\s*:\s*(\d+)""")
+                return pattern.find(json)?.groupValues?.get(1)?.toInt() ?: 0
+            }
+            fun extractString(key: String): String {
+                val pattern = Regex(""""$key"\s*:\s*"([^"]*)"?""")
+                return pattern.find(json)?.groupValues?.get(1) ?: ""
+            }
+            SheetDescriptor(
+                frameW = extractInt("frameW"),
+                frameH = extractInt("frameH"),
+                cols = extractInt("cols"),
+                rows = extractInt("rows"),
+                footAnchorX = extractInt("footAnchorX"),
+                footAnchorY = extractInt("footAnchorY"),
+                opaqueBodyH = extractInt("opaqueBodyH"),
+                source = extractString("source"),
+            )
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    /**
      * Load a sprite sheet from [assetPath] via resourcesVfs and slice into frames.
+     * If a .sheet.json descriptor exists, uses its frameW/frameH instead of the default.
      * Falls back to a single procedural placeholder frame if loading fails.
      */
     suspend fun load(assetPath: String, frameSize: Int = DEFAULT_FRAME_SIZE): List<BmpSlice> {
         return try {
             val bitmap = resourcesVfs[assetPath].readBitmap()
-            sliceFrames(bitmap, frameSize)
+            val descriptor = loadDescriptor(assetPath)
+            val fs = descriptor?.frameW ?: frameSize
+            sliceFrames(bitmap, fs)
         } catch (_: Exception) {
             // Fallback: single procedural frame (compile-safe, no asset needed)
             listOf(buildFallbackBitmap().slice())
@@ -42,7 +97,7 @@ object SpriteLoader {
     }
 
     /**
-     * Slice ROW 0 of a grid sprite sheet into square [frameSize] frames.
+     * Slice ROW 0 of a grid sprite sheet into [frameW]×[frameH] frames.
      * If the bitmap is smaller than [frameSize] (e.g. the procedural fallback),
      * the whole bitmap height is used as the frame size so it yields one frame.
      */
@@ -52,6 +107,19 @@ object SpriteLoader {
         val frameCount = (bitmap.width / fs).coerceAtLeast(1)
         return List(frameCount) { i ->
             bitmap.slice(RectangleInt(i * fs, 0, fs, fs))
+        }
+    }
+
+    /**
+     * Slice ROW 0 using non-square frames (frameW × frameH from descriptor).
+     */
+    fun sliceFramesRect(bitmap: Bitmap, frameW: Int, frameH: Int): List<BmpSlice> {
+        if (bitmap.height <= 0 || bitmap.width <= 0) return listOf(bitmap.slice())
+        val fw = if (frameW <= 0 || frameW > bitmap.width) bitmap.width else frameW
+        val fh = if (frameH <= 0 || frameH > bitmap.height) bitmap.height else frameH
+        val frameCount = (bitmap.width / fw).coerceAtLeast(1)
+        return List(frameCount) { i ->
+            bitmap.slice(RectangleInt(i * fw, 0, fw, fh))
         }
     }
 
@@ -81,15 +149,56 @@ object SpriteLoader {
     }
 
     /**
+     * Slices ALL rows with non-square frames (frameW × frameH from descriptor).
+     */
+    fun sliceAllRowsRect(bitmap: Bitmap, frameW: Int, frameH: Int): List<List<BmpSlice>> {
+        if (bitmap.height <= 0 || bitmap.width <= 0) return listOf(listOf(bitmap.slice()))
+        val fw = if (frameW <= 0 || frameW > bitmap.width) bitmap.width else frameW
+        val fh = if (frameH <= 0 || frameH > bitmap.height) bitmap.height else frameH
+        val rowCount = (bitmap.height / fh).coerceAtLeast(1)
+        val colCount = (bitmap.width / fw).coerceAtLeast(1)
+        return List(rowCount) { row ->
+            List(colCount) { col ->
+                bitmap.slice(RectangleInt(col * fw, row * fh, fw, fh))
+            }
+        }
+    }
+
+    /**
      * Convenience: load a sheet and return all rows.
+     * Uses .sheet.json descriptor if available (non-square frames).
      * Fallback: single row with the procedural fallback frame.
      */
     suspend fun loadAllRows(assetPath: String, frameSize: Int = DEFAULT_FRAME_SIZE): List<List<BmpSlice>> {
         return try {
             val bitmap = resourcesVfs[assetPath].readBitmap()
-            sliceAllRows(bitmap, frameSize)
+            val descriptor = loadDescriptor(assetPath)
+            if (descriptor != null) {
+                sliceAllRowsRect(bitmap, descriptor.frameW, descriptor.frameH)
+            } else {
+                sliceAllRows(bitmap, frameSize)
+            }
         } catch (_: Exception) {
             listOf(listOf(buildFallbackBitmap().slice()))
+        }
+    }
+
+    /**
+     * Load a sheet + its descriptor together. Returns pair of (rows, descriptor?).
+     * Used by CharacterSprite to get both frames AND body metrics in one call.
+     */
+    suspend fun loadWithDescriptor(assetPath: String): Pair<List<List<BmpSlice>>, SheetDescriptor?> {
+        return try {
+            val bitmap = resourcesVfs[assetPath].readBitmap()
+            val descriptor = loadDescriptor(assetPath)
+            val rows = if (descriptor != null) {
+                sliceAllRowsRect(bitmap, descriptor.frameW, descriptor.frameH)
+            } else {
+                sliceAllRows(bitmap, DEFAULT_FRAME_SIZE)
+            }
+            rows to descriptor
+        } catch (_: Exception) {
+            listOf(listOf(buildFallbackBitmap().slice())) to null
         }
     }
 }

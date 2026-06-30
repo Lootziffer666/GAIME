@@ -17,7 +17,10 @@ import rpg.weather.Season
 
 /**
  * An invisible NPC interaction hotspot on the grid.
- * No sprite rendered — the painted background provides the visual.
+ * Step 17: Now carries an optional sheet path so NPCs can be rendered
+ * as Doodle-filtered sprites (same as the player). If sheetPath is null,
+ * the NPC remains an invisible hotspot (legacy behavior / figurefree maps
+ * without character assets yet).
  */
 data class ImageNpcHotspot(
     val cellX: Int,
@@ -25,6 +28,8 @@ data class ImageNpcHotspot(
     val facingHint: Facing,
     val dialog: List<DialogLine>,
     val barkEvent: BarkEvent?,
+    val sheetPath: String? = null,
+    val walkSheetPath: String? = null,
 )
 
 /**
@@ -78,7 +83,7 @@ data class ImageWorldDef(
          */
         fun tavernInterior(): ImageWorldDef = ImageWorldDef(
             id = ImageMapId.TAVERN_INTERIOR,
-            imagePath = "assets/HD/backgrounds/tavern_interior.png",
+            imagePath = "assets/HD/backgrounds/figurefree/tavern_interior.png",
             gridTmxPath = "assets/HD/backgrounds/tavern_interior.tmx",
             displayName = "Heroes' Home",
             spawn = 39 to 50, // center of large walkable area
@@ -94,6 +99,8 @@ data class ImageWorldDef(
                         DialogLine("Barkeep", "The Questbook. It fell on the desk and opened\nto the right page. Fate, probably."),
                     ),
                     barkEvent = BarkEvent.BARKEEP_SPEND_SOME_COIN,
+                    sheetPath = "assets/HD/characters/vampire/PNG/Vampires1/Without_shadow/Vampires1_Idle_without_shadow.png",
+                    walkSheetPath = "assets/HD/characters/vampire/PNG/Vampires1/Without_shadow/Vampires1_Walk_without_shadow.png",
                 ),
                 ImageNpcHotspot(
                     cellX = 40,
@@ -104,6 +111,8 @@ data class ImageWorldDef(
                         DialogLine("Patron", "I hear the king likes to wear evening gowns."),
                     ),
                     barkEvent = BarkEvent.PATRON_HE_SURE_IS_SLOW,
+                    sheetPath = "assets/HD/characters/swordsman/PNG/Swordsman_lvl2/Without_shadow/Swordsman_lvl2_Idle_without_shadow.png",
+                    walkSheetPath = "assets/HD/characters/swordsman/PNG/Swordsman_lvl2/Without_shadow/Swordsman_lvl2_Walk_without_shadow.png",
                 ),
             ),
             exits = listOf(

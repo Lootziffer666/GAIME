@@ -1,0 +1,10 @@
+{
+  "frameW": 40,
+  "frameH": 29,
+  "cols": 6,
+  "rows": 4,
+  "footAnchorX": 19,
+  "footAnchorY": 28,
+  "opaqueBodyH": 25,
+  "source": "Vampires3_Walk_without_shadow.png"
+}

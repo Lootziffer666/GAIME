@@ -1,0 +1,10 @@
+{
+  "frameW": 24,
+  "frameH": 30,
+  "cols": 6,
+  "rows": 4,
+  "footAnchorX": 11,
+  "footAnchorY": 29,
+  "opaqueBodyH": 26,
+  "source": "Swordsman_lvl3_Walk_with_shadow.png"
+}
