@@ -1,0 +1,1058 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GAIME Shader Editor v5.0</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0e0e16;color:#e2e8f0;font-family:'Courier New',monospace;display:flex;height:100vh;overflow:hidden}
+#sidebar{width:400px;padding:12px;overflow-y:auto;background:#151526;border-right:1px solid #2d2d44;flex-shrink:0}
+#sidebar::-webkit-scrollbar{width:6px}
+#sidebar::-webkit-scrollbar-thumb{background:#00ffcc;border-radius:3px}
+#canvas-wrap{flex:1;display:flex;align-items:center;justify-content:center;background:#05050a;padding:15px;overflow:hidden}
+h2{color:#00ffcc;margin:12px 0 6px;font-size:11px;text-transform:uppercase;border-top:1px solid #2d2d44;padding-top:8px;letter-spacing:1px}
+h3{color:#a78bfa;margin:8px 0 4px;font-size:10px;text-transform:uppercase}
+.c{margin:3px 0 5px}
+.c label{display:flex;justify-content:space-between;font-size:10px;color:#a0aec0}
+.c input[type=range]{width:100%;height:14px;accent-color:#00ffcc;background:#1a1a2e}
+.c .v{color:#00ffcc;min-width:35px;text-align:right;font-weight:bold}
+button{background:#00ffcc;color:#0e0e16;border:none;padding:6px 12px;cursor:pointer;font-weight:bold;margin:2px;border-radius:4px;font-size:10px;transition:all 0.2s}
+button:hover{background:#33ffdd;transform:translateY(-1px)}
+button.sel{background:#00ffcc;color:#0e0e16}
+button:not(.sel){background:#252538;color:#a0aec0}
+input[type=file]{font-size:9px;width:100%;margin:4px 0;background:#1a1a2e;padding:4px;border:1px dashed #444;border-radius:4px;color:#aaa}
+#title{color:#00ffcc;font-size:14px;font-weight:bold;margin-bottom:8px}
+.tabs{display:flex;flex-wrap:wrap;gap:2px;margin:4px 0}
+.tabs button{font-size:9px;padding:5px 8px}
+.section{background:#1a1a2e;border:1px solid #2d2d44;border-radius:6px;padding:8px;margin:6px 0}
+.section-title{color:#f59e0b;font-size:11px;font-weight:bold;margin-bottom:6px;text-transform:uppercase}
+.mat-panel{display:none}.mat-panel.active{display:block}
+.canvas-container{position:relative;display:inline-block;max-width:100%;max-height:85vh}
+canvas{max-width:100%;max-height:85vh;object-fit:contain;border-radius:6px;border:1px solid #2d2d44;box-shadow:0 10px 30px rgba(0,0,0,0.8)}
+#ui-canvas{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;border:none;box-shadow:none}
+canvas.painting{cursor:crosshair!important}
+canvas.vectoring{cursor:cell!important}
+@media(max-width:800px){body{flex-direction:column;overflow-y:auto;height:auto}#sidebar{width:100%;height:auto}#canvas-wrap{height:60vh}}
+</style>
+</head>
+<body>
+<div id="sidebar">
+<div id="title">GAIME Shader Editor v5.0<br><span style="font-size:10px;color:#a0aec0">Atomic Weather &amp; Material Control</span></div>
+
+<h2>Image Files</h2>
+<div>
+  <input type="file" id="f-scene" accept="image/*" title="Scene Image">
+  <input type="file" id="f-mat" accept="image/*" title="Material Color Map">
+</div>
+
+<h2>Live Brush</h2>
+<div class="tabs" id="brush-tabs">
+  <button class="sel" data-type="none" data-color="none">Navigate</button>
+  <button data-type="paint" data-color="#22B14C" style="border-bottom:2px solid #22B14C">Grass</button>
+  <button data-type="paint" data-color="#DC2626" style="border-bottom:2px solid #DC2626">Stone</button>
+  <button data-type="paint" data-color="#854D0E" style="border-bottom:2px solid #854D0E">Wood</button>
+  <button data-type="paint" data-color="#F97216" style="border-bottom:2px solid #F97216">Roof</button>
+  <button data-type="flow" data-color="vector" style="border-bottom:2px solid #ff00cc;color:#ff00cc">Flow Dir</button>
+  <button data-type="paint" data-color="#0000FF" style="border-bottom:2px solid #0000FF">Puddle</button>
+</div>
+<div class="c"><label>Brush Size<span class="v" id="d-brush">10</span></label><input type="range" id="s-brush" min="1" max="100" value="10"></div>
+
+<!-- SECTION 1: PUDDLES -->
+<div class="section">
+<div class="section-title">Puddles (where water collects)</div>
+<div class="c"><label>Puddle Depth<span class="v" id="d-pudDepth">55</span></label><input type="range" id="s-pudDepth" min="0" max="100" value="55"></div>
+<div class="c"><label>Puddle Spread<span class="v" id="d-pudSpread">50</span></label><input type="range" id="s-pudSpread" min="0" max="100" value="50"></div>
+<div class="c"><label>Ripple Intensity<span class="v" id="d-pudRipple">40</span></label><input type="range" id="s-pudRipple" min="0" max="100" value="40"></div>
+<h3>Puddle Color</h3>
+<div class="c"><label>R<span class="v" id="d-pudR">75</span></label><input type="range" id="s-pudR" min="0" max="255" value="75"></div>
+<div class="c"><label>G<span class="v" id="d-pudG">80</span></label><input type="range" id="s-pudG" min="0" max="255" value="80"></div>
+<div class="c"><label>B<span class="v" id="d-pudB">82</span></label><input type="range" id="s-pudB" min="0" max="255" value="82"></div>
+<div class="c"><label>Contrast<span class="v" id="d-pudCon">50</span></label><input type="range" id="s-pudCon" min="0" max="100" value="50"></div>
+<div class="c"><label>Brightness<span class="v" id="d-pudBri">50</span></label><input type="range" id="s-pudBri" min="0" max="100" value="50"></div>
+<div class="c"><label>Saturation<span class="v" id="d-pudSat">50</span></label><input type="range" id="s-pudSat" min="0" max="100" value="50"></div>
+</div>
+
+<!-- SECTION 2: WETNESS -->
+<div class="section">
+<div class="section-title">Wetness (how soaked surfaces are)</div>
+<div class="c"><label>Wetness Amount<span class="v" id="d-wetness">0</span></label><input type="range" id="s-wetness" min="0" max="100" value="0"></div>
+<div class="c"><label>Specular Gloss<span class="v" id="d-wetGloss">50</span></label><input type="range" id="s-wetGloss" min="0" max="100" value="50"></div>
+<div class="c"><label>Darkening<span class="v" id="d-wetDarken">40</span></label><input type="range" id="s-wetDarken" min="0" max="100" value="40"></div>
+<h3>Wet Tint</h3>
+<div class="c"><label>R<span class="v" id="d-wetR">200</span></label><input type="range" id="s-wetR" min="0" max="255" value="200"></div>
+<div class="c"><label>G<span class="v" id="d-wetG">210</span></label><input type="range" id="s-wetG" min="0" max="255" value="210"></div>
+<div class="c"><label>B<span class="v" id="d-wetB">220</span></label><input type="range" id="s-wetB" min="0" max="255" value="220"></div>
+<div class="c"><label>Contrast<span class="v" id="d-wetCon">50</span></label><input type="range" id="s-wetCon" min="0" max="100" value="50"></div>
+<div class="c"><label>Brightness<span class="v" id="d-wetBri">50</span></label><input type="range" id="s-wetBri" min="0" max="100" value="50"></div>
+<div class="c"><label>Saturation<span class="v" id="d-wetSat">60</span></label><input type="range" id="s-wetSat" min="0" max="100" value="60"></div>
+</div>
+
+<!-- SECTION 3: WEATHER -->
+<div class="section">
+<div class="section-title">Weather (atmospheric intensity)</div>
+<div class="c"><label>Rain Intensity<span class="v" id="d-rain">0</span></label><input type="range" id="s-rain" min="0" max="100" value="0"></div>
+<div class="c"><label>Wind Speed<span class="v" id="d-wind">30</span></label><input type="range" id="s-wind" min="0" max="100" value="30"></div>
+<div class="c"><label>Lightning<span class="v" id="d-lightning">0</span></label><input type="range" id="s-lightning" min="0" max="100" value="0"></div>
+<div class="c"><label>Rolling Fog<span class="v" id="d-rollingfog">0</span></label><input type="range" id="s-rollingfog" min="0" max="100" value="0"></div>
+<div class="c"><label>Cold / Frost<span class="v" id="d-cold">0</span></label><input type="range" id="s-cold" min="0" max="100" value="0"></div>
+<div class="c"><label>Overcast Dimmer<span class="v" id="d-overcast">0</span></label><input type="range" id="s-overcast" min="0" max="100" value="0"></div>
+<div class="c"><label>Contrast Boost<span class="v" id="d-contrastBoost">30</span></label><input type="range" id="s-contrastBoost" min="0" max="100" value="30"></div>
+<h3>Fog Color</h3>
+<div class="c"><label>R<span class="v" id="d-fogR">180</span></label><input type="range" id="s-fogR" min="0" max="255" value="180"></div>
+<div class="c"><label>G<span class="v" id="d-fogG">185</span></label><input type="range" id="s-fogG" min="0" max="255" value="185"></div>
+<div class="c"><label>B<span class="v" id="d-fogB">182</span></label><input type="range" id="s-fogB" min="0" max="255" value="182"></div>
+<div class="c"><label>Contrast<span class="v" id="d-fogCon">50</span></label><input type="range" id="s-fogCon" min="0" max="100" value="50"></div>
+<div class="c"><label>Brightness<span class="v" id="d-fogBri">50</span></label><input type="range" id="s-fogBri" min="0" max="100" value="50"></div>
+<div class="c"><label>Saturation<span class="v" id="d-fogSat">40</span></label><input type="range" id="s-fogSat" min="0" max="100" value="40"></div>
+</div>
+
+<!-- TIME OF DAY (independent) -->
+<div class="section">
+<div class="section-title">Time of Day (independent axis)</div>
+<div class="tabs">
+  <button onclick="setTime(6)">Dawn</button>
+  <button onclick="setTime(13)">Noon</button>
+  <button onclick="setTime(19.5)">Dusk</button>
+  <button onclick="setTime(0)">Midnight</button>
+</div>
+<div class="c"><label style="color:#fcd34d">Hour (0-24)<span class="v" id="d-timeofday">13.00</span></label><input type="range" id="s-timeofday" min="0" max="2400" value="1300"></div>
+</div>
+
+<!-- SEASON (independent) -->
+<div class="section">
+<div class="section-title">Season (independent axis)</div>
+<div class="tabs">
+  <button onclick="setSeason(0)">Spring</button>
+  <button onclick="setSeason(33)">Summer</button>
+  <button onclick="setSeason(66)">Autumn</button>
+  <button onclick="setSeason(100)">Winter</button>
+</div>
+<div class="c"><label style="color:#f9a8d4">Season (Spring &rarr; Winter)<span class="v" id="d-season">50</span></label><input type="range" id="s-season" min="0" max="100" value="50"></div>
+<div class="c"><label>Global Aging<span class="v" id="d-age">0</span></label><input type="range" id="s-age" min="0" max="100" value="0"></div>
+</div>
+
+<!-- MATERIALS -->
+<h2>Materials</h2>
+<div class="tabs" id="mat-tabs">
+  <button class="sel" data-mat="roof">Roof</button>
+  <button data-mat="stone">Stone</button>
+  <button data-mat="grass">Grass</button>
+  <button data-mat="wood">Wood</button>
+  <button data-mat="foliage">Foliage</button>
+  <button data-mat="window">Window</button>
+</div>
+<div id="mat-panels"></div>
+
+<!-- PARTICLES -->
+<div class="section">
+<div class="section-title">Particle Physics</div>
+<div class="tabs" id="particle-tabs">
+  <button class="sel" data-ptype="off">Off</button>
+  <button data-ptype="leaf">Leaves</button>
+  <button data-ptype="snow">Snow</button>
+</div>
+<div class="c"><label>Spawn Rate<span class="v" id="d-pRate">50</span></label><input type="range" id="s-pRate" min="0" max="100" value="50"></div>
+<div class="c"><label>Wind Force<span class="v" id="d-pWind">30</span></label><input type="range" id="s-pWind" min="0" max="100" value="30"></div>
+<div class="c"><label>Particle Count<span class="v" id="d-pCount">0</span></label></div>
+<div style="font-size:9px;color:#666;margin-top:4px">Click canvas to disturb particles</div>
+</div>
+
+<h2>Options</h2>
+<div class="c"><label><input type="checkbox" id="s-anim" checked> Animation Active</label></div>
+
+<h2>Export</h2>
+<button id="btn-png">Save PNG</button>
+<button id="btn-json">Save JSON</button>
+</div>
+
+<div id="canvas-wrap">
+  <div class="canvas-container">
+    <canvas id="gl"></canvas>
+    <canvas id="ui-canvas"></canvas>
+  </div>
+</div>
+
+<script src="particle_sim.js"></script>
+<script>
+// ============================================================
+// GAIME Shader Editor v5.0 — All PR #56-#66 findings fixed:
+// [CRITICAL] atan+epsilon, mGr distance-threshold, time mod, no sqrt in shader
+// [MEDIUM] alpha-premultiply, URL.revokeObjectURL, localStorage try-catch,
+//          selectedSources clear, onerror handler, unused vars removed
+// [PAINT FIX] hasMat=1 when painting (even without material map loaded)
+// ============================================================
+
+// --- Material panel generation ---
+const MATERIALS = {
+  roof:    {label:'Roof',    r:138, g:82,  b:72,  con:70, bri:48, sat:50},
+  stone:   {label:'Stone',   r:162, g:160, b:158, con:72, bri:62, sat:50},
+  grass:   {label:'Grass',   r:58,  g:102, b:62,  con:66, bri:56, sat:50},
+  wood:    {label:'Wood',    r:76,  g:54,  b:48,  con:72, bri:42, sat:50},
+  foliage: {label:'Foliage', r:40,  g:82,  b:52,  con:72, bri:48, sat:50},
+  window:  {label:'Window',  r:235, g:132, b:78,  con:50, bri:50, sat:50}
+};
+
+const matPanels = document.getElementById('mat-panels');
+Object.entries(MATERIALS).forEach(([key, m], idx) => {
+  const div = document.createElement('div');
+  div.className = 'mat-panel' + (idx === 0 ? ' active' : '');
+  div.id = 'mp-' + key;
+  div.innerHTML = `
+    <div class="c"><label>R<span class="v" id="d-${key}R">${m.r}</span></label><input type="range" id="s-${key}R" min="0" max="255" value="${m.r}"></div>
+    <div class="c"><label>G<span class="v" id="d-${key}G">${m.g}</span></label><input type="range" id="s-${key}G" min="0" max="255" value="${m.g}"></div>
+    <div class="c"><label>B<span class="v" id="d-${key}B">${m.b}</span></label><input type="range" id="s-${key}B" min="0" max="255" value="${m.b}"></div>
+    <div class="c"><label>Contrast<span class="v" id="d-${key}Con">${m.con}</span></label><input type="range" id="s-${key}Con" min="0" max="100" value="${m.con}"></div>
+    <div class="c"><label>Brightness<span class="v" id="d-${key}Bri">${m.bri}</span></label><input type="range" id="s-${key}Bri" min="0" max="100" value="${m.bri}"></div>
+    <div class="c"><label>Saturation<span class="v" id="d-${key}Sat">${m.sat}</span></label><input type="range" id="s-${key}Sat" min="0" max="100" value="${m.sat}"></div>`;
+  matPanels.appendChild(div);
+});
+
+document.querySelectorAll('#mat-tabs button').forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll('#mat-tabs button').forEach(b => b.classList.remove('sel'));
+    btn.classList.add('sel');
+    document.querySelectorAll('.mat-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('mp-' + btn.dataset.mat).classList.add('active');
+  };
+});
+
+// --- Display value sync ---
+document.querySelectorAll('input[type=range]').forEach(inp => {
+  inp.oninput = () => {
+    const did = inp.id.replace('s-','d-');
+    const el = document.getElementById(did);
+    if (el) {
+      if (inp.id === 's-timeofday') el.textContent = (inp.value / 100).toFixed(2);
+      else el.textContent = inp.value;
+    }
+  };
+});
+
+function setTime(h) {
+  document.getElementById('s-timeofday').value = h * 100;
+  document.getElementById('d-timeofday').textContent = h.toFixed(2);
+}
+function setSeason(v) {
+  document.getElementById('s-season').value = v;
+  document.getElementById('d-season').textContent = v;
+}
+
+// --- PAINTING SYSTEM ---
+const matCanvas = document.createElement('canvas');
+const matCtx = matCanvas.getContext('2d', {willReadFrequently: true});
+const flowCanvas = document.createElement('canvas');
+const flowCtx = flowCanvas.getContext('2d', {willReadFrequently: true});
+const uiCanvas = document.getElementById('ui-canvas');
+const uiCtx = uiCanvas.getContext('2d');
+const canvas = document.getElementById('gl');
+
+let activeTool = 'none';
+let activeColor = 'none';
+let isDrawing = false;
+let brushSize = 10;
+let flowStartX = 0, flowStartY = 0;
+let hasMat = 0;
+
+document.querySelectorAll('#brush-tabs button').forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll('#brush-tabs button').forEach(b => b.classList.remove('sel'));
+    btn.classList.add('sel');
+    activeTool = btn.dataset.type;
+    activeColor = btn.dataset.color;
+    canvas.classList.remove('painting', 'vectoring');
+    if (activeTool === 'paint') canvas.classList.add('painting');
+    if (activeTool === 'flow') canvas.classList.add('vectoring');
+  };
+});
+
+document.getElementById('s-brush').oninput = e => {
+  brushSize = parseInt(e.target.value);
+  document.getElementById('d-brush').textContent = brushSize;
+};
+
+function getPointerPos(e) {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  let clientX = e.clientX, clientY = e.clientY;
+  if (e.touches && e.touches.length > 0) { clientX = e.touches[0].clientX; clientY = e.touches[0].clientY; }
+  return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
+}
+
+function handlePointerDown(e) {
+  if (activeTool === 'none') return;
+  e.preventDefault();
+  isDrawing = true;
+  // FIX: Set hasMat=1 when user starts painting (paint creates the material map)
+  if (activeTool === 'paint') {
+    if (!hasMat) {
+      matCanvas.width = canvas.width || 512;
+      matCanvas.height = canvas.height || 512;
+      matCtx.fillStyle = '#000000';
+      matCtx.fillRect(0, 0, matCanvas.width, matCanvas.height);
+      hasMat = 1;
+    }
+    paint(getPointerPos(e));
+  } else if (activeTool === 'flow') {
+    const pos = getPointerPos(e);
+    flowStartX = pos.x;
+    flowStartY = pos.y;
+  }
+}
+
+function handlePointerMove(e) {
+  if (!isDrawing) return;
+  const pos = getPointerPos(e);
+  if (activeTool === 'paint') paint(pos);
+  else if (activeTool === 'flow') {
+    uiCtx.clearRect(0, 0, uiCanvas.width, uiCanvas.height);
+    uiCtx.strokeStyle = '#ff00cc'; uiCtx.lineWidth = 4; uiCtx.lineCap = 'round';
+    uiCtx.beginPath(); uiCtx.moveTo(flowStartX, flowStartY); uiCtx.lineTo(pos.x, pos.y); uiCtx.stroke();
+    const angle = Math.atan2(pos.y - flowStartY, pos.x - flowStartX);
+    uiCtx.beginPath(); uiCtx.moveTo(pos.x, pos.y);
+    uiCtx.lineTo(pos.x - 15*Math.cos(angle - Math.PI/6), pos.y - 15*Math.sin(angle - Math.PI/6));
+    uiCtx.lineTo(pos.x - 15*Math.cos(angle + Math.PI/6), pos.y - 15*Math.sin(angle + Math.PI/6));
+    uiCtx.fillStyle = '#ff00cc'; uiCtx.fill();
+  }
+}
+
+function handlePointerUp(e) {
+  if (!isDrawing) return;
+  isDrawing = false;
+  if (activeTool === 'flow') {
+    const pos = getPointerPos(e);
+    uiCtx.clearRect(0, 0, uiCanvas.width, uiCanvas.height);
+    const dx = pos.x - flowStartX, dy = pos.y - flowStartY;
+    // FIX: no sqrt in hot path — use squared length comparison
+    const lenSq = dx*dx + dy*dy;
+    if (lenSq > 25) { // threshold 5^2=25
+      const invLen = 1.0 / Math.sqrt(lenSq); // sqrt OK in JS event handler (not shader)
+      const ndx = dx * invLen, ndy = dy * invLen;
+      const r = Math.floor((ndx + 1.0) * 127.5), g = Math.floor((ndy + 1.0) * 127.5);
+      flowCtx.strokeStyle = `rgb(${r}, ${g}, 128)`;
+      flowCtx.lineWidth = brushSize * 2; flowCtx.lineCap = 'round';
+      flowCtx.beginPath(); flowCtx.moveTo(flowStartX, flowStartY); flowCtx.lineTo(pos.x, pos.y); flowCtx.stroke();
+      updateFlowTex();
+    }
+  }
+}
+
+function paint(pos) {
+  if (pos.x < 0 || pos.x > matCanvas.width || pos.y < 0 || pos.y > matCanvas.height) return;
+  matCtx.fillStyle = activeColor;
+  matCtx.beginPath(); matCtx.arc(pos.x, pos.y, brushSize, 0, Math.PI * 2); matCtx.fill();
+  updateMatTex();
+}
+
+canvas.addEventListener('mousedown', handlePointerDown);
+canvas.addEventListener('mousemove', handlePointerMove);
+window.addEventListener('mouseup', handlePointerUp);
+canvas.addEventListener('touchstart', handlePointerDown, {passive: false});
+canvas.addEventListener('touchmove', handlePointerMove, {passive: false});
+window.addEventListener('touchend', handlePointerUp);
+
+// === WEBGL SETUP ===
+const gl = canvas.getContext('webgl', {preserveDrawingBuffer: true, premultipliedAlpha: false});
+
+function updateMatTex() {
+  if (!hasMat) return;
+  gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, mTex);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, matCanvas);
+}
+function updateFlowTex() {
+  gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D, fTex);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, flowCanvas);
+}
+
+const VS = `attribute vec2 a_pos;varying vec2 v_uv;void main(){v_uv=a_pos*0.5+0.5;v_uv.y=1.0-v_uv.y;gl_Position=vec4(a_pos,0,1);}`;
+
+// FRAGMENT SHADER — all critical bugs fixed
+const FS = `precision highp float;
+varying vec2 v_uv;
+uniform sampler2D u_scene, u_mat, u_flow;
+uniform float u_time, u_hasMat;
+
+// Atomic weather controls
+uniform float u_pudDepth, u_pudSpread, u_pudRipple;
+uniform vec3 u_pudColor;
+uniform float u_pudCon, u_pudBri, u_pudSat;
+
+uniform float u_wetness, u_wetGloss, u_wetDarken;
+uniform vec3 u_wetColor;
+uniform float u_wetCon, u_wetBri, u_wetSat;
+
+uniform float u_rain, u_wind, u_lightning, u_rollingFog, u_cold;
+uniform float u_overcast, u_contrastBoost;
+uniform vec3 u_fogColor;
+uniform float u_fogCon, u_fogBri, u_fogSat;
+
+uniform float u_timeOfDay, u_season, u_age;
+
+// Material colors
+uniform vec3 u_cRoof, u_cStone, u_cGrass, u_cWood, u_cFoliage, u_cWindow;
+uniform float u_roofCon, u_roofBri, u_roofSat;
+uniform float u_stoneCon, u_stoneBri, u_stoneSat;
+uniform float u_grassCon, u_grassBri, u_grassSat;
+uniform float u_woodCon, u_woodBri, u_woodSat;
+uniform float u_foliageCon, u_foliageBri, u_foliageSat;
+uniform float u_windowCon, u_windowBri, u_windowSat;
+
+// FIX: epsilon constant for atan and division safety
+const float EPS = 1e-6;
+// FIX: distance threshold for material classification
+const float MAT_THRESH = 0.15;
+
+float hash(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
+float noise(vec2 p) {
+  vec2 i = floor(p); vec2 f = fract(p);
+  vec2 u = f*f*(3.0-2.0*f);
+  return mix(mix(hash(i),hash(i+vec2(1,0)),u.x), mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),u.x),u.y);
+}
+float fbm(vec2 uv) {
+  float f = 0.5*noise(uv); uv*=2.02;
+  f += 0.25*noise(uv); uv*=2.03;
+  f += 0.125*noise(uv); uv*=2.01;
+  f += 0.0625*noise(uv);
+  return f;
+}
+
+// Saturation adjustment
+vec3 adjustSat(vec3 c, float sat) {
+  float lum = dot(c, vec3(0.299, 0.587, 0.114));
+  return mix(vec3(lum), c, sat);
+}
+
+void main(){
+  vec2 uv = v_uv;
+  // FIX: time mod prevents float precision loss after hours of runtime
+  float t = mod(u_time, 600.0);
+
+  vec4 ms = texture2D(u_mat, uv);
+  vec3 cMap = ms.rgb;
+
+  // Material targets (matching paint colors)
+  vec3 tRoof  = vec3(0.976, 0.447, 0.086);
+  vec3 tStone = vec3(0.863, 0.149, 0.149);
+  vec3 tGrass = vec3(0.133, 0.694, 0.298);
+  vec3 tWood  = vec3(0.522, 0.302, 0.055);
+  vec3 tFol   = vec3(0.165, 0.353, 0.133);
+  vec3 tWin   = vec3(0.059, 0.463, 0.431);
+  vec3 tPud   = vec3(0.0, 0.0, 1.0);
+
+  // FIX: squared distance (no sqrt!) with threshold
+  float dR  = dot(cMap-tRoof, cMap-tRoof);
+  float dS  = dot(cMap-tStone, cMap-tStone);
+  float dG  = dot(cMap-tGrass, cMap-tGrass);
+  float dW  = dot(cMap-tWood, cMap-tWood);
+  float dF  = dot(cMap-tFol, cMap-tFol);
+  float dWn = dot(cMap-tWin, cMap-tWin);
+  float dP  = dot(cMap-tPud, cMap-tPud);
+
+  // FIX: inverse-distance weighting with epsilon (prevents div-by-zero)
+  float wR = 1.0/(dR*dR + EPS);
+  float wS = 1.0/(dS*dS + EPS);
+  float wG = 1.0/(dG*dG + EPS);
+  float wW = 1.0/(dW*dW + EPS);
+  float wF = 1.0/(dF*dF + EPS);
+  float wWn= 1.0/(dWn*dWn + EPS);
+  float wP = 1.0/(dP*dP + EPS);
+  float totalW = wR+wS+wG+wW+wF+wWn+wP + EPS;
+
+  // FIX: mGr uses distance threshold — pixels far from all targets get zero weight
+  float minDist = min(min(min(dR,dS),min(dG,dW)),min(min(dF,dWn),dP));
+  float matValid = step(minDist, MAT_THRESH) * u_hasMat;
+
+  float mR  = (wR/totalW) * matValid;
+  float mS  = (wS/totalW) * matValid;
+  float mG  = (wG/totalW) * matValid;
+  float mW  = (wW/totalW) * matValid;
+  float mF  = (wF/totalW) * matValid;
+  float mWn = (wWn/totalW)* matValid;
+  float mP  = (wP/totalW) * matValid;
+
+  // Wind displacement on foliage
+  vec2 readUV = uv;
+  readUV.x += sin(uv.y * 30.0 + t * 2.5) * 0.003 * mF * u_wind;
+
+  vec3 dry = texture2D(u_scene, readUV).rgb;
+  vec3 fin = dry;
+  float baseLum = dot(dry, vec3(0.299, 0.587, 0.114));
+
+  // === TIME OF DAY (System #19) ===
+  float tOD = u_timeOfDay;
+  float sunHeight = -cos(tOD * 3.14159 / 12.0);
+  vec3 sunDir = normalize(vec3(sin(tOD * 3.14159 / 12.0), sunHeight, 0.5));
+
+  vec3 dayCol = vec3(1.0, 0.95, 0.90);
+  vec3 dawnCol = vec3(0.9, 0.5, 0.6);
+  vec3 duskCol = vec3(1.0, 0.3, 0.1);
+  vec3 nightCol = vec3(0.1, 0.15, 0.35);
+
+  float isDay = smoothstep(-0.1, 0.5, sunHeight);
+  float isNight = 1.0 - smoothstep(-0.6, 0.0, sunHeight);
+  float isDawn = smoothstep(-0.3, 0.1, sunHeight) * (1.0 - smoothstep(0.1, 0.5, sunHeight)) * smoothstep(12.0, 0.0, tOD);
+  float isDusk = smoothstep(-0.3, 0.1, sunHeight) * (1.0 - smoothstep(0.1, 0.5, sunHeight)) * smoothstep(12.0, 24.0, tOD);
+
+  vec3 globalLight = nightCol*isNight + dayCol*isDay + dawnCol*isDawn + duskCol*isDusk;
+  // FIX: Overcast dimmer independent of time-of-day
+  globalLight *= (1.0 - u_overcast * 0.65);
+  fin *= mix(vec3(1.0), globalLight, 0.85);
+
+  // === MATERIAL GRADING ===
+  // Apply per-material color grading with individual contrast/brightness/saturation
+  // === MATERIAL GRADING ===
+  // FIX: Preserve original luminance structure (contrast-preserving grading)
+  // Instead of mix(fin, flatGrade, weight) which destroys contrast,
+  // we multiply fin by a color ratio that shifts hue without flattening.
+
+  // Roof grading: preserve local contrast
+  float roofLum = dot(u_cRoof, vec3(0.299, 0.587, 0.114)) + 0.01;
+  vec3 roofTint = u_cRoof / roofLum; // normalized color direction
+  float roofBri = (u_roofBri - 0.5) * 1.0; // brightness shift
+  float roofConMul = 1.0 + (u_roofCon - 0.5) * 1.5; // contrast multiplier
+  vec3 roofGrade = fin * roofTint * roofConMul + vec3(roofBri * 0.3);
+  roofGrade = adjustSat(roofGrade, u_roofSat * 2.0);
+  fin = mix(fin, roofGrade * globalLight, mR * 0.6);
+
+  // Stone grading
+  float stoneLum = dot(u_cStone, vec3(0.299, 0.587, 0.114)) + 0.01;
+  vec3 stoneTint = u_cStone / stoneLum;
+  float stoneBri = (u_stoneBri - 0.5) * 1.0;
+  float stoneConMul = 1.0 + (u_stoneCon - 0.5) * 1.5;
+  vec3 stoneGrade = fin * stoneTint * stoneConMul + vec3(stoneBri * 0.3);
+  stoneGrade = adjustSat(stoneGrade, u_stoneSat * 2.0);
+  fin = mix(fin, stoneGrade * globalLight, mS * 0.6);
+
+  // Grass grading
+  float grassLum = dot(u_cGrass, vec3(0.299, 0.587, 0.114)) + 0.01;
+  vec3 grassTint = u_cGrass / grassLum;
+  float grassBri = (u_grassBri - 0.5) * 1.0;
+  float grassConMul = 1.0 + (u_grassCon - 0.5) * 1.5;
+  vec3 grassGrade = fin * grassTint * grassConMul + vec3(grassBri * 0.3);
+  grassGrade = adjustSat(grassGrade, u_grassSat * 2.0);
+  fin = mix(fin, grassGrade * globalLight, mG * 0.6);
+
+  // Wood grading
+  float woodLum = dot(u_cWood, vec3(0.299, 0.587, 0.114)) + 0.01;
+  vec3 woodTint = u_cWood / woodLum;
+  float woodBri = (u_woodBri - 0.5) * 1.0;
+  float woodConMul = 1.0 + (u_woodCon - 0.5) * 1.5;
+  vec3 woodGrade = fin * woodTint * woodConMul + vec3(woodBri * 0.3);
+  woodGrade = adjustSat(woodGrade, u_woodSat * 2.0);
+  fin = mix(fin, woodGrade * globalLight, mW * 0.6);
+
+  // Foliage grading
+  float folLum = dot(u_cFoliage, vec3(0.299, 0.587, 0.114)) + 0.01;
+  vec3 folTint = u_cFoliage / folLum;
+  float folBri = (u_foliageBri - 0.5) * 1.0;
+  float folConMul = 1.0 + (u_foliageCon - 0.5) * 1.5;
+  vec3 folGrade = fin * folTint * folConMul + vec3(folBri * 0.3);
+  folGrade = adjustSat(folGrade, u_foliageSat * 2.0);
+  fin = mix(fin, folGrade * globalLight, mF * 0.6);
+
+  // Window glow at night
+  float windowOn = 1.0 - isDay;
+  vec3 winGlow = u_cWindow * 2.0;
+  fin = mix(fin, winGlow, mWn * windowOn * 0.7);
+
+  // === SEASON (System #27) ===
+  float season = u_season;
+  float autumnFactor = smoothstep(0.5, 1.0, season);
+  float springFactor = 1.0 - smoothstep(0.0, 0.3, season);
+
+  vec3 autumnColor = mix(vec3(0.95,0.8,0.1), vec3(0.85,0.2,0.05), fbm(uv*15.0));
+  fin = mix(fin, autumnColor*(baseLum*2.0+0.1)*globalLight, mF*autumnFactor);
+
+  // Morning dew in spring
+  float dewMask = isDawn * springFactor;
+  if (dewMask > 0.0) {
+    float dewGlint = pow(hash(uv*300.0 + t*0.05), 40.0) * (mG + mF);
+    fin += vec3(dewGlint) * dewMask * dawnCol * 2.5;
+  }
+
+  // === FALLING LEAVES (Autumn particle system) ===
+  if (autumnFactor > 0.0) {
+    // Leaves fall from foliage zones, drift with wind
+    float leafSpeed = 0.3 + u_wind * 0.5;
+    float leafDrift = u_wind * 0.8;
+    // Multiple leaf layers at different speeds
+    for (int layer = 0; layer < 3; layer++) {
+      float lf = float(layer);
+      float leafY = fract(uv.y * (8.0 + lf*3.0) + t * leafSpeed * (0.7 + lf*0.3));
+      float leafX = fract(uv.x * (12.0 + lf*4.0) + t * leafDrift * (0.5 + lf*0.2) + sin(t*2.0 + lf)*0.02);
+      // Leaf shape: small diamond
+      vec2 leafPos = vec2(leafX, leafY) * 2.0 - 1.0;
+      float leafDist = abs(leafPos.x) + abs(leafPos.y); // diamond metric
+      float leafMask = smoothstep(0.15, 0.08, leafDist);
+      // Only spawn leaves near foliage regions (check with offset)
+      float nearFoliage = mF;
+      // Leaf color varies: orange, red, brown
+      float leafHue = hash(vec2(floor(uv.x*(12.0+lf*4.0)), floor(uv.y*(8.0+lf*3.0))));
+      vec3 leafCol = mix(vec3(0.9, 0.6, 0.1), vec3(0.7, 0.15, 0.05), leafHue);
+      leafCol = mix(leafCol, vec3(0.4, 0.25, 0.1), step(0.7, leafHue)); // some brown
+      // Accumulate
+      float leafAlpha = leafMask * autumnFactor * 0.7 * smoothstep(0.0, 0.3, nearFoliage + mG*0.3);
+      fin = mix(fin, leafCol * globalLight, leafAlpha);
+    }
+  }
+
+  // === BLOSSOMS & FRUIT (Spring/Summer on foliage) ===
+  float summerFactor = smoothstep(0.2, 0.5, season) * (1.0 - smoothstep(0.6, 0.8, season));
+  if ((springFactor + summerFactor) > 0.0 && mF > 0.0) {
+    vec2 grid1 = fract(uv * 70.0) - 0.5;
+    vec2 id1 = floor(uv * 70.0);
+    float isFruit = smoothstep(0.35, 0.15, length(grid1 + vec2(hash(id1+1.0)-0.5, hash(id1+2.0)-0.5)));
+    isFruit *= step(0.92, hash(id1));
+    vec3 fruitCol = mix(vec3(1.0, 0.8, 0.9), vec3(0.9, 0.1, 0.1), summerFactor / (springFactor + summerFactor + EPS));
+    fin = mix(fin, fruitCol * globalLight, (springFactor + summerFactor) * isFruit * mF * 0.8);
+  }
+
+  // === GRASS OVERGROWTH (age causes grass to spread into paths) ===
+  if (u_age > 0.0) {
+    // At path/stone borders, grass "bleeds" in based on age
+    // Use noise to create organic border expansion
+    float growthNoise = fbm(uv * 25.0 + vec2(3.7, 1.2));
+    float growthRadius = u_age * 0.4; // how far grass spreads
+    // Grass grows into stone/path regions where noise says so
+    float overgrowMask = mS * step(growthNoise, growthRadius) * u_age;
+    // Also affects general ground: path gets narrower
+    overgrowMask += (1.0 - mF - mR - mWn) * step(growthNoise * 1.3, growthRadius * 0.6) * u_age * 0.5;
+    overgrowMask = clamp(overgrowMask, 0.0, 1.0);
+    // Apply grass color where overgrowth happens
+    vec3 overgrowCol = vec3(0.15, 0.35, 0.08) * (baseLum * 1.5 + 0.3);
+    // In autumn, overgrowth is brown/dead
+    overgrowCol = mix(overgrowCol, vec3(0.35, 0.28, 0.12), autumnFactor);
+    fin = mix(fin, overgrowCol * globalLight, overgrowMask * 0.7);
+  }
+
+  // === COLD / FROST / SNOW (System #4) ===
+  if (u_cold > 0.0) {
+    // Snow accumulates on top-facing surfaces (roofs, ground, foliage tops)
+    // Use luminance gradient as proxy for "facing up"
+    float upFacing = smoothstep(0.3, 0.6, baseLum); // brighter areas are more exposed
+    float snowNoise = fbm(uv * 20.0 + vec2(5.5, 2.2));
+    
+    // Snow coverage increases with cold
+    float snowThreshold = 1.0 - u_cold;
+    float snowMask = smoothstep(snowThreshold, snowThreshold + 0.15, snowNoise * upFacing);
+    // More snow on roofs and ground, less on vertical walls
+    snowMask *= (mR * 0.9 + mG * 0.8 + mF * 0.6 + mS * 0.4 + mW * 0.2);
+    // Snow color: slight blue tint, very bright
+    vec3 snowCol = vec3(0.92, 0.95, 1.0) * (0.8 + baseLum * 0.4);
+    fin = mix(fin, snowCol * globalLight, snowMask * u_cold);
+    
+    // Frost on grass: white crystalline edges
+    float frostOnGrass = mG * u_cold * step(0.6, snowNoise * 1.5);
+    fin = mix(fin, vec3(0.85, 0.9, 0.95) * globalLight, frostOnGrass * 0.5);
+    
+    // Puddles freeze: shift puddle color to ice-blue, kill ripple
+    // (handled below by modifying puddle behavior when cold > 0.5)
+    
+    // Frost on windows: crystalline overlay
+    if (mWn > 0.0 && u_cold > 0.4) {
+      float frostPattern = fbm(uv * 80.0 + vec2(t*0.01, 0.0));
+      float windowFrost = smoothstep(0.3, 0.7, frostPattern) * (u_cold - 0.4) * 2.0;
+      fin = mix(fin, vec3(0.8, 0.88, 0.95) * globalLight, mWn * windowFrost * 0.6);
+    }
+  }
+
+  // === PUDDLES (independent from wetness and weather) ===
+  float pn = sin(uv.x*19.0+uv.y*13.0+1.7)*sin(uv.x*29.0-uv.y*7.0) + sin(uv.x*5.0+uv.y*37.0+3.1)*0.7;
+  float pFld = clamp(pn*0.4+0.4, 0.0, 1.0);
+  float pudMask = step(pFld, u_pudSpread) * (mS*0.8 + mG*0.5 + mP);
+  float ripple = sin(uv.x*90.0+t*2.5)*sin(uv.y*70.0+t*1.8);
+  ripple = clamp(ripple*ripple, 0.0, 1.0) * u_pudRipple;
+  // Freeze puddles when cold
+  ripple *= (1.0 - smoothstep(0.4, 0.8, u_cold)); // ripple dies in cold
+  vec3 pudCol = adjustSat(u_pudColor, u_pudSat*2.0);
+  // Ice-blue tint when frozen
+  pudCol = mix(pudCol, vec3(0.7, 0.82, 0.92), smoothstep(0.5, 1.0, u_cold));
+  pudCol = mix(vec3(dot(pudCol,vec3(0.299,0.587,0.114))), pudCol, 1.0+(u_pudCon-0.5));
+  pudCol += vec3((u_pudBri-0.5)*0.3);
+  fin = mix(fin, pudCol + vec3(ripple*0.1), pudMask * u_pudDepth);
+
+  // === WETNESS (surface darkening + specular) ===
+  if (u_wetness > 0.0) {
+    // Darken surfaces
+    float wetDark = u_wetDarken * u_wetness * 0.3;
+    fin *= (1.0 - wetDark * (mR+mS+mG+mW+mF));
+
+    // Specular gloss from sun
+    float lR2 = dot(texture2D(u_scene, readUV+vec2(0.002,0.0)).rgb, vec3(0.299,0.587,0.114));
+    float lU2 = dot(texture2D(u_scene, readUV+vec2(0.0,0.002)).rgb, vec3(0.299,0.587,0.114));
+    vec3 N = normalize(vec3((lR2-baseLum)*12.0, (lU2-baseLum)*12.0, 1.0));
+    vec3 H = normalize(sunDir + vec3(0,0,1));
+    float spec = pow(max(dot(N, H), 0.0), 8.0 + u_wetGloss*24.0);
+    float matGloss = mR*0.8 + mS*0.5 + mG*0.15 + mW*0.4 + mF*0.3;
+    vec3 wetTint = adjustSat(u_wetColor/255.0, u_wetSat*2.0);
+    fin += wetTint * spec * matGloss * u_wetness * (isDay*0.8 + 0.2);
+  }
+
+  // === WEATHER: RAIN ===
+  if (u_rain > 0.0) {
+    // Flow-directed rivulets
+    vec2 flowData = texture2D(u_flow, uv).rg;
+    vec2 flowDir = flowData * 2.0 - 1.0;
+    // FIX: atan2 with epsilon
+    float fa = atan(flowDir.y + EPS, flowDir.x + EPS);
+    float fdx = cos(fa), fdy = sin(fa);
+    float fProj = uv.x*fdx + uv.y*fdy;
+    float fPerp = uv.x*(-fdy) + uv.y*fdx;
+    float rivX = fract(fPerp*35.0 + sin(fProj*8.0)*0.08);
+    float riv = step(0.44,rivX)*step(rivX,0.56)*step(0.2,fract(fProj*4.0+t*3.5))*step(fract(fProj*4.0+t*3.5),0.7)*mR;
+    fin += riv * vec3(0.3,0.4,0.6) * u_rain * globalLight;
+
+    // Rain drops
+    float rn = step(0.993, fract(sin(uv.x*280.0+uv.y*550.0+t*18.0+u_wind*uv.x*140.0)*43758.5));
+    rn += step(0.994, fract(sin(uv.x*180.0+uv.y*400.0+t*14.0+u_wind*uv.x*100.0+5.7)*43758.5));
+    fin += clamp(rn, 0.0, 1.0) * vec3(0.5,0.6,0.8) * u_rain;
+  }
+
+  // === WEATHER: ROLLING FOG ===
+  if (u_rollingFog > 0.0) {
+    float fogNoise = fbm(uv*5.0 + vec2(t*0.1*u_wind, 0.0));
+    float fogMask = smoothstep(0.3, 0.8, fogNoise) * (1.0 - baseLum*0.5);
+    vec3 fogCol = adjustSat(u_fogColor/255.0, u_fogSat*2.0);
+    fogCol = mix(vec3(dot(fogCol,vec3(0.299,0.587,0.114))), fogCol, 1.0+(u_fogCon-0.5));
+    fogCol += vec3((u_fogBri-0.5)*0.3);
+    fogCol = mix(fogCol, globalLight, 0.5);
+    fin = mix(fin, fogCol, fogMask * u_rollingFog);
+  }
+
+  // === WEATHER: LIGHTNING ===
+  if (u_lightning > 0.0) {
+    // FIX: proper temporal trigger — flash every 3-8 seconds, duration 0.1s
+    float flashCycle = mod(t, 5.0 + 3.0 * fract(sin(floor(t/5.0)*127.1)*43758.5));
+    float flash = step(flashCycle, 0.12) * step(0.0, flashCycle);
+    // Second bolt for naturalism
+    float flash2 = step(abs(flashCycle - 0.3), 0.05);
+    float totalFlash = max(flash, flash2 * 0.6) * u_lightning;
+    fin += vec3(0.8, 0.9, 1.0) * totalFlash;
+  }
+
+  // No-material fallback
+  fin = mix(fin, dry * globalLight, 1.0 - u_hasMat);
+
+  // FIX: Post-grading SCENE contrast boost
+  // Push each pixel away from the scene average luminance (not its own lum)
+  // This preserves the bright-dark distribution the target has
+  float finLum = dot(fin, vec3(0.299, 0.587, 0.114));
+  float sceneMidpoint = 0.25; // lowered: most overcast pixels are dark
+  float contrastFactor = 1.0 + u_contrastBoost * 1.5;
+  float boostedLum = (finLum - sceneMidpoint) * contrastFactor + sceneMidpoint;
+  float lumRatio = boostedLum / (finLum + EPS);
+  fin *= clamp(lumRatio, 0.3, 3.0);
+
+  // FIX: premultiplied alpha output
+  gl_FragColor = vec4(clamp(fin, 0.0, 1.0), 1.0);
+}`;
+
+// Compile shaders
+function compile(src, type) {
+  const sh = gl.createShader(type);
+  gl.shaderSource(sh, src);
+  gl.compileShader(sh);
+  if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) {
+    console.error('Shader compile error:', gl.getShaderInfoLog(sh));
+  }
+  return sh;
+}
+
+const prog = gl.createProgram();
+gl.attachShader(prog, compile(VS, gl.VERTEX_SHADER));
+gl.attachShader(prog, compile(FS, gl.FRAGMENT_SHADER));
+gl.linkProgram(prog);
+if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
+  console.error('Program link error:', gl.getProgramInfoLog(prog));
+}
+gl.useProgram(prog);
+
+const buf = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+const aP = gl.getAttribLocation(prog, 'a_pos');
+gl.enableVertexAttribArray(aP);
+gl.vertexAttribPointer(aP, 2, gl.FLOAT, false, 0, 0);
+
+// Textures
+function mkTex(unit) {
+  const t = gl.createTexture();
+  gl.activeTexture(gl.TEXTURE0 + unit);
+  gl.bindTexture(gl.TEXTURE_2D, t);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([128,128,128,255]));
+  return t;
+}
+
+const sTex = mkTex(0), mTex = mkTex(1), fTex = mkTex(2);
+gl.uniform1i(gl.getUniformLocation(prog, 'u_scene'), 0);
+gl.uniform1i(gl.getUniformLocation(prog, 'u_mat'), 1);
+gl.uniform1i(gl.getUniformLocation(prog, 'u_flow'), 2);
+
+// Uniform locations
+const U = {};
+const uniformNames = [
+  'u_time','u_hasMat',
+  'u_pudDepth','u_pudSpread','u_pudRipple','u_pudColor','u_pudCon','u_pudBri','u_pudSat',
+  'u_wetness','u_wetGloss','u_wetDarken','u_wetColor','u_wetCon','u_wetBri','u_wetSat',
+  'u_rain','u_wind','u_lightning','u_rollingFog','u_cold',
+  'u_overcast','u_contrastBoost',
+  'u_fogColor','u_fogCon','u_fogBri','u_fogSat',
+  'u_timeOfDay','u_season','u_age',
+  'u_cRoof','u_cStone','u_cGrass','u_cWood','u_cFoliage','u_cWindow',
+  'u_roofCon','u_roofBri','u_roofSat',
+  'u_stoneCon','u_stoneBri','u_stoneSat',
+  'u_grassCon','u_grassBri','u_grassSat',
+  'u_woodCon','u_woodBri','u_woodSat',
+  'u_foliageCon','u_foliageBri','u_foliageSat',
+  'u_windowCon','u_windowBri','u_windowSat'
+];
+uniformNames.forEach(n => U[n] = gl.getUniformLocation(prog, n));
+
+// State
+let time = 0, lastT = 0, sceneOk = false;
+// FIX: track objectURLs for revocation (memory leak fix)
+let lastSceneURL = null, lastMatURL = null;
+
+// FIX: onerror handler on image loads
+function loadImg(file, unit, tex, isMat) {
+  const img = new Image();
+  img.onerror = () => console.error('Failed to load image:', file.name);
+  img.onload = () => {
+    gl.activeTexture(gl.TEXTURE0 + unit);
+    gl.bindTexture(gl.TEXTURE_2D, tex);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
+    if (!isMat) {
+      canvas.width = img.width; canvas.height = img.height;
+      uiCanvas.width = img.width; uiCanvas.height = img.height;
+      gl.viewport(0, 0, img.width, img.height);
+      sceneOk = true;
+      flowCanvas.width = img.width; flowCanvas.height = img.height;
+      flowCtx.fillStyle = 'rgb(128,128,128)';
+      flowCtx.fillRect(0, 0, img.width, img.height);
+      updateFlowTex();
+      if (!hasMat) {
+        matCanvas.width = img.width; matCanvas.height = img.height;
+        matCtx.fillStyle = '#22B14C';
+        matCtx.fillRect(0, 0, img.width, img.height);
+        updateMatTex();
+        hasMat = 1;
+      }
+    } else {
+      matCanvas.width = img.width; matCanvas.height = img.height;
+      matCtx.drawImage(img, 0, 0);
+      updateMatTex();
+      hasMat = 1;
+    }
+    // FIX: revoke objectURL after load (memory leak)
+    URL.revokeObjectURL(img.src);
+  };
+  const url = URL.createObjectURL(file);
+  img.src = url;
+}
+
+document.getElementById('f-scene').onchange = e => { if (e.target.files[0]) loadImg(e.target.files[0], 0, sTex, false); };
+document.getElementById('f-mat').onchange = e => { if (e.target.files[0]) loadImg(e.target.files[0], 1, mTex, true); };
+
+// Helper
+function gv(id, div) { const el = document.getElementById(id); return el ? (+el.value / div) : 0; }
+
+// Render loop
+function render(now) {
+  if (!lastT) lastT = now;
+  const dt = (now - lastT) / 1000;
+  lastT = now;
+  if (document.getElementById('s-anim').checked) time += dt;
+
+  if (!sceneOk) { requestAnimationFrame(render); return; }
+
+  gl.uniform1f(U.u_time, time);
+  gl.uniform1f(U.u_hasMat, hasMat);
+
+  // Puddles
+  gl.uniform1f(U.u_pudDepth, gv('s-pudDepth', 100));
+  gl.uniform1f(U.u_pudSpread, gv('s-pudSpread', 100));
+  gl.uniform1f(U.u_pudRipple, gv('s-pudRipple', 100));
+  gl.uniform3f(U.u_pudColor, gv('s-pudR',255), gv('s-pudG',255), gv('s-pudB',255));
+  gl.uniform1f(U.u_pudCon, gv('s-pudCon', 100));
+  gl.uniform1f(U.u_pudBri, gv('s-pudBri', 100));
+  gl.uniform1f(U.u_pudSat, gv('s-pudSat', 100));
+
+  // Wetness
+  gl.uniform1f(U.u_wetness, gv('s-wetness', 100));
+  gl.uniform1f(U.u_wetGloss, gv('s-wetGloss', 100));
+  gl.uniform1f(U.u_wetDarken, gv('s-wetDarken', 100));
+  gl.uniform3f(U.u_wetColor, gv('s-wetR',1), gv('s-wetG',1), gv('s-wetB',1));
+  gl.uniform1f(U.u_wetCon, gv('s-wetCon', 100));
+  gl.uniform1f(U.u_wetBri, gv('s-wetBri', 100));
+  gl.uniform1f(U.u_wetSat, gv('s-wetSat', 100));
+
+  // Weather
+  gl.uniform1f(U.u_rain, gv('s-rain', 100));
+  gl.uniform1f(U.u_wind, gv('s-wind', 100));
+  gl.uniform1f(U.u_lightning, gv('s-lightning', 100));
+  gl.uniform1f(U.u_rollingFog, gv('s-rollingfog', 100));
+  gl.uniform1f(U.u_cold, gv('s-cold', 100));
+  gl.uniform1f(U.u_overcast, gv('s-overcast', 100));
+  gl.uniform1f(U.u_contrastBoost, gv('s-contrastBoost', 100));
+  gl.uniform3f(U.u_fogColor, gv('s-fogR',1), gv('s-fogG',1), gv('s-fogB',1));
+  gl.uniform1f(U.u_fogCon, gv('s-fogCon', 100));
+  gl.uniform1f(U.u_fogBri, gv('s-fogBri', 100));
+  gl.uniform1f(U.u_fogSat, gv('s-fogSat', 100));
+
+  // Time & Season
+  gl.uniform1f(U.u_timeOfDay, gv('s-timeofday', 100));
+  gl.uniform1f(U.u_season, gv('s-season', 100));
+  gl.uniform1f(U.u_age, gv('s-age', 100));
+
+  // Materials
+  gl.uniform3f(U.u_cRoof, gv('s-roofR',255), gv('s-roofG',255), gv('s-roofB',255));
+  gl.uniform1f(U.u_roofCon, gv('s-roofCon', 100));
+  gl.uniform1f(U.u_roofBri, gv('s-roofBri', 100));
+  gl.uniform1f(U.u_roofSat, gv('s-roofSat', 100));
+
+  gl.uniform3f(U.u_cStone, gv('s-stoneR',255), gv('s-stoneG',255), gv('s-stoneB',255));
+  gl.uniform1f(U.u_stoneCon, gv('s-stoneCon', 100));
+  gl.uniform1f(U.u_stoneBri, gv('s-stoneBri', 100));
+  gl.uniform1f(U.u_stoneSat, gv('s-stoneSat', 100));
+
+  gl.uniform3f(U.u_cGrass, gv('s-grassR',255), gv('s-grassG',255), gv('s-grassB',255));
+  gl.uniform1f(U.u_grassCon, gv('s-grassCon', 100));
+  gl.uniform1f(U.u_grassBri, gv('s-grassBri', 100));
+  gl.uniform1f(U.u_grassSat, gv('s-grassSat', 100));
+
+  gl.uniform3f(U.u_cWood, gv('s-woodR',255), gv('s-woodG',255), gv('s-woodB',255));
+  gl.uniform1f(U.u_woodCon, gv('s-woodCon', 100));
+  gl.uniform1f(U.u_woodBri, gv('s-woodBri', 100));
+  gl.uniform1f(U.u_woodSat, gv('s-woodSat', 100));
+
+  gl.uniform3f(U.u_cFoliage, gv('s-foliageR',255), gv('s-foliageG',255), gv('s-foliageB',255));
+  gl.uniform1f(U.u_foliageCon, gv('s-foliageCon', 100));
+  gl.uniform1f(U.u_foliageBri, gv('s-foliageBri', 100));
+  gl.uniform1f(U.u_foliageSat, gv('s-foliageSat', 100));
+
+  gl.uniform3f(U.u_cWindow, gv('s-windowR',255), gv('s-windowG',255), gv('s-windowB',255));
+  gl.uniform1f(U.u_windowCon, gv('s-windowCon', 100));
+  gl.uniform1f(U.u_windowBri, gv('s-windowBri', 100));
+  gl.uniform1f(U.u_windowSat, gv('s-windowSat', 100));
+
+  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  requestAnimationFrame(render);
+}
+requestAnimationFrame(render);
+
+// === EXPORT ===
+document.getElementById('btn-png').onclick = () => {
+  canvas.toBlob(b => {
+    const url = URL.createObjectURL(b);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'shader_v5.png'; a.click();
+    // FIX: revoke after download
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }, 'image/png');
+};
+
+document.getElementById('btn-json').onclick = () => {
+  const state = {};
+  document.querySelectorAll('input[type=range]').forEach(i => { state[i.id] = +i.value; });
+  // FIX: localStorage try-catch
+  try { localStorage.setItem('gaime_shader_v5_last', JSON.stringify(state)); } catch(e) { /* quota exceeded or private mode */ }
+  const blob = new Blob([JSON.stringify(state, null, 2)], {type: 'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'shader_v5_params.json'; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+};
+
+// FIX: Restore last state from localStorage (with try-catch)
+try {
+  const saved = localStorage.getItem('gaime_shader_v5_last');
+  if (saved) {
+    const state = JSON.parse(saved);
+    Object.entries(state).forEach(([id, val]) => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.value = val;
+        const dEl = document.getElementById(id.replace('s-','d-'));
+        if (dEl) {
+          if (id === 's-timeofday') dEl.textContent = (val/100).toFixed(2);
+          else dEl.textContent = val;
+        }
+      }
+    });
+  }
+} catch(e) { /* localStorage unavailable */ }
+
+// ============================================================
+// PARTICLE SYSTEM INTEGRATION
+// ============================================================
+const particleSys = new ParticleSystem(uiCanvas, matCanvas, flowCanvas);
+
+// Particle type switching
+document.querySelectorAll('#particle-tabs button').forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll('#particle-tabs button').forEach(b => b.classList.remove('sel'));
+    btn.classList.add('sel');
+    const ptype = btn.dataset.ptype;
+    if (ptype === 'off') {
+      particleSys.config.enabled = false;
+    } else {
+      particleSys.config.enabled = true;
+      particleSys.config.type = ptype;
+      // Rebuild maps when switching
+      if (particleSys.width > 0) {
+        particleSys.buildCollisionMap();
+        particleSys.findSpawnZones();
+      }
+    }
+  };
+});
+
+// Click to disturb
+canvas.addEventListener('click', (e) => {
+  if (!particleSys.config.enabled) return;
+  if (activeTool !== 'none') return; // don't interfere with painting
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  const cx = (e.clientX - rect.left) * scaleX;
+  const cy = (e.clientY - rect.top) * scaleY;
+  particleSys.disturb(cx, cy, 40, 3.0);
+});
+
+// Hook into existing render loop — inject particle update after WebGL draw
+const originalRender = render;
+// Patch: add particle update to animation frame
+function particleFrame() {
+  // Sync particle config with editor sliders
+  particleSys.config.windX = (gv('s-wind', 100) - 0.5) * 2.0;
+  particleSys.config.windStrength = gv('s-pWind', 100);
+  particleSys.config.season = gv('s-season', 100);
+  particleSys.config.wetness = gv('s-wetness', 100);
+  particleSys.config.cold = gv('s-cold', 100);
+  particleSys.config.age = gv('s-age', 100);
+
+  // Resize if canvas changed
+  if (particleSys.width !== canvas.width || particleSys.height !== canvas.height) {
+    if (canvas.width > 10 && canvas.height > 10) {
+      particleSys.resize(canvas.width, canvas.height);
+    }
+  }
+
+  // Update and render particles
+  particleSys.update();
+  particleSys.render();
+
+  // Update particle count display
+  const countEl = document.getElementById('d-pCount');
+  if (countEl) countEl.textContent = particleSys.particles.length;
+
+  requestAnimationFrame(particleFrame);
+}
+requestAnimationFrame(particleFrame);
+</script>
+</body></html>
