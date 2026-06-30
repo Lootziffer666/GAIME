@@ -486,30 +486,55 @@ void main(){
 
   // === MATERIAL GRADING ===
   // Apply per-material color grading with individual contrast/brightness/saturation
-  vec3 gradeRoof = adjustSat(u_cRoof * (baseLum*2.0+0.3), u_roofSat*2.0);
-  gradeRoof = mix(vec3(dot(gradeRoof,vec3(0.299,0.587,0.114))), gradeRoof, 1.0+(u_roofCon-0.5));
-  gradeRoof += vec3((u_roofBri-0.5)*0.5);
-  fin = mix(fin, gradeRoof * globalLight, mR * 0.7);
+  // === MATERIAL GRADING ===
+  // FIX: Preserve original luminance structure (contrast-preserving grading)
+  // Instead of mix(fin, flatGrade, weight) which destroys contrast,
+  // we multiply fin by a color ratio that shifts hue without flattening.
 
-  vec3 gradeStone = adjustSat(u_cStone * (baseLum*2.0+0.3), u_stoneSat*2.0);
-  gradeStone = mix(vec3(dot(gradeStone,vec3(0.299,0.587,0.114))), gradeStone, 1.0+(u_stoneCon-0.5));
-  gradeStone += vec3((u_stoneBri-0.5)*0.5);
-  fin = mix(fin, gradeStone * globalLight, mS * 0.7);
+  // Roof grading: preserve local contrast
+  float roofLum = dot(u_cRoof, vec3(0.299, 0.587, 0.114)) + 0.01;
+  vec3 roofTint = u_cRoof / roofLum; // normalized color direction
+  float roofBri = (u_roofBri - 0.5) * 1.0; // brightness shift
+  float roofConMul = 1.0 + (u_roofCon - 0.5) * 1.5; // contrast multiplier
+  vec3 roofGrade = fin * roofTint * roofConMul + vec3(roofBri * 0.3);
+  roofGrade = adjustSat(roofGrade, u_roofSat * 2.0);
+  fin = mix(fin, roofGrade * globalLight, mR * 0.6);
 
-  vec3 gradeGrass = adjustSat(u_cGrass * (baseLum*2.0+0.3), u_grassSat*2.0);
-  gradeGrass = mix(vec3(dot(gradeGrass,vec3(0.299,0.587,0.114))), gradeGrass, 1.0+(u_grassCon-0.5));
-  gradeGrass += vec3((u_grassBri-0.5)*0.5);
-  fin = mix(fin, gradeGrass * globalLight, mG * 0.7);
+  // Stone grading
+  float stoneLum = dot(u_cStone, vec3(0.299, 0.587, 0.114)) + 0.01;
+  vec3 stoneTint = u_cStone / stoneLum;
+  float stoneBri = (u_stoneBri - 0.5) * 1.0;
+  float stoneConMul = 1.0 + (u_stoneCon - 0.5) * 1.5;
+  vec3 stoneGrade = fin * stoneTint * stoneConMul + vec3(stoneBri * 0.3);
+  stoneGrade = adjustSat(stoneGrade, u_stoneSat * 2.0);
+  fin = mix(fin, stoneGrade * globalLight, mS * 0.6);
 
-  vec3 gradeWood = adjustSat(u_cWood * (baseLum*2.0+0.3), u_woodSat*2.0);
-  gradeWood = mix(vec3(dot(gradeWood,vec3(0.299,0.587,0.114))), gradeWood, 1.0+(u_woodCon-0.5));
-  gradeWood += vec3((u_woodBri-0.5)*0.5);
-  fin = mix(fin, gradeWood * globalLight, mW * 0.7);
+  // Grass grading
+  float grassLum = dot(u_cGrass, vec3(0.299, 0.587, 0.114)) + 0.01;
+  vec3 grassTint = u_cGrass / grassLum;
+  float grassBri = (u_grassBri - 0.5) * 1.0;
+  float grassConMul = 1.0 + (u_grassCon - 0.5) * 1.5;
+  vec3 grassGrade = fin * grassTint * grassConMul + vec3(grassBri * 0.3);
+  grassGrade = adjustSat(grassGrade, u_grassSat * 2.0);
+  fin = mix(fin, grassGrade * globalLight, mG * 0.6);
 
-  vec3 gradeFol = adjustSat(u_cFoliage * (baseLum*2.0+0.3), u_foliageSat*2.0);
-  gradeFol = mix(vec3(dot(gradeFol,vec3(0.299,0.587,0.114))), gradeFol, 1.0+(u_foliageCon-0.5));
-  gradeFol += vec3((u_foliageBri-0.5)*0.5);
-  fin = mix(fin, gradeFol * globalLight, mF * 0.7);
+  // Wood grading
+  float woodLum = dot(u_cWood, vec3(0.299, 0.587, 0.114)) + 0.01;
+  vec3 woodTint = u_cWood / woodLum;
+  float woodBri = (u_woodBri - 0.5) * 1.0;
+  float woodConMul = 1.0 + (u_woodCon - 0.5) * 1.5;
+  vec3 woodGrade = fin * woodTint * woodConMul + vec3(woodBri * 0.3);
+  woodGrade = adjustSat(woodGrade, u_woodSat * 2.0);
+  fin = mix(fin, woodGrade * globalLight, mW * 0.6);
+
+  // Foliage grading
+  float folLum = dot(u_cFoliage, vec3(0.299, 0.587, 0.114)) + 0.01;
+  vec3 folTint = u_cFoliage / folLum;
+  float folBri = (u_foliageBri - 0.5) * 1.0;
+  float folConMul = 1.0 + (u_foliageCon - 0.5) * 1.5;
+  vec3 folGrade = fin * folTint * folConMul + vec3(folBri * 0.3);
+  folGrade = adjustSat(folGrade, u_foliageSat * 2.0);
+  fin = mix(fin, folGrade * globalLight, mF * 0.6);
 
   // Window glow at night
   float windowOn = 1.0 - isDay;
@@ -531,13 +556,103 @@ void main(){
     fin += vec3(dewGlint) * dewMask * dawnCol * 2.5;
   }
 
+  // === FALLING LEAVES (Autumn particle system) ===
+  if (autumnFactor > 0.0) {
+    // Leaves fall from foliage zones, drift with wind
+    float leafSpeed = 0.3 + u_wind * 0.5;
+    float leafDrift = u_wind * 0.8;
+    // Multiple leaf layers at different speeds
+    for (int layer = 0; layer < 3; layer++) {
+      float lf = float(layer);
+      float leafY = fract(uv.y * (8.0 + lf*3.0) + t * leafSpeed * (0.7 + lf*0.3));
+      float leafX = fract(uv.x * (12.0 + lf*4.0) + t * leafDrift * (0.5 + lf*0.2) + sin(t*2.0 + lf)*0.02);
+      // Leaf shape: small diamond
+      vec2 leafPos = vec2(leafX, leafY) * 2.0 - 1.0;
+      float leafDist = abs(leafPos.x) + abs(leafPos.y); // diamond metric
+      float leafMask = smoothstep(0.15, 0.08, leafDist);
+      // Only spawn leaves near foliage regions (check with offset)
+      float nearFoliage = mF;
+      // Leaf color varies: orange, red, brown
+      float leafHue = hash(vec2(floor(uv.x*(12.0+lf*4.0)), floor(uv.y*(8.0+lf*3.0))));
+      vec3 leafCol = mix(vec3(0.9, 0.6, 0.1), vec3(0.7, 0.15, 0.05), leafHue);
+      leafCol = mix(leafCol, vec3(0.4, 0.25, 0.1), step(0.7, leafHue)); // some brown
+      // Accumulate
+      float leafAlpha = leafMask * autumnFactor * 0.7 * smoothstep(0.0, 0.3, nearFoliage + mG*0.3);
+      fin = mix(fin, leafCol * globalLight, leafAlpha);
+    }
+  }
+
+  // === BLOSSOMS & FRUIT (Spring/Summer on foliage) ===
+  float summerFactor = smoothstep(0.2, 0.5, season) * (1.0 - smoothstep(0.6, 0.8, season));
+  if ((springFactor + summerFactor) > 0.0 && mF > 0.0) {
+    vec2 grid1 = fract(uv * 70.0) - 0.5;
+    vec2 id1 = floor(uv * 70.0);
+    float isFruit = smoothstep(0.35, 0.15, length(grid1 + vec2(hash(id1+1.0)-0.5, hash(id1+2.0)-0.5)));
+    isFruit *= step(0.92, hash(id1));
+    vec3 fruitCol = mix(vec3(1.0, 0.8, 0.9), vec3(0.9, 0.1, 0.1), summerFactor / (springFactor + summerFactor + EPS));
+    fin = mix(fin, fruitCol * globalLight, (springFactor + summerFactor) * isFruit * mF * 0.8);
+  }
+
+  // === GRASS OVERGROWTH (age causes grass to spread into paths) ===
+  if (u_age > 0.0) {
+    // At path/stone borders, grass "bleeds" in based on age
+    // Use noise to create organic border expansion
+    float growthNoise = fbm(uv * 25.0 + vec2(3.7, 1.2));
+    float growthRadius = u_age * 0.4; // how far grass spreads
+    // Grass grows into stone/path regions where noise says so
+    float overgrowMask = mS * step(growthNoise, growthRadius) * u_age;
+    // Also affects general ground: path gets narrower
+    overgrowMask += (1.0 - mF - mR - mWn) * step(growthNoise * 1.3, growthRadius * 0.6) * u_age * 0.5;
+    overgrowMask = clamp(overgrowMask, 0.0, 1.0);
+    // Apply grass color where overgrowth happens
+    vec3 overgrowCol = vec3(0.15, 0.35, 0.08) * (baseLum * 1.5 + 0.3);
+    // In autumn, overgrowth is brown/dead
+    overgrowCol = mix(overgrowCol, vec3(0.35, 0.28, 0.12), autumnFactor);
+    fin = mix(fin, overgrowCol * globalLight, overgrowMask * 0.7);
+  }
+
+  // === COLD / FROST / SNOW (System #4) ===
+  if (u_cold > 0.0) {
+    // Snow accumulates on top-facing surfaces (roofs, ground, foliage tops)
+    // Use luminance gradient as proxy for "facing up"
+    float upFacing = smoothstep(0.3, 0.6, baseLum); // brighter areas are more exposed
+    float snowNoise = fbm(uv * 20.0 + vec2(5.5, 2.2));
+    
+    // Snow coverage increases with cold
+    float snowThreshold = 1.0 - u_cold;
+    float snowMask = smoothstep(snowThreshold, snowThreshold + 0.15, snowNoise * upFacing);
+    // More snow on roofs and ground, less on vertical walls
+    snowMask *= (mR * 0.9 + mG * 0.8 + mF * 0.6 + mS * 0.4 + mW * 0.2);
+    // Snow color: slight blue tint, very bright
+    vec3 snowCol = vec3(0.92, 0.95, 1.0) * (0.8 + baseLum * 0.4);
+    fin = mix(fin, snowCol * globalLight, snowMask * u_cold);
+    
+    // Frost on grass: white crystalline edges
+    float frostOnGrass = mG * u_cold * step(0.6, snowNoise * 1.5);
+    fin = mix(fin, vec3(0.85, 0.9, 0.95) * globalLight, frostOnGrass * 0.5);
+    
+    // Puddles freeze: shift puddle color to ice-blue, kill ripple
+    // (handled below by modifying puddle behavior when cold > 0.5)
+    
+    // Frost on windows: crystalline overlay
+    if (mWn > 0.0 && u_cold > 0.4) {
+      float frostPattern = fbm(uv * 80.0 + vec2(t*0.01, 0.0));
+      float windowFrost = smoothstep(0.3, 0.7, frostPattern) * (u_cold - 0.4) * 2.0;
+      fin = mix(fin, vec3(0.8, 0.88, 0.95) * globalLight, mWn * windowFrost * 0.6);
+    }
+  }
+
   // === PUDDLES (independent from wetness and weather) ===
   float pn = sin(uv.x*19.0+uv.y*13.0+1.7)*sin(uv.x*29.0-uv.y*7.0) + sin(uv.x*5.0+uv.y*37.0+3.1)*0.7;
   float pFld = clamp(pn*0.4+0.4, 0.0, 1.0);
   float pudMask = step(pFld, u_pudSpread) * (mS*0.8 + mG*0.5 + mP);
   float ripple = sin(uv.x*90.0+t*2.5)*sin(uv.y*70.0+t*1.8);
   ripple = clamp(ripple*ripple, 0.0, 1.0) * u_pudRipple;
+  // Freeze puddles when cold
+  ripple *= (1.0 - smoothstep(0.4, 0.8, u_cold)); // ripple dies in cold
   vec3 pudCol = adjustSat(u_pudColor, u_pudSat*2.0);
+  // Ice-blue tint when frozen
+  pudCol = mix(pudCol, vec3(0.7, 0.82, 0.92), smoothstep(0.5, 1.0, u_cold));
   pudCol = mix(vec3(dot(pudCol,vec3(0.299,0.587,0.114))), pudCol, 1.0+(u_pudCon-0.5));
   pudCol += vec3((u_pudBri-0.5)*0.3);
   fin = mix(fin, pudCol + vec3(ripple*0.1), pudMask * u_pudDepth);
@@ -604,9 +719,15 @@ void main(){
   // No-material fallback
   fin = mix(fin, dry * globalLight, 1.0 - u_hasMat);
 
-  // FIX: Post-grading contrast boost (addresses contrast ceiling of ~33)
+  // FIX: Post-grading SCENE contrast boost
+  // Push each pixel away from the scene average luminance (not its own lum)
+  // This preserves the bright-dark distribution the target has
   float finLum = dot(fin, vec3(0.299, 0.587, 0.114));
-  fin = mix(vec3(finLum), fin, 1.0 + u_contrastBoost * 0.8);
+  float sceneMidpoint = 0.25; // lowered: most overcast pixels are dark
+  float contrastFactor = 1.0 + u_contrastBoost * 1.5;
+  float boostedLum = (finLum - sceneMidpoint) * contrastFactor + sceneMidpoint;
+  float lumRatio = boostedLum / (finLum + EPS);
+  fin *= clamp(lumRatio, 0.3, 3.0);
 
   // FIX: premultiplied alpha output
   gl_FragColor = vec4(clamp(fin, 0.0, 1.0), 1.0);
