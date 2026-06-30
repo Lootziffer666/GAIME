@@ -171,12 +171,14 @@ object SpriteLoader {
      */
     suspend fun loadAllRows(assetPath: String, frameSize: Int = DEFAULT_FRAME_SIZE): List<List<BmpSlice>> {
         return try {
-            val bitmap = resourcesVfs[assetPath].readBitmap()
             val descriptor = loadDescriptor(assetPath)
             if (descriptor != null) {
+                // The descriptor describes the NORMALIZED sheet — slice THAT, not the original
+                // (slicing the original 64px-frame sheet at the normalized frameW yields tiny slivers).
+                val bitmap = resourcesVfs[normalizedPath(assetPath)].readBitmap()
                 sliceAllRowsRect(bitmap, descriptor.frameW, descriptor.frameH)
             } else {
-                sliceAllRows(bitmap, frameSize)
+                sliceAllRows(resourcesVfs[assetPath].readBitmap(), frameSize)
             }
         } catch (_: Exception) {
             listOf(listOf(buildFallbackBitmap().slice()))
@@ -189,16 +191,21 @@ object SpriteLoader {
      */
     suspend fun loadWithDescriptor(assetPath: String): Pair<List<List<BmpSlice>>, SheetDescriptor?> {
         return try {
-            val bitmap = resourcesVfs[assetPath].readBitmap()
             val descriptor = loadDescriptor(assetPath)
             val rows = if (descriptor != null) {
+                // Descriptor describes the NORMALIZED sheet — load + slice THAT, not the original.
+                val bitmap = resourcesVfs[normalizedPath(assetPath)].readBitmap()
                 sliceAllRowsRect(bitmap, descriptor.frameW, descriptor.frameH)
             } else {
-                sliceAllRows(bitmap, DEFAULT_FRAME_SIZE)
+                sliceAllRows(resourcesVfs[assetPath].readBitmap(), DEFAULT_FRAME_SIZE)
             }
             rows to descriptor
         } catch (_: Exception) {
             listOf(listOf(buildFallbackBitmap().slice())) to null
         }
     }
+
+    /** Path to the normalized sheet that a descriptor describes: "Foo.png" → "Foo.normalized.png". */
+    private fun normalizedPath(assetPath: String): String =
+        assetPath.removeSuffix(".png") + ".normalized.png"
 }

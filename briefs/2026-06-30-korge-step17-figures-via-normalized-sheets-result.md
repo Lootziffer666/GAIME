@@ -74,3 +74,28 @@ statt unsichtbarer Hotspots. Die Taverne nutzt das figurenfreie Hintergrundbild.
   Schatten sollen durch Shader entstehen, nicht durch Sprite-Layer)
 - **Figuren-Größe muss visuell validiert werden:** `figures_marker_check.png` ansehen und die
   gerenderte Figur mit den gemalten vergleichen. Falls zu groß/klein: `targetBodyMapPx` justieren.
+
+## Integration-Review + Fix (Claude)
+
+**Verifiziert durch Messung** (nicht Augenmaß), gerenderte Figur an der Spawn-Zelle isoliert
+(Screenshot minus rohem Hintergrund), NICHT eine gemalte Figur verwechselt.
+
+**Root-Bug gefunden + gefixt:** `SpriteLoader.loadWithDescriptor`/`loadAllRows` luden das
+**Original**-Sheet (64px-Frames) und schnitten es mit der **normalisierten** Deskriptor-Frame-
+Größe (25px) → jeder „Frame" war ein 25px-Splitter eines 64px-Frames = ~2px Körper → die Figur
+rendete als **~9px-Klecks** (per Diff gemessen). Fix: bei vorhandenem Deskriptor das
+`<name>.normalized.png` laden (das saubere 25px-Raster), nicht das Original.
+
+**Nach Fix gemessen:** Spieler-Körperhöhe = **96,7px Map** (Ziel 96) — der Qualitätsmarker ist auf
+der Größe **getroffen**. `figures_marker_check` zeigt unsere Figur **gleich groß** wie die gemalte
+Crono-Marker-Figur. Stil: gleiche Familie, unsere einen Tick dunkler (Doodle + dunkler Sprite) —
+Linien-/Helligkeits-Feinpolitur ist optional.
+
+**Kein Regress:** Sichtbare Körpergröße = `körper_px × scale`; der normalisierte Körper ist
+weiterhin 24px (wie der 24px-Körper im alten 64px-Frame) → Legacy-/Unified-Captures rendern gleich
+groß wie zuvor (`interior.png` bestätigt). Build + Core-Tests grün.
+
+**Provenance:** Result bestätigte „ohne Delegation". Code-Qualität solide (Tool + Deskriptoren +
+NPC-Pfad korrekt); der eine Bug war ein echter Logikfehler, kein Flüchtigkeitsfehler-Muster.
+
+Gallery: `docs/screenshots/step17-figure-vs-marker-fixed.png`.
