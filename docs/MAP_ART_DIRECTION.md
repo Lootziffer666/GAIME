@@ -4,6 +4,28 @@ Kanonische Richtlinie für das Erzeugen der **gemalten Quell-Maps**, die GAIMEs
 Pipeline füttern. Sie definiert Stil, Kamera und Layout-Logik so, dass die Bilder
 **spielbar** sind — nicht nur hübsch.
 
+## Figuren werden GERENDERT, nicht baked-in (locked 2026-06-30)
+
+Quell-Maps sind **figurenfrei**. Jede Figur — Spieler **und** NPCs — ist ein gerendertes
+Doodle-Sprite über dem gemalten, scharfen Hintergrund. Baked-in Figuren sind verboten
+(man kann sie nicht steuern, nicht beleuchten, nicht altern lassen).
+Kanonisches figurenfreies Set: `assets/HD/backgrounds/figurefree/`
+(`village_eldoria` 1366×768, `sylvanoria_wildwood` 1366×768, `tavern_exterior` 1254×1254,
+`tavern_interior` 1254×1254).
+
+- **4 Auflösungen = 4 logische Raster = 4 Figurengrößen.** Reise-Ebene (1366×768, weiter
+  Zoom) → kleine Figuren; Gameplay-Innenraum (1254×1254, naher Zoom) → große Figuren.
+  Figurengröße **pro Map aus dem Raster ableiten** (`charScale = tilesTall*screenTile/64`),
+  nie hartkodieren.
+- **QUALITÄTSMARKER (verbindlich):** Die früher *baked-in* gemalten Figuren sind der
+  Maßstab. **Sieht unsere gerenderte Figur in Größe und Stil ähnlich aus wie eine gemalte
+  Figur derselben Map-Skala, ist es gut.** Prüfung = Doodle-Figur direkt neben einer
+  gemalten Figur derselben Skala rendern und vergleichen (Referenz:
+  `docs/screenshots/quality-marker-figure-vs-baked.png`). Abweichung „zu kräftig/zu stark
+  getuscht" → Linienstärke/Proportion justieren, bis sie zur gemalten Familie passt.
+- **NPCs sind damit gerenderte Figuren, keine unsichtbaren Hotspots mehr** (das alte
+  Hotspot-Modell hing an den baked-in Figuren). Interaktion bleibt grid-basiert.
+
 ## Wie das in die GAIME-Pipeline passt
 
 ```

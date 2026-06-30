@@ -189,6 +189,14 @@ bash scripts/setup-gl.sh          # one-time: Mesa EGL headless GL
 - **Three map tiers:** World map (region, tiny figures, NO doodle) → local exterior
   → gameplay interior (full-size figures, doodle reads). Doodle is a near/gameplay
   feature only.
+- **Figures are RENDERED, source maps are figure-free** (`assets/HD/backgrounds/figurefree/`,
+  locked 2026-06-30). Player AND NPCs are doodle sprites; baked-in figures are banned. 4
+  reference resolutions (2×1366×768 travel, 2×1254×1254 gameplay) → 4 grids → 4 figure sizes;
+  derive per map (`charScale = tilesTall*screenTile/64`). **Quality marker:** the previously
+  baked-in painted figures are the bar — render the doodle figure next to a painted figure of
+  the same map scale and check size/style match (`docs/screenshots/quality-marker-figure-vs-baked.png`).
+  Current state: scale matches, our figure is slightly chunkier / more inked than the smooth
+  painted ones → tune line strength/proportion toward the painted family.
 - **Donor policy:** Anime4K & co. reimplemented from concept, NEVER copy foreign
   code into the tree (KORGE_MIGRATION_PLAN §1).
 
