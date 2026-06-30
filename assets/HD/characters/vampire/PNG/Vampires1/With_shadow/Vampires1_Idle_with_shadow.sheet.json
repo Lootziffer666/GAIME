@@ -1,0 +1,10 @@
+{
+  "frameW": 23,
+  "frameH": 30,
+  "cols": 4,
+  "rows": 4,
+  "footAnchorX": 11,
+  "footAnchorY": 29,
+  "opaqueBodyH": 29,
+  "source": "Vampires1_Idle_with_shadow.png"
+}

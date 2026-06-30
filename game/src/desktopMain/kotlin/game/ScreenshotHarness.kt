@@ -114,6 +114,9 @@ fun main() {
     captureUnifiedSystems()
     // Step 16: Pfeiler 2 — unified scene specs (all grid physics visible)
     UNIFIED_SPECS.forEach { renderUnifiedScene(it) }
+    // Step 17: Figures via normalized sheets
+    captureFiguresTavern()
+    captureFiguresMarkerCheck()
 }
 
 private fun captureWorld(config: MapConfig, name: String, withDialog: Boolean) {
@@ -2427,3 +2430,162 @@ private val UNIFIED_SPECS = listOf(
         },
     ),
 )
+
+// =============================================================================
+// Step 17: Figures via normalized sheets
+// =============================================================================
+
+/**
+ * figures_tavern: Figurefree tavern + player + NPCs as rendered Doodle figures.
+ * Player = Swordsman, NPCs = Vampire (barkeep) + Swordsman lvl2 (patron).
+ * All physically normalized (body ~110px screen, foot on ground).
+ */
+private fun captureFiguresTavern() {
+    val def = ImageWorldDef.tavernInterior()
+    korgeScreenshotTest(Size(2560.0, 1440.0)) {
+        val outputW = 2560.0
+        val outputH = 1440.0
+
+        val bgBitmap = resourcesVfs[def.imagePath].readBitmap()
+        val imgH = bgBitmap.height.toFloat()
+        val tmxContent = resourcesVfs[def.gridTmxPath].readString()
+        val tiledMap = rpg.tiled.TmxLoader.parse(tmxContent)
+        val grid = rpg.tiled.CollisionGrid.from(tiledMap)
+
+        val gridRows = grid.rows
+        val screenTile = (outputH / gridRows).toFloat()
+        val bgScale = (outputH / imgH).toDouble()
+
+        val worldLayer = container {}
+        addChild(worldLayer)
+
+        val bg = worldLayer.image(bgBitmap)
+        bg.smoothing = true
+        bg.scaleX = bgScale
+        bg.scaleY = bgScale
+
+        // Physical scale from descriptor
+        val targetBodyScreenPx = 96f * bgScale.toFloat()
+        val idleDesc = SpriteLoader.loadDescriptor(
+            "assets/HD/characters/swordsman/PNG/Swordsman_lvl1/Without_shadow/Swordsman_lvl1_Idle_without_shadow.png"
+        )
+        val playerBodyH = (idleDesc?.opaqueBodyH ?: 24).toFloat()
+        val charScale = targetBodyScreenPx / playerBodyH
+        val layerTile = (screenTile / charScale).toInt().coerceAtLeast(1)
+
+        // Entity layer with doodle filter
+        val entityLayer = worldLayer.container {}
+
+        // Player
+        val (spawnX, spawnY) = def.spawn ?: (grid.cols / 2 to grid.rows / 2)
+        val player = CharacterSprite(entityLayer, layerTile, layerTile)
+        player.loadSwordsman()
+        player.gridX = spawnX
+        player.gridY = spawnY
+        player.facing = Facing.DOWN
+        player.play(SpriteAnimation.IDLE)
+
+        // NPCs
+        for (npc in def.npcs) {
+            if (npc.sheetPath != null) {
+                val npcSprite = CharacterSprite(entityLayer, layerTile, layerTile)
+                npcSprite.loadFromSheet(npc.sheetPath, npc.walkSheetPath)
+                npcSprite.gridX = npc.cellX
+                npcSprite.gridY = npc.cellY
+                npcSprite.facing = npc.facingHint
+                npcSprite.play(SpriteAnimation.IDLE)
+            }
+        }
+
+        entityLayer.scaleX = charScale.toDouble()
+        entityLayer.scaleY = charScale.toDouble()
+
+        val doodleFilter = game.shader.DoodleLineFilter(time = 1.5f, lineStrength = 0.8f, jitter = 0.4f)
+        entityLayer.filter = doodleFilter
+
+        // Camera
+        val camera = rpg.world.Camera()
+        val playerScreenX = player.visualGridX.toFloat() * screenTile
+        val playerScreenY = player.visualGridY.toFloat() * screenTile
+        camera.follow(playerScreenX, playerScreenY, outputW.toFloat(), outputH.toFloat(),
+            bgBitmap.width * bgScale.toFloat(), outputH.toFloat())
+        worldLayer.x = -camera.x.toDouble()
+        worldLayer.y = -camera.y.toDouble()
+
+        // HUD
+        val hero = Combatant(id = "nib", name = "Nib", maxHp = 80, side = Side.PLAYER, attackPower = 12)
+        HudOverlay(this, hero, Inventory(initialGold = 50), "Heroes' Home (FIGURES)")
+
+        save("figures_tavern")
+    }
+}
+
+/**
+ * figures_marker_check: Same player sprite rendered on the OLD baked-in tavern
+ * (with painted figures) for size/style comparison against the quality markers.
+ */
+private fun captureFiguresMarkerCheck() {
+    korgeScreenshotTest(Size(2560.0, 1440.0)) {
+        val outputH = 1440.0
+
+        // Load the OLD baked-in tavern (with painted figures as reference markers)
+        val bgBitmap = resourcesVfs["assets/HD/backgrounds/tavern_interior.png"].readBitmap()
+        val imgH = bgBitmap.height.toFloat()
+        val tmxContent = resourcesVfs["assets/HD/backgrounds/tavern_interior.tmx"].readString()
+        val tiledMap = rpg.tiled.TmxLoader.parse(tmxContent)
+        val grid = rpg.tiled.CollisionGrid.from(tiledMap)
+
+        val gridRows = grid.rows
+        val screenTile = (outputH / gridRows).toFloat()
+        val bgScale = (outputH / imgH).toDouble()
+
+        val worldLayer = container {}
+        addChild(worldLayer)
+
+        val bg = worldLayer.image(bgBitmap)
+        bg.smoothing = true
+        bg.scaleX = bgScale
+        bg.scaleY = bgScale
+
+        // Physical scale from descriptor (same as figures_tavern)
+        val targetBodyScreenPx = 96f * bgScale.toFloat()
+        val idleDesc = SpriteLoader.loadDescriptor(
+            "assets/HD/characters/swordsman/PNG/Swordsman_lvl1/Without_shadow/Swordsman_lvl1_Idle_without_shadow.png"
+        )
+        val playerBodyH = (idleDesc?.opaqueBodyH ?: 24).toFloat()
+        val charScale = targetBodyScreenPx / playerBodyH
+        val layerTile = (screenTile / charScale).toInt().coerceAtLeast(1)
+
+        // Entity layer with doodle filter
+        val entityLayer = worldLayer.container {}
+
+        // Player at spawn position (next to painted figures for comparison)
+        val player = CharacterSprite(entityLayer, layerTile, layerTile)
+        player.loadSwordsman()
+        player.gridX = 39
+        player.gridY = 50
+        player.facing = Facing.DOWN
+        player.play(SpriteAnimation.IDLE)
+
+        entityLayer.scaleX = charScale.toDouble()
+        entityLayer.scaleY = charScale.toDouble()
+
+        val doodleFilter = game.shader.DoodleLineFilter(time = 1.5f, lineStrength = 0.8f, jitter = 0.4f)
+        entityLayer.filter = doodleFilter
+
+        // Camera
+        val camera = rpg.world.Camera()
+        val playerScreenX = player.visualGridX.toFloat() * screenTile
+        val playerScreenY = player.visualGridY.toFloat() * screenTile
+        camera.follow(playerScreenX, playerScreenY, 2560f, outputH.toFloat(),
+            bgBitmap.width * bgScale.toFloat(), outputH.toFloat())
+        worldLayer.x = -camera.x.toDouble()
+        worldLayer.y = -camera.y.toDouble()
+
+        // HUD
+        val hero = Combatant(id = "nib", name = "Nib", maxHp = 80, side = Side.PLAYER, attackPower = 12)
+        HudOverlay(this, hero, Inventory(initialGold = 50), "MARKER CHECK (baked-in bg)")
+
+        save("figures_marker_check")
+    }
+}

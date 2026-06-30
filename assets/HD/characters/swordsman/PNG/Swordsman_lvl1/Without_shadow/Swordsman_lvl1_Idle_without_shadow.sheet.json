@@ -1,0 +1,10 @@
+{
+  "frameW": 25,
+  "frameH": 25,
+  "cols": 12,
+  "rows": 4,
+  "footAnchorX": 12,
+  "footAnchorY": 24,
+  "opaqueBodyH": 24,
+  "source": "Swordsman_lvl1_Idle_without_shadow.png"
+}

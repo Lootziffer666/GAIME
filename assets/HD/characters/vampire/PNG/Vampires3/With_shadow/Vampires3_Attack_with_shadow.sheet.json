@@ -1,0 +1,10 @@
+{
+  "frameW": 64,
+  "frameH": 48,
+  "cols": 12,
+  "rows": 4,
+  "footAnchorX": 31,
+  "footAnchorY": 47,
+  "opaqueBodyH": 30,
+  "source": "Vampires3_Attack_with_shadow.png"
+}

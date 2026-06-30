@@ -33,6 +33,23 @@ class CharacterSprite(
     var pixelOffsetX: Double = 0.0
     var pixelOffsetY: Double = 0.0
 
+    // --- Physical sizing from descriptor (Step 17) ---
+    /** Opaque body height in source pixels (from Idle descriptor). */
+    var opaqueBodyH: Int = 0
+        private set
+    /** Foot anchor Y in the frame (from descriptor). */
+    var footAnchorY: Int = 0
+        private set
+    /** Foot anchor X in the frame (from descriptor). */
+    var footAnchorX: Int = 0
+        private set
+    /** Actual frame width from descriptor (or DEFAULT_FRAME_SIZE). */
+    var frameW: Int = SpriteLoader.DEFAULT_FRAME_SIZE
+        private set
+    /** Actual frame height from descriptor (or DEFAULT_FRAME_SIZE). */
+    var frameH: Int = SpriteLoader.DEFAULT_FRAME_SIZE
+        private set
+
     // --- Smooth movement ---
     private var fromGridX: Int = 0
     private var fromGridY: Int = 0
@@ -100,21 +117,53 @@ class CharacterSprite(
 
     suspend fun loadSwordsman() {
         val base = "assets/HD/characters/swordsman/PNG/Swordsman_lvl1/Without_shadow"
-        animations[SpriteAnimation.IDLE] = SpriteLoader.loadAllRows("$base/Swordsman_lvl1_Idle_without_shadow.png")
-        animations[SpriteAnimation.WALK] = SpriteLoader.loadAllRows("$base/Swordsman_lvl1_Walk_without_shadow.png")
-        animations[SpriteAnimation.ATTACK] = SpriteLoader.loadAllRows("$base/Swordsman_lvl1_attack_without_shadow.png")
-        animations[SpriteAnimation.HURT] = SpriteLoader.loadAllRows("$base/Swordsman_lvl1_Hurt_without_shadow.png")
-        animations[SpriteAnimation.DEATH] = SpriteLoader.loadAllRows("$base/Swordsman_lvl1_Death_without_shadow.png")
-        applyFirstFrame()
+        loadAnimationSet(
+            idle = "$base/Swordsman_lvl1_Idle_without_shadow.png",
+            walk = "$base/Swordsman_lvl1_Walk_without_shadow.png",
+            attack = "$base/Swordsman_lvl1_attack_without_shadow.png",
+            hurt = "$base/Swordsman_lvl1_Hurt_without_shadow.png",
+            death = "$base/Swordsman_lvl1_Death_without_shadow.png",
+        )
     }
 
     suspend fun loadVampire() {
         val base = "assets/HD/characters/vampire/PNG/Vampires1/Without_shadow"
-        animations[SpriteAnimation.IDLE] = SpriteLoader.loadAllRows("$base/Vampires1_Idle_without_shadow.png")
-        animations[SpriteAnimation.WALK] = SpriteLoader.loadAllRows("$base/Vampires1_Walk_without_shadow.png")
-        animations[SpriteAnimation.ATTACK] = SpriteLoader.loadAllRows("$base/Vampires1_Attack_without_shadow.png")
-        animations[SpriteAnimation.HURT] = SpriteLoader.loadAllRows("$base/Vampires1_Hurt_without_shadow.png")
-        animations[SpriteAnimation.DEATH] = SpriteLoader.loadAllRows("$base/Vampires1_Death_without_shadow.png")
+        loadAnimationSet(
+            idle = "$base/Vampires1_Idle_without_shadow.png",
+            walk = "$base/Vampires1_Walk_without_shadow.png",
+            attack = "$base/Vampires1_Attack_without_shadow.png",
+            hurt = "$base/Vampires1_Hurt_without_shadow.png",
+            death = "$base/Vampires1_Death_without_shadow.png",
+        )
+    }
+
+    /**
+     * Loads a full animation set. The IDLE descriptor is the reference for body metrics.
+     * All sheets use their own descriptor for slicing but the IDLE opaqueBodyH is the
+     * scale reference (prevents "breathing" between animations).
+     */
+    private suspend fun loadAnimationSet(
+        idle: String, walk: String, attack: String, hurt: String, death: String
+    ) {
+        // Load idle FIRST — its descriptor is the scale reference
+        val (idleRows, idleDesc) = SpriteLoader.loadWithDescriptor(idle)
+        animations[SpriteAnimation.IDLE] = idleRows
+
+        // Store metrics from idle (the reference pose)
+        if (idleDesc != null) {
+            opaqueBodyH = idleDesc.opaqueBodyH
+            footAnchorY = idleDesc.footAnchorY
+            footAnchorX = idleDesc.footAnchorX
+            frameW = idleDesc.frameW
+            frameH = idleDesc.frameH
+        }
+
+        // Load remaining animations (each may have its own frame size)
+        animations[SpriteAnimation.WALK] = SpriteLoader.loadAllRows(walk)
+        animations[SpriteAnimation.ATTACK] = SpriteLoader.loadAllRows(attack)
+        animations[SpriteAnimation.HURT] = SpriteLoader.loadAllRows(hurt)
+        animations[SpriteAnimation.DEATH] = SpriteLoader.loadAllRows(death)
+
         applyFirstFrame()
     }
 
@@ -123,12 +172,20 @@ class CharacterSprite(
      * Falls back to procedural bitmaps on error.
      */
     suspend fun loadFromSheet(idleSheetPath: String?, walkSheetPath: String? = null) {
-        val idleRows = if (idleSheetPath != null) {
-            SpriteLoader.loadAllRows(idleSheetPath)
+        if (idleSheetPath != null) {
+            val (idleRows, idleDesc) = SpriteLoader.loadWithDescriptor(idleSheetPath)
+            animations[SpriteAnimation.IDLE] = idleRows
+            if (idleDesc != null) {
+                opaqueBodyH = idleDesc.opaqueBodyH
+                footAnchorY = idleDesc.footAnchorY
+                footAnchorX = idleDesc.footAnchorX
+                frameW = idleDesc.frameW
+                frameH = idleDesc.frameH
+            }
         } else {
-            listOf(SpriteLoader.sliceFrames(SpriteLoader.buildFallbackBitmap()))
+            animations[SpriteAnimation.IDLE] = listOf(SpriteLoader.sliceFrames(SpriteLoader.buildFallbackBitmap()))
         }
-        animations[SpriteAnimation.IDLE] = idleRows
+        val idleRows = animations[SpriteAnimation.IDLE]!!
         animations[SpriteAnimation.WALK] = if (walkSheetPath != null) SpriteLoader.loadAllRows(walkSheetPath) else idleRows
         animations[SpriteAnimation.ATTACK] = idleRows
         animations[SpriteAnimation.HURT] = idleRows
@@ -194,9 +251,23 @@ class CharacterSprite(
         if (!frames.isNullOrEmpty()) {
             img.bitmap = frames[0]
         }
-        val frameSize = img.bitmap.width
-        pixelOffsetX = -(frameSize - tileWidth) / 2.0
-        pixelOffsetY = -(frameSize - tileHeight) / 2.0
+        val bmpW = img.bitmap.width
+        val bmpH = img.bitmap.height
+
+        // Step 17: Position with foot anchor.
+        // The foot anchor point in the frame should align with the BOTTOM CENTER of
+        // the grid cell. This means:
+        //   pixelOffsetX = (tileWidth/2) - footAnchorX  (center body on tile)
+        //   pixelOffsetY = tileHeight - footAnchorY - 1  (foot sits on cell bottom)
+        // When no descriptor: fallback to centering (old behavior).
+        if (opaqueBodyH > 0 && footAnchorY > 0) {
+            pixelOffsetX = (tileWidth / 2.0) - footAnchorX
+            pixelOffsetY = tileHeight.toDouble() - footAnchorY.toDouble() - 1.0
+        } else {
+            pixelOffsetX = -(bmpW - tileWidth) / 2.0
+            pixelOffsetY = -(bmpH - tileHeight) / 2.0
+        }
+
         fromGridX = gridX
         fromGridY = gridY
         moveProgress = 1f

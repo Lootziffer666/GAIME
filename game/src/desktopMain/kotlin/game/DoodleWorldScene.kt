@@ -130,12 +130,21 @@ class DoodleWorldScene : Scene() {
         // =====================================================================
         val entityLayer = worldLayer.container {}
 
-        // Grid-derived character sizing (NEVER hardcoded) — Step 13 math:
-        // tilesTall=5, layerTile = round(64/tilesTall), charScale = screenTile/layerTile
-        // charScale multiplies BOTH the sprite size AND in-layer position.
-        val tilesTall = 5
-        val layerTile = (64.0 / tilesTall).toInt().coerceAtLeast(1) // ~13 px in layer space
-        val charScale = screenTile / layerTile.toFloat()
+        // Step 17: Physical normalization from sheet descriptor.
+        // Target body height = 96 map-px, scaled to screen via bgScale.
+        // charScale = targetBodyPx_screen / opaqueBodyH (from Idle descriptor).
+        val targetBodyMapPx = 96f  // Owner spec: 96px body at 1254² map scale
+        val targetBodyScreenPx = targetBodyMapPx * bgScale
+
+        // Load the Idle descriptor to get opaqueBodyH BEFORE creating the sprite
+        val idleDescPath = "assets/HD/characters/swordsman/PNG/Swordsman_lvl1/Without_shadow/Swordsman_lvl1_Idle_without_shadow.png"
+        val idleDesc = SpriteLoader.loadDescriptor(idleDescPath)
+        val playerBodyH = (idleDesc?.opaqueBodyH ?: 24).toFloat().coerceAtLeast(1f)
+        val charScale = targetBodyScreenPx / playerBodyH
+
+        // layerTile: the tile size in entity-layer space (before charScale is applied).
+        // screenTile / charScale gives us how many source-pixels one grid cell spans.
+        val layerTile = (screenTile / charScale).toInt().coerceAtLeast(1)
 
         // Determine spawn
         val (rawSpawnX, rawSpawnY) = pendingSpawn ?: def.spawn ?: (gridCols / 2 to gridRows / 2)
@@ -185,8 +194,22 @@ class DoodleWorldScene : Scene() {
         entityLayer.filter = doodleFilter
 
         // =====================================================================
-        // 5. NPC HOTSPOTS — invisible, optional debug markers
+        // 5. NPCs — rendered Doodle figures (Step 17) + debug markers
         // =====================================================================
+        // NPCs with a sheetPath get a CharacterSprite in the entityLayer
+        // (same physical scale as the player). NPCs without remain invisible hotspots.
+        for (npc in def.npcs) {
+            if (npc.sheetPath != null) {
+                val npcSprite = CharacterSprite(entityLayer, layerTile, layerTile)
+                npcSprite.loadFromSheet(npc.sheetPath, npc.walkSheetPath)
+                npcSprite.gridX = npc.cellX
+                npcSprite.gridY = npc.cellY
+                npcSprite.facing = npc.facingHint
+                npcSprite.play(SpriteAnimation.IDLE)
+            }
+        }
+
+        // Debug hotspot markers (drawn in worldLayer AFTER entities, so on top)
         if (DEBUG_HOTSPOTS) {
             for (npc in def.npcs) {
                 val markerX = npc.cellX * screenTile
