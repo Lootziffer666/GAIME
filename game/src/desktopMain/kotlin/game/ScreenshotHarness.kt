@@ -2469,9 +2469,9 @@ private fun captureFiguresTavern() {
         // Physical scale from descriptor
         val targetBodyScreenPx = 96f * bgScale.toFloat()
         val idleDesc = SpriteLoader.loadDescriptor(
-            "assets/HD/characters/swordsman/PNG/Swordsman_lvl1/Without_shadow/Swordsman_lvl1_Idle_without_shadow.png"
+            "assets/HD/characters/forest_ranger/ForestRanger_Idle.png"
         )
-        val playerBodyH = (idleDesc?.opaqueBodyH ?: 24).toFloat()
+        val playerBodyH = (idleDesc?.opaqueBodyH ?: 551).toFloat()
         val charScale = targetBodyScreenPx / playerBodyH
         val layerTile = (screenTile / charScale).toInt().coerceAtLeast(1)
 
@@ -2481,7 +2481,7 @@ private fun captureFiguresTavern() {
         // Player
         val (spawnX, spawnY) = def.spawn ?: (grid.cols / 2 to grid.rows / 2)
         val player = CharacterSprite(entityLayer, layerTile, layerTile)
-        player.loadSwordsman()
+        player.loadForestRanger()
         player.gridX = spawnX
         player.gridY = spawnY
         player.facing = Facing.DOWN
@@ -2628,9 +2628,9 @@ private fun captureRTMaterial() {
         // Physical scale
         val targetBodyScreenPx = 96f * bgScale.toFloat()
         val idleDesc = SpriteLoader.loadDescriptor(
-            "assets/HD/characters/swordsman/PNG/Swordsman_lvl1/Without_shadow/Swordsman_lvl1_Idle_without_shadow.png"
+            "assets/HD/characters/forest_ranger/ForestRanger_Idle.png"
         )
-        val playerBodyH = (idleDesc?.opaqueBodyH ?: 24).toFloat()
+        val playerBodyH = (idleDesc?.opaqueBodyH ?: 551).toFloat()
         val charScale = targetBodyScreenPx / playerBodyH
         val layerTile = (screenTile / charScale).toInt().coerceAtLeast(1)
 
@@ -2638,7 +2638,7 @@ private fun captureRTMaterial() {
         val entityLayer = worldLayer.container {}
         val (spawnX, spawnY) = def.spawn ?: (grid.cols / 2 to grid.rows / 2)
         val player = CharacterSprite(entityLayer, layerTile, layerTile)
-        player.loadSwordsman()
+        player.loadForestRanger()
         player.gridX = spawnX
         player.gridY = spawnY
         player.facing = Facing.DOWN

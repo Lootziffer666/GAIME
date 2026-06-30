@@ -137,9 +137,9 @@ class DoodleWorldScene : Scene() {
         val targetBodyScreenPx = targetBodyMapPx * bgScale
 
         // Load the Idle descriptor to get opaqueBodyH BEFORE creating the sprite
-        val idleDescPath = "assets/HD/characters/swordsman/PNG/Swordsman_lvl1/Without_shadow/Swordsman_lvl1_Idle_without_shadow.png"
+        val idleDescPath = "assets/HD/characters/forest_ranger/ForestRanger_Idle.png"
         val idleDesc = SpriteLoader.loadDescriptor(idleDescPath)
-        val playerBodyH = (idleDesc?.opaqueBodyH ?: 24).toFloat().coerceAtLeast(1f)
+        val playerBodyH = (idleDesc?.opaqueBodyH ?: 551).toFloat().coerceAtLeast(1f)
         val charScale = targetBodyScreenPx / playerBodyH
 
         // layerTile: the tile size in entity-layer space (before charScale is applied).
@@ -176,7 +176,7 @@ class DoodleWorldScene : Scene() {
 
         // Create player
         val player = CharacterSprite(entityLayer, layerTile, layerTile)
-        player.loadSwordsman()
+        player.loadForestRanger()
         player.gridX = spawnX
         player.gridY = spawnY
         player.facing = Facing.DOWN

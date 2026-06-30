@@ -138,6 +138,21 @@ class CharacterSprite(
     }
 
     /**
+     * Load the Forest Ranger (high-resolution vector-rendered character).
+     * 551px opaque body height → downscaled to target, no upscale needed.
+     */
+    suspend fun loadForestRanger() {
+        val base = "assets/HD/characters/forest_ranger"
+        loadAnimationSet(
+            idle = "$base/ForestRanger_Idle.png",
+            walk = "$base/ForestRanger_Walk.png",
+            attack = "$base/ForestRanger_Attack.png",
+            hurt = "$base/ForestRanger_Hurt.png",
+            death = "$base/ForestRanger_Death.png",
+        )
+    }
+
+    /**
      * Loads a full animation set. The IDLE descriptor is the reference for body metrics.
      * All sheets use their own descriptor for slicing but the IDLE opaqueBodyH is the
      * scale reference (prevents "breathing" between animations).
