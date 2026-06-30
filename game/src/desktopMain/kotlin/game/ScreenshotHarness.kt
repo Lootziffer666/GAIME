@@ -36,6 +36,16 @@ import korlibs.korge.view.filter.filter
 import rpg.world.Camera
 import game.world.ImageWorldDef
 import game.world.ImageMapId
+import game.systems.SystemRegistry
+import rpg.systems.WorldContext
+import rpg.systems.WaterSystem
+import rpg.systems.BloodSystem
+import rpg.systems.SnowSystem
+import rpg.systems.FootprintSystem
+import rpg.systems.SeasonSystem
+import rpg.systems.MaterialFatigueSystem
+import rpg.weather.MaterialFatigue
+import rpg.weather.Season
 import rpg.weather.WaterGrid
 
 /**
@@ -102,6 +112,8 @@ fun main() {
     captureUnifiedDialog()
     // Step 15: Systems architecture proof
     captureUnifiedSystems()
+    // Step 16: Pfeiler 2 — unified scene specs (all grid physics visible)
+    UNIFIED_SPECS.forEach { renderUnifiedScene(it) }
 }
 
 private fun captureWorld(config: MapConfig, name: String, withDialog: Boolean) {
@@ -2101,3 +2113,306 @@ private fun captureUnifiedSystems() {
         save("unified_systems")
     }
 }
+
+// =============================================================================
+// STEP 16: PFEILER 2 — UNIFIED SCENE SPEC (Harness Data-Refactor)
+// =============================================================================
+
+/**
+ * A declarative specification for a unified runtime screenshot.
+ * Each spec produces one 2560x1440 PNG via [renderUnifiedScene].
+ */
+data class UnifiedSceneSpec(
+    val name: String,
+    val map: ImageMapId = ImageMapId.TAVERN_INTERIOR,
+    val season: Season? = null,
+    val weather: Weather? = null,
+    val prefill: (SystemRegistry) -> Unit = {},
+    val playerCell: Pair<Int, Int>? = null,
+)
+
+/**
+ * Renders a single unified scene from a [UnifiedSceneSpec].
+ * Builds the full DoodleWorldScene stack (image + grid + doodle character +
+ * SystemRegistry with all Pfeiler 2 systems + overlays), applies prefill,
+ * and saves to PNG. Deterministic (fixed values, no Random).
+ */
+private fun renderUnifiedScene(spec: UnifiedSceneSpec) {
+    val def = ImageWorldDef.forId(spec.map)
+    korgeScreenshotTest(Size(2560.0, 1440.0)) {
+        val outputW = 2560.0
+        val outputH = 1440.0
+
+        // 1. Load image + grid
+        val bgBitmap = resourcesVfs[def.imagePath].readBitmap()
+        val imgW = bgBitmap.width.toFloat()
+        val imgH = bgBitmap.height.toFloat()
+        val tmxContent = resourcesVfs[def.gridTmxPath].readString()
+        val tiledMap = rpg.tiled.TmxLoader.parse(tmxContent)
+        val grid = rpg.tiled.CollisionGrid.from(tiledMap)
+
+        val gridRows = grid.rows
+        val screenTile = (outputH / gridRows).toFloat()
+        val bgScale = (outputH / imgH).toDouble()
+        val worldW = imgW * bgScale.toFloat()
+        val worldH = outputH.toFloat()
+
+        // 2. World layer
+        val worldLayer = container {}
+        addChild(worldLayer)
+
+        val bg = worldLayer.image(bgBitmap)
+        bg.smoothing = true
+        bg.scaleX = bgScale
+        bg.scaleY = bgScale
+
+        // 3. Entity layer with doodle filter
+        val entityLayer = worldLayer.container {}
+        val tilesTall = 5
+        val layerTile = (64.0 / tilesTall).toInt().coerceAtLeast(1)
+        val charScale = screenTile / layerTile.toFloat()
+
+        val spawn = spec.playerCell ?: def.spawn ?: (grid.cols / 2 to grid.rows / 2)
+        val player = CharacterSprite(entityLayer, layerTile, layerTile)
+        player.loadSwordsman()
+        player.gridX = spawn.first
+        player.gridY = spawn.second
+        player.facing = Facing.DOWN
+        player.play(SpriteAnimation.IDLE)
+
+        entityLayer.scaleX = charScale.toDouble()
+        entityLayer.scaleY = charScale.toDouble()
+
+        val doodleFilter = game.shader.DoodleLineFilter(time = 1.5f, lineStrength = 0.8f, jitter = 0.4f)
+        entityLayer.filter = doodleFilter
+
+        // 4. Create all grids and systems
+        val overlayTileSize = screenTile.toInt().coerceAtLeast(1)
+        val currentSeason = spec.season ?: def.season ?: Season.SUMMER
+        val isSnowing = spec.weather == Weather.SNOW || currentSeason == Season.WINTER
+
+        val waterGrid = WaterGrid(
+            width = grid.cols, height = grid.rows,
+            offsetX = grid.offsetX, offsetY = grid.offsetY
+        )
+        val bloodGrid = BloodGrid(
+            width = grid.cols, height = grid.rows,
+            offsetX = grid.offsetX, offsetY = grid.offsetY
+        )
+        val snowGrid = SnowGrid(
+            width = grid.cols, height = grid.rows,
+            offsetX = grid.offsetX, offsetY = grid.offsetY
+        )
+        val footprintGrid = FootprintGrid(
+            width = grid.cols, height = grid.rows,
+            offsetX = grid.offsetX, offsetY = grid.offsetY
+        )
+        val seasonalGrid = SeasonalGrid(
+            width = grid.cols, height = grid.rows,
+            offsetX = grid.offsetX, offsetY = grid.offsetY
+        )
+        val fatigueGrid = MaterialFatigue(
+            width = grid.cols, height = grid.rows,
+            offsetX = grid.offsetX, offsetY = grid.offsetY
+        )
+
+        if (currentSeason == Season.SPRING) seasonalGrid.initFlowers()
+
+        val waterSystem = WaterSystem(waterGrid, isRaining = spec.weather == Weather.RAIN)
+        val bloodSystem = BloodSystem(bloodGrid)
+        val snowSystem = SnowSystem(snowGrid, isSnowing = isSnowing)
+        val footprintSystem = FootprintSystem(footprintGrid, isRaining = spec.weather == Weather.RAIN)
+        val seasonSystem = SeasonSystem(seasonalGrid, season = currentSeason)
+        val fatigueSystem = MaterialFatigueSystem(fatigueGrid)
+
+        // 5. Overlays in render order: Water > Blood > Snow > Footprints > Season > MaterialFatigue
+        val waterOverlay = WaterOverlay(worldLayer, overlayTileSize, overlayTileSize)
+        val bloodOverlay = BloodOverlay(worldLayer, overlayTileSize, overlayTileSize)
+        val snowOverlay = SnowOverlay(worldLayer, overlayTileSize, overlayTileSize)
+        val footprintOverlay = FootprintOverlay(worldLayer, overlayTileSize, overlayTileSize)
+        val springOverlay = SpringOverlay(worldLayer, overlayTileSize, overlayTileSize)
+        val fatigueOverlay = MaterialFatigueOverlay(worldLayer, overlayTileSize, overlayTileSize)
+
+        // 6. SystemRegistry
+        val registry = SystemRegistry()
+        registry.register(waterSystem) { waterOverlay.update(waterGrid) }
+        registry.register(bloodSystem) { bloodOverlay.update(bloodGrid, snowGrid) }
+        registry.register(snowSystem) { snowOverlay.update(snowGrid, footprintGrid) }
+        registry.register(footprintSystem) { footprintOverlay.update(footprintGrid) }
+        registry.register(seasonSystem) { springOverlay.update(seasonalGrid) }
+        registry.register(fatigueSystem) { fatigueOverlay.update(fatigueGrid) }
+
+        // 7. Apply prefill (populate grids for the screenshot)
+        spec.prefill(registry)
+
+        // 8. Render all overlays after prefill
+        registry.renderAll()
+
+        // 9. NPC hotspot debug markers (drawn last so they aren't obscured)
+        for (npc in def.npcs) {
+            val markerX = npc.cellX * screenTile
+            val markerY = npc.cellY * screenTile
+            worldLayer.solidRect(
+                screenTile.toDouble() * 0.6,
+                screenTile.toDouble() * 0.6,
+                RGBA(0xff, 0xaa, 0x00, 0x66)
+            ).apply {
+                x = (markerX + screenTile * 0.2).toDouble()
+                y = (markerY + screenTile * 0.2).toDouble()
+            }
+        }
+
+        // 10. Camera: center on player
+        val camera = Camera()
+        val playerScreenX = player.visualGridX.toFloat() * screenTile
+        val playerScreenY = player.visualGridY.toFloat() * screenTile
+        camera.follow(playerScreenX, playerScreenY, outputW.toFloat(), outputH.toFloat(), worldW, worldH)
+        worldLayer.x = -camera.x.toDouble()
+        worldLayer.y = -camera.y.toDouble()
+
+        // 11. HUD (screen-fixed)
+        val hero = Combatant(id = "nib", name = "Nib", maxHp = 80, side = Side.PLAYER, attackPower = 12)
+        HudOverlay(this, hero, Inventory(initialGold = 50), def.displayName)
+
+        save(spec.name)
+    }
+}
+
+// =============================================================================
+// STEP 16: UNIFIED SCENE SPECS (6 new screenshots)
+// =============================================================================
+
+private val UNIFIED_SPECS = listOf(
+    // 1. unified_winter: Snow accumulated + player footprints in snow
+    UnifiedSceneSpec(
+        name = "unified_winter",
+        map = ImageMapId.TAVERN_INTERIOR,
+        season = Season.WINTER,
+        weather = Weather.SNOW,
+        playerCell = 39 to 50,
+        prefill = { registry ->
+            val snow = registry.get<SnowSystem>("snow")!!
+            // Accumulate snow across the grid
+            snow.grid.accumulate(0.7f)
+            // Clear footprints trail approaching player from south
+            val px = 39; val py = 50
+            snow.grid.clearAt(px, py + 3, 0.5f)
+            snow.grid.clearAt(px, py + 2, 0.5f)
+            snow.grid.clearAt(px, py + 1, 0.5f)
+            snow.grid.clearAt(px, py, 0.4f)
+            // Stamp footprints on the trail
+            val fp = registry.get<FootprintSystem>("footprint")!!
+            fp.grid.stamp(px, py + 3)
+            fp.grid.stamp(px, py + 2)
+            fp.grid.stamp(px, py + 1)
+            fp.grid.stamp(px, py)
+        },
+    ),
+    // 2. unified_blood_snow: Fresh blood on snow (the 40-systems overlay thesis)
+    UnifiedSceneSpec(
+        name = "unified_blood_snow",
+        map = ImageMapId.TAVERN_INTERIOR,
+        season = Season.WINTER,
+        weather = Weather.SNOW,
+        playerCell = 39 to 50,
+        prefill = { registry ->
+            val snow = registry.get<SnowSystem>("snow")!!
+            snow.grid.accumulate(0.75f)
+            val blood = registry.get<BloodSystem>("blood")!!
+            // Fresh blood at and near player
+            blood.spill(39, 50, 0.9f)
+            blood.spill(40, 50, 0.7f)
+            blood.spill(39, 49, 0.6f)
+            blood.spill(38, 50, 0.5f)
+            // Older blood further out (age after spilling)
+            blood.spill(37, 51, 0.8f)
+            blood.spill(41, 49, 0.6f)
+            blood.grid.age(0.7f)
+            // Re-spill fresh blood near player
+            blood.spill(39, 50, 0.9f)
+            blood.spill(40, 50, 0.7f)
+        },
+    ),
+    // 3. unified_spring: Spring overlay with flowers
+    UnifiedSceneSpec(
+        name = "unified_spring",
+        map = ImageMapId.SYLVANORIA_WILDWOOD,
+        season = Season.SPRING,
+        playerCell = 40 to 24,
+        prefill = { registry ->
+            val season = registry.get<SeasonSystem>("season")!!
+            season.grid.initFlowers(0.8f)
+            // Trample near player to show interaction
+            season.grid.trampleFlower(40, 24, 0.5f)
+            season.grid.trampleFlower(41, 24, 0.3f)
+            season.grid.trampleFlower(40, 25, 0.4f)
+        },
+    ),
+    // 4. unified_autumn: Autumn overlay with fallen leaves
+    UnifiedSceneSpec(
+        name = "unified_autumn",
+        map = ImageMapId.SYLVANORIA_WILDWOOD,
+        season = Season.AUTUMN,
+        playerCell = 40 to 24,
+        prefill = { registry ->
+            val season = registry.get<SeasonSystem>("season")!!
+            // Drop multiple rounds of leaves
+            season.grid.dropLeaves(0.5f, timeStep = 0)
+            season.grid.dropLeaves(0.4f, timeStep = 1)
+            season.grid.dropLeaves(0.3f, timeStep = 2)
+            // Player kicked leaves at current position
+            season.grid.kickLeaves(40, 24)
+        },
+    ),
+    // 5. unified_material_fatigue: Cracks visible
+    UnifiedSceneSpec(
+        name = "unified_material_fatigue",
+        map = ImageMapId.TAVERN_INTERIOR,
+        playerCell = 39 to 50,
+        prefill = { registry ->
+            val fatigue = registry.get<MaterialFatigueSystem>("material_fatigue")!!
+            // Various stress levels around player
+            fatigue.impact(39, 48, 0.4f)   // cracked
+            fatigue.impact(40, 49, 0.35f)  // cracked
+            fatigue.impact(38, 50, 0.55f)  // medium crack
+            fatigue.impact(39, 51, 0.6f)   // medium crack
+            fatigue.impact(40, 50, 0.8f)   // broken
+            fatigue.impactRadius(37, 49, 2, 0.75f) // radius impact, broken center
+        },
+    ),
+    // 6. unified_all: All systems active simultaneously
+    UnifiedSceneSpec(
+        name = "unified_all",
+        map = ImageMapId.TAVERN_INTERIOR,
+        season = Season.WINTER,
+        weather = Weather.SNOW,
+        playerCell = 39 to 50,
+        prefill = { registry ->
+            // Snow
+            val snow = registry.get<SnowSystem>("snow")!!
+            snow.grid.accumulate(0.6f)
+            snow.grid.clearAt(39, 50, 0.4f)
+            snow.grid.clearAt(39, 51, 0.3f)
+            // Blood on snow
+            val blood = registry.get<BloodSystem>("blood")!!
+            blood.spill(40, 50, 0.8f)
+            blood.spill(41, 51, 0.6f)
+            // Footprints
+            val fp = registry.get<FootprintSystem>("footprint")!!
+            fp.grid.stamp(39, 52)
+            fp.grid.stamp(39, 51)
+            fp.grid.stamp(39, 50)
+            fp.grid.stamp(38, 50)
+            // Material fatigue
+            val fatigue = registry.get<MaterialFatigueSystem>("material_fatigue")!!
+            fatigue.impact(37, 49, 0.5f)
+            fatigue.impact(38, 48, 0.75f)
+            fatigue.impactRadius(41, 52, 1, 0.6f)
+            // Water puddles
+            val water = registry.get<WaterSystem>("water")!!
+            water.grid[35, 48] = 0.5f
+            water.grid[36, 48] = 0.4f
+            water.grid[35, 49] = 0.3f
+        },
+    ),
+)
