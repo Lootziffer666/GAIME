@@ -117,6 +117,8 @@ fun main() {
     // Step 17: Figures via normalized sheets
     captureFiguresTavern()
     captureFiguresMarkerCheck()
+    // RT Material Rendering proof
+    captureRTMaterial()
 }
 
 private fun captureWorld(config: MapConfig, name: String, withDialog: Boolean) {
@@ -2467,9 +2469,9 @@ private fun captureFiguresTavern() {
         // Physical scale from descriptor
         val targetBodyScreenPx = 96f * bgScale.toFloat()
         val idleDesc = SpriteLoader.loadDescriptor(
-            "assets/HD/characters/swordsman/PNG/Swordsman_lvl1/Without_shadow/Swordsman_lvl1_Idle_without_shadow.png"
+            "assets/HD/characters/forest_ranger/ForestRanger_Idle.png"
         )
-        val playerBodyH = (idleDesc?.opaqueBodyH ?: 24).toFloat()
+        val playerBodyH = (idleDesc?.opaqueBodyH ?: 551).toFloat()
         val charScale = targetBodyScreenPx / playerBodyH
         val layerTile = (screenTile / charScale).toInt().coerceAtLeast(1)
 
@@ -2479,7 +2481,7 @@ private fun captureFiguresTavern() {
         // Player
         val (spawnX, spawnY) = def.spawn ?: (grid.cols / 2 to grid.rows / 2)
         val player = CharacterSprite(entityLayer, layerTile, layerTile)
-        player.loadSwordsman()
+        player.loadForestRanger()
         player.gridX = spawnX
         player.gridY = spawnY
         player.facing = Facing.DOWN
@@ -2587,5 +2589,148 @@ private fun captureFiguresMarkerCheck() {
         HudOverlay(this, hero, Inventory(initialGold = 50), "MARKER CHECK (baked-in bg)")
 
         save("figures_marker_check")
+    }
+}
+
+// =============================================================================
+// RT Material Rendering — physical materials via fragment shader
+// =============================================================================
+
+/**
+ * Proof of concept: WorldMaterialFilter transforms flat overlay colors into
+ * physically rendered materials (reflective water, sparkling snow, glossy blood,
+ * shadowed cracks). Same scene as unified_all but with material shader active.
+ */
+private fun captureRTMaterial() {
+    val def = ImageWorldDef.tavernInterior()
+    korgeScreenshotTest(Size(2560.0, 1440.0)) {
+        val outputW = 2560.0
+        val outputH = 1440.0
+
+        val bgBitmap = resourcesVfs[def.imagePath].readBitmap()
+        val imgH = bgBitmap.height.toFloat()
+        val tmxContent = resourcesVfs[def.gridTmxPath].readString()
+        val tiledMap = rpg.tiled.TmxLoader.parse(tmxContent)
+        val grid = rpg.tiled.CollisionGrid.from(tiledMap)
+
+        val gridRows = grid.rows
+        val screenTile = (outputH / gridRows).toFloat()
+        val bgScale = (outputH / imgH).toDouble()
+
+        val worldLayer = container {}
+        addChild(worldLayer)
+
+        val bg = worldLayer.image(bgBitmap)
+        bg.smoothing = true
+        bg.scaleX = bgScale
+        bg.scaleY = bgScale
+
+        // Physical scale
+        val targetBodyScreenPx = 96f * bgScale.toFloat()
+        val idleDesc = SpriteLoader.loadDescriptor(
+            "assets/HD/characters/forest_ranger/ForestRanger_Idle.png"
+        )
+        val playerBodyH = (idleDesc?.opaqueBodyH ?: 551).toFloat()
+        val charScale = targetBodyScreenPx / playerBodyH
+        val layerTile = (screenTile / charScale).toInt().coerceAtLeast(1)
+
+        // Entity layer
+        val entityLayer = worldLayer.container {}
+        val (spawnX, spawnY) = def.spawn ?: (grid.cols / 2 to grid.rows / 2)
+        val player = CharacterSprite(entityLayer, layerTile, layerTile)
+        player.loadForestRanger()
+        player.gridX = spawnX
+        player.gridY = spawnY
+        player.facing = Facing.DOWN
+        player.play(SpriteAnimation.IDLE)
+        entityLayer.scaleX = charScale.toDouble()
+        entityLayer.scaleY = charScale.toDouble()
+
+        // Overlays — multiple systems active (like unified_all)
+        val overlayTileSize = screenTile.toInt().coerceAtLeast(1)
+
+        // Water puddles around spawn
+        val waterGrid = rpg.weather.WaterGrid(
+            width = grid.cols, height = grid.rows,
+            offsetX = grid.offsetX, offsetY = grid.offsetY
+        )
+        for (dx in -4..4) {
+            for (dy in -4..4) {
+                val wx = spawnX - grid.offsetX + dx
+                val wy = spawnY - grid.offsetY + dy
+                if (wx in 0 until grid.cols && wy in 0 until grid.rows) {
+                    waterGrid[wx, wy] = 0.4f + (4 - kotlin.math.abs(dx) - kotlin.math.abs(dy)).coerceAtLeast(0) * 0.12f
+                }
+            }
+        }
+        val waterOverlay = WaterOverlay(worldLayer, overlayTileSize, overlayTileSize)
+        waterOverlay.update(waterGrid)
+
+        // Snow patches (offset from water)
+        val snowGrid = rpg.weather.SnowGrid(
+            width = grid.cols, height = grid.rows,
+            offsetX = grid.offsetX, offsetY = grid.offsetY
+        )
+        for (dx in 3..7) {
+            for (dy in -3..1) {
+                val wx = spawnX - grid.offsetX + dx
+                val wy = spawnY - grid.offsetY + dy
+                if (wx in 0 until grid.cols && wy in 0 until grid.rows) {
+                    snowGrid[wx + grid.offsetX, wy + grid.offsetY] = 0.6f
+                }
+            }
+        }
+        val footprintGrid = rpg.weather.FootprintGrid(
+            width = grid.cols, height = grid.rows,
+            offsetX = grid.offsetX, offsetY = grid.offsetY
+        )
+        val snowOverlay = SnowOverlay(worldLayer, overlayTileSize, overlayTileSize)
+        snowOverlay.update(snowGrid, footprintGrid)
+
+        // Blood spots
+        val bloodGrid = rpg.weather.BloodGrid(
+            width = grid.cols, height = grid.rows,
+            offsetX = grid.offsetX, offsetY = grid.offsetY
+        )
+        bloodGrid.spill(spawnX - 2, spawnY + 2, 0.8f)
+        bloodGrid.spill(spawnX - 1, spawnY + 2, 0.5f)
+        bloodGrid.spill(spawnX - 2, spawnY + 3, 0.3f)
+        val bloodOverlay = BloodOverlay(worldLayer, overlayTileSize, overlayTileSize)
+        bloodOverlay.update(bloodGrid, snowGrid)
+
+        // Material fatigue (cracks)
+        val fatigue = rpg.weather.MaterialFatigue(
+            width = grid.cols, height = grid.rows,
+            offsetX = grid.offsetX, offsetY = grid.offsetY
+        )
+        fatigue.addStress(spawnX + 3, spawnY + 3, 0.8f)
+        fatigue.addStressRadius(spawnX + 4, spawnY + 4, 1, 0.6f)
+        val fatigueOverlay = MaterialFatigueOverlay(worldLayer, overlayTileSize, overlayTileSize)
+        fatigueOverlay.update(fatigue)
+
+        // === APPLY WORLD MATERIAL FILTER ===
+        // This transforms the flat overlay colors into physical materials
+        val materialFilter = game.shader.WorldMaterialFilter(
+            time = 2.5f,
+            intensity = 1.0f,
+            lightAngle = 0.7f,
+            lightHeight = 0.6f,
+        )
+        worldLayer.filter = materialFilter
+
+        // Camera
+        val camera = rpg.world.Camera()
+        val playerScreenX = player.visualGridX.toFloat() * screenTile
+        val playerScreenY = player.visualGridY.toFloat() * screenTile
+        camera.follow(playerScreenX, playerScreenY, outputW.toFloat(), outputH.toFloat(),
+            bgBitmap.width * bgScale.toFloat(), outputH.toFloat())
+        worldLayer.x = -camera.x.toDouble()
+        worldLayer.y = -camera.y.toDouble()
+
+        // HUD
+        val hero = Combatant(id = "nib", name = "Nib", maxHp = 80, side = Side.PLAYER, attackPower = 12)
+        HudOverlay(this, hero, Inventory(initialGold = 50), "RT MATERIAL RENDERING")
+
+        save("rt_material")
     }
 }
