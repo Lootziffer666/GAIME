@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>GAIME Shader Editor</title>
+<title>GAIME Shader Editor v2</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:#1a1a2e;color:#e0e0e0;font-family:monospace;display:flex;height:100vh;overflow:hidden}
@@ -14,307 +14,192 @@ h2{color:#00d4aa;margin:8px 0 4px;font-size:11px;text-transform:uppercase;border
 .c{margin:2px 0 5px}
 .c label{display:flex;justify-content:space-between;font-size:10px;color:#999}
 .c input[type=range]{width:100%;height:14px}
-.c .v{color:#00d4aa;min-width:35px;text-align:right}
+.c .v{color:#00d4aa;min-width:30px;text-align:right}
 button{background:#00d4aa;color:#1a1a2e;border:none;padding:5px 10px;cursor:pointer;font-weight:bold;margin:2px;border-radius:3px;font-size:10px}
 button:hover{background:#00ffcc}
 button.active{background:#ff6b6b;color:#fff}
 input[type=file]{font-size:9px;width:100%;margin:2px 0}
 #title{color:#00d4aa;font-size:13px;font-weight:bold;margin-bottom:6px}
 .tabs{display:flex;flex-wrap:wrap;gap:2px;margin:4px 0}
-.tabs button{font-size:9px;padding:4px 6px}
+.tabs button{font-size:9px;padding:3px 5px}
 .tabs button.sel{background:#00d4aa;color:#1a1a2e}
 .tabs button:not(.sel){background:#333;color:#aaa}
-.mat-panel{display:none}
-.mat-panel.active{display:block}
-#timeline{margin-top:8px;padding:6px;background:#0d1b2a;border-radius:4px}
-#timeline .kf{display:inline-block;width:20px;height:20px;background:#333;border:1px solid #555;margin:2px;cursor:pointer;border-radius:3px;font-size:8px;text-align:center;line-height:20px}
-#timeline .kf.set{background:#00d4aa;color:#1a1a2e;border-color:#00d4aa}
+.mp{display:none}.mp.active{display:block}
+#kf-bar .k{display:inline-block;width:18px;height:18px;background:#333;border:1px solid #555;margin:1px;cursor:pointer;border-radius:2px;font-size:8px;text-align:center;line-height:18px}
+#kf-bar .k.set{background:#00d4aa;color:#1a1a2e}
 @media(max-width:700px){#sidebar{width:100%;height:55vh;order:2}#canvas-wrap{height:45vh;order:1}body{flex-direction:column}}
 </style>
 </head>
 <body>
 <div id="sidebar">
 <div id="title">GAIME Shader Editor v2</div>
-<div><input type="file" id="f-scene" accept="image/*"><input type="file" id="f-mat" accept="image/*"></div>
-
+<input type="file" id="f-scene" accept="image/*">
+<input type="file" id="f-mat" accept="image/*">
 <h2>Global</h2>
-<div class="c"><label>Weather<span class="v" id="d-w">0.00</span></label><input type="range" id="s-w" min="0" max="100" value="0"></div>
-<div class="c"><label>Wind<span class="v" id="d-wind">0.30</span></label><input type="range" id="s-wind" min="0" max="100" value="30"></div>
+<div class="c"><label>Weather<span class="v" id="d-w">0</span></label><input type="range" id="s-w" min="0" max="100" value="0"></div>
+<div class="c"><label>Wind<span class="v" id="d-wind">30</span></label><input type="range" id="s-wind" min="0" max="100" value="30"></div>
+<div class="c"><label>Shadow Lift<span class="v" id="d-shad">12</span></label><input type="range" id="s-shad" min="0" max="50" value="12"></div>
+<div class="c"><label>Puddles<span class="v" id="d-pud">55</span></label><input type="range" id="s-pud" min="0" max="100" value="55"></div>
+<div class="c"><label>Rain<span class="v" id="d-rain">20</span></label><input type="range" id="s-rain" min="0" max="100" value="20"></div>
+<div class="c"><label>Rivulets<span class="v" id="d-riv">12</span></label><input type="range" id="s-riv" min="0" max="100" value="12"></div>
+<div class="c"><label>Fog<span class="v" id="d-fog">25</span></label><input type="range" id="s-fog" min="0" max="100" value="25"></div>
+<div class="c"><label>Age<span class="v" id="d-age">0</span></label><input type="range" id="s-age" min="0" max="100" value="0"></div>
+<div class="c"><label>Moss<span class="v" id="d-moss">50</span></label><input type="range" id="s-moss" min="0" max="100" value="50"></div>
+<div class="c"><label>Invasion<span class="v" id="d-inv">50</span></label><input type="range" id="s-inv" min="0" max="100" value="50"></div>
 <div class="c"><label><input type="checkbox" id="s-anim" checked> Animate</label></div>
-
-<h2>Material</h2>
-<div class="tabs" id="mat-tabs">
-<button class="sel" data-m="roof">Roof</button>
-<button data-m="stone">Stone</button>
-<button data-m="grass">Grass</button>
-<button data-m="wood">Wood</button>
-<button data-m="foliage">Foliage</button>
-<button data-m="puddle">Puddle</button>
-<button data-m="fog">Fog</button>
-<button data-m="window">Window</button>
-</div>
-<div id="mat-panels"></div>
-
-<h2>Effects</h2>
-<div class="c"><label>Puddles<span class="v" id="d-pud">0.55</span></label><input type="range" id="s-pud" min="0" max="100" value="55"></div>
-<div class="c"><label>Rain Streaks<span class="v" id="d-rain">0.20</span></label><input type="range" id="s-rain" min="0" max="100" value="20"></div>
-<div class="c"><label>Rivulets<span class="v" id="d-riv">0.12</span></label><input type="range" id="s-riv" min="0" max="100" value="12"></div>
-<div class="c"><label>Shadow Lift<span class="v" id="d-shad">0.12</span></label><input type="range" id="s-shad" min="0" max="50" value="12"></div>
-
-<h2>Time / Decay</h2>
-<div class="c"><label>Age<span class="v" id="d-age">0.00</span></label><input type="range" id="s-age" min="0" max="100" value="0"></div>
-<div class="c"><label>Moss<span class="v" id="d-moss">0.50</span></label><input type="range" id="s-moss" min="0" max="100" value="50"></div>
-<div class="c"><label>Grass Invasion<span class="v" id="d-inv">0.50</span></label><input type="range" id="s-inv" min="0" max="100" value="50"></div>
-
-<div id="timeline">
-<h2 style="border:none;margin:0">Keyframes</h2>
+<h2>Materials</h2>
+<div class="tabs" id="tabs"></div>
+<div id="panels"></div>
+<h2>Keyframes</h2>
 <div id="kf-bar"></div>
-<button id="btn-kf-set">Set KF</button>
-<button id="btn-kf-play">Play</button>
-<button id="btn-kf-clear">Clear</button>
-</div>
-
+<button id="btn-kf-set">Set</button><button id="btn-kf-play">Play</button><button id="btn-kf-clear">Clear</button>
 <h2>Export</h2>
-<button id="btn-png">PNG</button>
-<button id="btn-json">Params JSON</button>
+<button id="btn-png">PNG</button><button id="btn-json">JSON</button>
 </div>
 <div id="canvas-wrap"><canvas id="gl"></canvas></div>
 <script>
-// Material definitions with defaults from reference palette
-const MATS={
-  roof:{r:84,g:46,b:30,contrast:50,brightness:50,sharpness:0,blur:0,opacity:100},
-  stone:{r:74,g:69,b:64,contrast:50,brightness:50,sharpness:0,blur:0,opacity:100},
-  grass:{r:45,g:69,b:36,contrast:50,brightness:50,sharpness:0,blur:0,opacity:100},
-  wood:{r:46,g:25,b:16,contrast:50,brightness:50,sharpness:0,blur:0,opacity:100},
-  foliage:{r:26,g:46,b:22,contrast:50,brightness:50,sharpness:0,blur:0,opacity:100},
-  puddle:{r:43,g:42,b:41,contrast:50,brightness:50,sharpness:0,blur:0,opacity:100},
-  fog:{r:112,g:120,b:128,contrast:50,brightness:50,sharpness:0,blur:0,opacity:100},
-  window:{r:217,g:148,b:65,contrast:50,brightness:50,sharpness:0,blur:0,opacity:100}
-};
-
-// Generate per-material panels
-const panelsDiv=document.getElementById('mat-panels');
+const MATS={roof:[84,46,30],stone:[74,69,64],grass:[45,69,36],wood:[46,25,16],fol:[26,46,22],puddle:[43,42,41],fog:[112,120,128],win:[217,148,65]};
+const NAMES={roof:"Roof",stone:"Stone",grass:"Grass",wood:"Wood",fol:"Foliage",puddle:"Puddle",fog:"Fog",win:"Window"};
+// Build tabs + panels
+const tabsEl=document.getElementById("tabs"),panelsEl=document.getElementById("panels");
+let first=true;
 Object.keys(MATS).forEach(m=>{
+  const btn=document.createElement("button");btn.textContent=NAMES[m];btn.dataset.m=m;if(first)btn.classList.add("sel");
+  btn.onclick=()=>{document.querySelectorAll(".tabs button").forEach(b=>b.classList.remove("sel"));btn.classList.add("sel");document.querySelectorAll(".mp").forEach(p=>p.classList.remove("active"));document.getElementById("p-"+m).classList.add("active");};
+  tabsEl.appendChild(btn);
   const d=MATS[m];
-  panelsDiv.innerHTML+=`<div class="mat-panel${m==='roof'?' active':''}" id="p-${m}">
-<div class="c"><label>R<span class="v" id="d-${m}-r">${d.r}</span></label><input type="range" id="s-${m}-r" min="0" max="255" value="${d.r}"></div>
-<div class="c"><label>G<span class="v" id="d-${m}-g">${d.g}</span></label><input type="range" id="s-${m}-g" min="0" max="255" value="${d.g}"></div>
-<div class="c"><label>B<span class="v" id="d-${m}-b">${d.b}</span></label><input type="range" id="s-${m}-b" min="0" max="255" value="${d.b}"></div>
-<div class="c"><label>Contrast<span class="v" id="d-${m}-con">${d.contrast}</span></label><input type="range" id="s-${m}-con" min="0" max="100" value="${d.contrast}"></div>
-<div class="c"><label>Brightness<span class="v" id="d-${m}-bri">${d.brightness}</span></label><input type="range" id="s-${m}-bri" min="0" max="100" value="${d.brightness}"></div>
-<div class="c"><label>Sharpness<span class="v" id="d-${m}-sha">${d.sharpness}</span></label><input type="range" id="s-${m}-sha" min="0" max="100" value="${d.sharpness}"></div>
-<div class="c"><label>Edge Blur<span class="v" id="d-${m}-blu">${d.blur}</span></label><input type="range" id="s-${m}-blu" min="0" max="100" value="${d.blur}"></div>
-<div class="c"><label>Opacity<span class="v" id="d-${m}-opa">${d.opacity}</span></label><input type="range" id="s-${m}-opa" min="0" max="100" value="${d.opacity}"></div>
-</div>`;
+  const p=document.createElement("div");p.className="mp"+(first?" active":"");p.id="p-"+m;
+  p.innerHTML=`<div class="c"><label>R<span class="v" id="d-${m}-r">${d[0]}</span></label><input type="range" id="s-${m}-r" min="0" max="255" value="${d[0]}"></div>
+<div class="c"><label>G<span class="v" id="d-${m}-g">${d[1]}</span></label><input type="range" id="s-${m}-g" min="0" max="255" value="${d[1]}"></div>
+<div class="c"><label>B<span class="v" id="d-${m}-b">${d[2]}</span></label><input type="range" id="s-${m}-b" min="0" max="255" value="${d[2]}"></div>
+<div class="c"><label>Contrast<span class="v" id="d-${m}-con">50</span></label><input type="range" id="s-${m}-con" min="0" max="100" value="50"></div>
+<div class="c"><label>Brightness<span class="v" id="d-${m}-bri">50</span></label><input type="range" id="s-${m}-bri" min="0" max="100" value="50"></div>
+<div class="c"><label>Opacity<span class="v" id="d-${m}-opa">100</span></label><input type="range" id="s-${m}-opa" min="0" max="100" value="100"></div>`;
+  panelsEl.appendChild(p);first=false;
 });
+// Display update
+document.querySelectorAll("input[type=range]").forEach(i=>{i.oninput=()=>{const e=document.getElementById(i.id.replace("s-","d-"));if(e)e.textContent=i.value;};});
+// KF
+const kfs=[];const kfBar=document.getElementById("kf-bar");
+for(let i=0;i<10;i++){const d=document.createElement("span");d.className="k";d.textContent=i;kfBar.appendChild(d);}
+function getState(){const s={};document.querySelectorAll("input[type=range]").forEach(i=>{s[i.id]=+i.value;});return s;}
+function setState(s){Object.keys(s).forEach(k=>{const el=document.getElementById(k);if(el){el.value=s[k];const d=document.getElementById(k.replace("s-","d-"));if(d)d.textContent=Math.round(s[k]);}});}
+function lerp(a,b,t){const r={};Object.keys(a).forEach(k=>{r[k]=a[k]+(b[k]-a[k])*t;});return r;}
+document.getElementById("btn-kf-set").onclick=()=>{if(kfs.length>=10)return;kfs.push(getState());kfBar.children[kfs.length-1].classList.add("set");};
+document.getElementById("btn-kf-clear").onclick=()=>{kfs.length=0;document.querySelectorAll(".k").forEach(k=>k.classList.remove("set"));};
+let playing=false,playT=0;
+document.getElementById("btn-kf-play").onclick=()=>{if(kfs.length<2)return;playing=!playing;};
 
-// Tab switching
-document.querySelectorAll('#mat-tabs button').forEach(btn=>{
-  btn.onclick=()=>{
-    document.querySelectorAll('#mat-tabs button').forEach(b=>b.classList.remove('sel'));
-    btn.classList.add('sel');
-    document.querySelectorAll('.mat-panel').forEach(p=>p.classList.remove('active'));
-    document.getElementById('p-'+btn.dataset.m).classList.add('active');
-  };
-});
-
-// Update all displays on input
-document.querySelectorAll('input[type=range]').forEach(inp=>{
-  inp.oninput=()=>{
-    const did=inp.id.replace('s-','d-');
-    const el=document.getElementById(did);
-    if(el)el.textContent=inp.value;
-  };
-});
-
-// === KEYFRAMES ===
-const keyframes=[];
-const kfBar=document.getElementById('kf-bar');
-for(let i=0;i<10;i++){const d=document.createElement('div');d.className='kf';d.textContent=i;d.dataset.idx=i;kfBar.appendChild(d);}
-
-function getState(){
-  const s={w:+document.getElementById('s-w').value,wind:+document.getElementById('s-wind').value,
-    pud:+document.getElementById('s-pud').value,rain:+document.getElementById('s-rain').value,
-    riv:+document.getElementById('s-riv').value,shad:+document.getElementById('s-shad').value,
-    age:+document.getElementById('s-age').value,moss:+document.getElementById('s-moss').value,inv:+document.getElementById('s-inv').value,mats:{}};
-  Object.keys(MATS).forEach(m=>{
-    s.mats[m]={r:+document.getElementById(`s-${m}-r`).value,g:+document.getElementById(`s-${m}-g`).value,
-      b:+document.getElementById(`s-${m}-b`).value,con:+document.getElementById(`s-${m}-con`).value,
-      bri:+document.getElementById(`s-${m}-bri`).value,sha:+document.getElementById(`s-${m}-sha`).value,
-      blu:+document.getElementById(`s-${m}-blu`).value,opa:+document.getElementById(`s-${m}-opa`).value};
-  });
-  return s;
-}
-function setState(s){
-  document.getElementById('s-w').value=s.w;document.getElementById('s-wind').value=s.wind;
-  document.getElementById('s-pud').value=s.pud;document.getElementById('s-rain').value=s.rain;
-  document.getElementById('s-riv').value=s.riv;document.getElementById('s-shad').value=s.shad;
-  document.getElementById('s-age').value=s.age;document.getElementById('s-moss').value=s.moss;document.getElementById('s-inv').value=s.inv;
-  Object.keys(s.mats).forEach(m=>{const d=s.mats[m];
-    document.getElementById(`s-${m}-r`).value=d.r;document.getElementById(`s-${m}-g`).value=d.g;document.getElementById(`s-${m}-b`).value=d.b;
-    document.getElementById(`s-${m}-con`).value=d.con;document.getElementById(`s-${m}-bri`).value=d.bri;
-    document.getElementById(`s-${m}-sha`).value=d.sha;document.getElementById(`s-${m}-blu`).value=d.blu;document.getElementById(`s-${m}-opa`).value=d.opa;
-  });
-  document.querySelectorAll('input[type=range]').forEach(inp=>{const did=inp.id.replace('s-','d-');const el=document.getElementById(did);if(el)el.textContent=inp.value;});
-}
-function lerpState(a,b,t){
-  const r={w:a.w+(b.w-a.w)*t,wind:a.wind+(b.wind-a.wind)*t,pud:a.pud+(b.pud-a.pud)*t,
-    rain:a.rain+(b.rain-a.rain)*t,riv:a.riv+(b.riv-a.riv)*t,shad:a.shad+(b.shad-a.shad)*t,
-    age:a.age+(b.age-a.age)*t,moss:a.moss+(b.moss-a.moss)*t,inv:a.inv+(b.inv-a.inv)*t,mats:{}};
-  Object.keys(a.mats).forEach(m=>{r.mats[m]={};Object.keys(a.mats[m]).forEach(k=>{r.mats[m][k]=a.mats[m][k]+(b.mats[m][k]-a.mats[m][k])*t;});});
-  return r;
-}
-
-document.getElementById('btn-kf-set').onclick=()=>{
-  const idx=keyframes.length;if(idx>=10)return;
-  keyframes.push(getState());
-  kfBar.children[idx].classList.add('set');
-};
-document.getElementById('btn-kf-clear').onclick=()=>{keyframes.length=0;document.querySelectorAll('.kf').forEach(k=>k.classList.remove('set'));};
-let playing=false;
-document.getElementById('btn-kf-play').onclick=()=>{
-  if(keyframes.length<2)return;playing=!playing;
-  document.getElementById('btn-kf-play').classList.toggle('active',playing);
-};
-let playT=0;
-
-// === WEBGL ===
-const VS=`attribute vec2 a_pos;varying vec2 v_uv;void main(){v_uv=a_pos*0.5+0.5;v_uv.y=1.0-v_uv.y;gl_Position=vec4(a_pos,0,1);}`;
+// WEBGL
+const VS=`attribute vec2 a;varying vec2 v;void main(){v=a*0.5+0.5;v.y=1.0-v.y;gl_Position=vec4(a,0,1);}`;
 const FS=`precision highp float;
-varying vec2 v_uv;
-uniform sampler2D u_scene,u_mat;
-uniform float u_time,u_weather,u_wind,u_hasMat;
-uniform vec3 u_cRoof,u_cStone,u_cGrass,u_cWood,u_cFol,u_cWin,u_cPud,u_cFog;
-uniform vec4 u_pRoof,u_pStone,u_pGrass,u_pWood,u_pFol; // x=contrast y=brightness z=blur w=opacity
-uniform float u_pud,u_rain,u_shad,u_riv,u_fog;
-uniform float u_age,u_moss,u_inv;
-
-vec3 applyGrade(vec3 col,vec3 target,vec4 params,float mask,float w){
-  float opa=params.w;
-  float con=(params.x-0.5)*2.0; // -1 to 1
-  float bri=(params.y-0.5)*2.0; // -1 to 1
-  // Mix toward target color
-  vec3 wet=target*clamp(dot(col,vec3(0.299,0.587,0.114))*2.5,0.3,1.5);
-  vec3 graded=mix(col,wet,opa*w*mask);
-  // Apply contrast
-  float lum=dot(graded,vec3(0.299,0.587,0.114));
-  graded=mix(vec3(lum),graded,1.0+con*w*mask);
-  // Apply brightness
-  graded+=vec3(bri*0.5*w*mask);
-  return graded;
+varying vec2 v;
+uniform sampler2D S,M;
+uniform float t,w,wind,hasMat;
+uniform vec3 cR,cS,cG,cW,cF,cP,cFg,cWn;
+uniform vec4 pR,pS,pG,pW,pF;
+uniform float pud,rain,shad,riv,fog,age,moss,inv;
+vec3 grade(vec3 c,vec3 tgt,vec4 p,float mask){
+  float lum=dot(c,vec3(.299,.587,.114));
+  float rb=clamp(lum*2.5,.3,1.5);
+  vec3 wet=tgt*rb;
+  float opa=p.w;
+  vec3 g2=mix(c,wet,opa);
+  float con=(p.x-.5)*2.0;
+  g2=mix(vec3(dot(g2,vec3(.299,.587,.114))),g2,1.0+con);
+  float bri=(p.y-.5);
+  g2+=vec3(bri*.5);
+  return mix(c,g2,mask);
 }
-
 void main(){
-  vec2 uv=v_uv;
-  vec3 dry=texture2D(u_scene,uv).rgb;
-  vec4 ms=texture2D(u_mat,uv);
-  float matId=floor(ms.r*7.0+0.5);
-  float flowAng=ms.g*6.2832;
-  float bCh=ms.b;
-  float dripInt=clamp(bCh/0.71,0.0,1.0)*step(bCh,0.75);
-  float isWin=step(0.8,bCh)*step(bCh,0.92)*u_hasMat;
-  float mG=step(matId,0.5)*u_hasMat;
-  float mS=step(0.5,matId)*step(matId,1.5)*u_hasMat;
-  float mW=step(1.5,matId)*step(matId,2.5)*u_hasMat;
-  float mR=step(2.5,matId)*step(matId,3.5)*u_hasMat;
-  float mF=step(3.5,matId)*step(matId,4.5)*u_hasMat;
-  float noMat=1.0-u_hasMat;
-  float w=u_weather;
-  // Shadow lift
-  float lum=dot(dry,vec3(0.299,0.587,0.114));
-  float lift=(1.0-lum)*w*u_shad;
-  vec3 fin=dry+vec3(lift);
-  // Per-material color grading
-  fin=applyGrade(fin,u_cRoof,u_pRoof,mR,w);
-  fin=applyGrade(fin,u_cStone,u_pStone,mS,w);
-  fin=applyGrade(fin,u_cGrass,u_pGrass,mG,w);
-  fin=applyGrade(fin,u_cWood,u_pWood,mW,w);
-  fin=applyGrade(fin,u_cFol,u_pFol,mF,w);
-  // No-mat fallback
-  fin=mix(fin,dry*(1.0-w*0.4),vec3(noMat*w));
+  vec2 uv=v;vec3 dry=texture2D(S,uv).rgb;
+  vec4 ms=texture2D(M,uv);
+  float id=floor(ms.r*7.0+0.5);
+  float fa=ms.g*6.2832,bCh=ms.b;
+  float drip=clamp(bCh/.71,0.,1.)*step(bCh,.75);
+  float isW2=step(.8,bCh)*step(bCh,.92)*hasMat;
+  float mGr=step(id,.5)*hasMat;
+  float mSt=step(.5,id)*step(id,1.5)*hasMat;
+  float mWo=step(1.5,id)*step(id,2.5)*hasMat;
+  float mRo=step(2.5,id)*step(id,3.5)*hasMat;
+  float mFo=step(3.5,id)*step(id,4.5)*hasMat;
+  float nm=1.-hasMat;
+  float lum=dot(dry,vec3(.299,.587,.114));
+  vec3 fin=dry+vec3((1.-lum)*w*shad);
+  fin=grade(fin,cR,pR,mRo*w);
+  fin=grade(fin,cS,pS,mSt*w);
+  fin=grade(fin,cG,pG,mGr*w);
+  fin=grade(fin,cW,pW,mWo*w);
+  fin=grade(fin,cF,pF,mFo*w);
+  fin=mix(fin,dry*(1.-.4*w),vec3(nm*w));
   // Puddles
-  float pn=sin(uv.x*19.0+uv.y*13.0+1.7)*sin(uv.x*29.0-uv.y*7.0)+sin(uv.x*5.0+uv.y*37.0+3.1)*0.7;
-  float pField=clamp(pn*0.4+0.4,0.0,1.0);
-  float pTh=mix(w*u_pud,w*1.3,dripInt*u_hasMat);
-  float hasPud=clamp(mS*step(pField,pTh)+mG*dripInt*u_hasMat*step(pField,w*0.8),0.0,1.0);
-  float ripple=sin(uv.x*90.0+u_time*2.5)*sin(uv.y*70.0+u_time*1.8);
-  ripple=clamp(ripple*ripple,0.0,1.0)*0.1;
-  float cloud=clamp(sin((uv.x+u_time*0.02)*3.0)*sin((uv.y+u_time*0.015)*2.0)*0.4+0.2,0.0,0.35)*0.12;
-  fin=mix(fin,u_cPud+vec3(ripple)+vec3(cloud),hasPud*w);
+  float pn=sin(uv.x*19.+uv.y*13.+1.7)*sin(uv.x*29.-uv.y*7.)+sin(uv.x*5.+uv.y*37.+3.1)*.7;
+  float pFld=clamp(pn*.4+.4,0.,1.);
+  float pTh=mix(w*pud,w*1.3,drip*hasMat);
+  float hp=clamp(mSt*step(pFld,pTh)+mGr*drip*hasMat*step(pFld,w*.8),0.,1.);
+  float rpl=sin(uv.x*90.+t*2.5)*sin(uv.y*70.+t*1.8);rpl=clamp(rpl*rpl,0.,1.)*.1;
+  fin=mix(fin,cP+vec3(rpl),hp*w);
   // Rivulets
-  float fdx=cos(flowAng),fdy=sin(flowAng);
-  float fProj=uv.x*fdx+uv.y*fdy,fPerp=uv.x*(-fdy)+uv.y*fdx;
-  float rivX=fract(fPerp*35.0+sin(fProj*8.0)*0.08);
-  float riv=step(0.44,rivX)*step(rivX,0.56)*step(0.2,fract(fProj*4.0+u_time*3.5))*step(fract(fProj*4.0+u_time*3.5),0.7)*mR*w*u_riv;
-  fin+=riv*vec3(0.3,0.4,0.6);
+  float fdx=cos(fa),fdy=sin(fa);
+  float fp=uv.x*fdx+uv.y*fdy,fpp=uv.x*(-fdy)+uv.y*fdx;
+  float rv=step(.44,fract(fpp*35.+sin(fp*8.)*.08))*step(fract(fpp*35.+sin(fp*8.)*.08),.56);
+  rv*=step(.2,fract(fp*4.+t*3.5))*step(fract(fp*4.+t*3.5),.7)*mRo*w*riv;
+  fin+=rv*vec3(.3,.4,.6);
   // Window
-  fin=mix(fin,u_cWin,isWin*w*0.7);
+  fin=mix(fin,cWn,isW2*w*.7);
   // Fog
-  float fogZ=clamp((uv.y-0.55)*3.0,0.0,1.0);
-  fin=mix(fin,u_cFog,w*w*fogZ*u_fog);
+  float fz=clamp((uv.y-.55)*3.,0.,1.);
+  fin=mix(fin,cFg,w*w*fz*fog);
   // Rain
-  float rn=clamp(step(0.993,fract(sin(uv.x*280.0+uv.y*550.0+u_time*18.0+u_wind*uv.x*140.0)*43758.5))+step(0.994,fract(sin(uv.x*180.0+uv.y*400.0+u_time*14.0+u_wind*uv.x*100.0+5.7)*43758.5)),0.0,1.0)*w*w*u_rain;
-  fin+=rn*vec3(0.5,0.6,0.8);
+  float rn=clamp(step(.993,fract(sin(uv.x*280.+uv.y*550.+t*18.+wind*uv.x*140.)*43758.5))+step(.994,fract(sin(uv.x*180.+uv.y*400.+t*14.+wind*uv.x*100.+5.7)*43758.5)),0.,1.)*w*w*rain;
+  fin+=rn*vec3(.5,.6,.8);
   // Decay
-  float age=u_age;
-  float mossN=fract(sin(uv.x*127.1+uv.y*311.7)*43758.5)*0.5+sin(uv.x*23.0+uv.y*17.0)*0.3+0.2;
-  fin=mix(fin,vec3(0.12,0.28,0.08),mR*age*u_moss*step(0.4,mossN)*0.7);
-  float invN=fract(sin(uv.x*97.0+uv.y*53.0)*43758.5)*0.5+sin(uv.x*11.0-uv.y*7.0)*0.3+0.2;
-  fin=mix(fin,vec3(0.08,0.22,0.05),mS*age*u_inv*step(0.35,invN)*0.6);
-  fin=mix(fin,fin*vec3(0.5,0.6,0.4),mW*age*0.5);
-  gl_FragColor=vec4(clamp(fin,0.0,1.0),1.0);
+  float mn=fract(sin(uv.x*127.1+uv.y*311.7)*43758.5)*.5+sin(uv.x*23.+uv.y*17.)*.3+.2;
+  fin=mix(fin,vec3(.12,.28,.08),mRo*age*moss*step(.4,mn)*.7);
+  float ivn=fract(sin(uv.x*97.+uv.y*53.)*43758.5)*.5+sin(uv.x*11.-uv.y*7.)*.3+.2;
+  fin=mix(fin,vec3(.08,.22,.05),mSt*age*inv*step(.35,ivn)*.6);
+  fin=mix(fin,fin*vec3(.5,.6,.4),mWo*age*.5);
+  gl_FragColor=vec4(clamp(fin,0.,1.),1.);
 }`;
-
-const canvas=document.getElementById('gl');
-const gl=canvas.getContext('webgl',{preserveDrawingBuffer:true});
-function compile(s,t){const sh=gl.createShader(t);gl.shaderSource(sh,s);gl.compileShader(sh);if(!gl.getShaderParameter(sh,gl.COMPILE_STATUS))console.error(gl.getShaderInfoLog(sh));return sh;}
-const prog=gl.createProgram();gl.attachShader(prog,compile(VS,gl.VERTEX_SHADER));gl.attachShader(prog,compile(FS,gl.FRAGMENT_SHADER));gl.linkProgram(prog);
-if(!gl.getProgramParameter(prog,gl.LINK_STATUS))console.error(gl.getProgramInfoLog(prog));
-gl.useProgram(prog);
-const buf=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,buf);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),gl.STATIC_DRAW);
-const aP=gl.getAttribLocation(prog,'a_pos');gl.enableVertexAttribArray(aP);gl.vertexAttribPointer(aP,2,gl.FLOAT,false,0,0);
-
-function mkTex(u){const t=gl.createTexture();gl.activeTexture(gl.TEXTURE0+u);gl.bindTexture(gl.TEXTURE_2D,t);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.NEAREST);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.NEAREST);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,1,1,0,gl.RGBA,gl.UNSIGNED_BYTE,new Uint8Array([128,128,128,255]));return t;}
-const sTex=mkTex(0),mTex=mkTex(1);
-gl.uniform1i(gl.getUniformLocation(prog,'u_scene'),0);gl.uniform1i(gl.getUniformLocation(prog,'u_mat'),1);
-
-const U={};['u_time','u_weather','u_wind','u_hasMat','u_cRoof','u_cStone','u_cGrass','u_cWood','u_cFol','u_cWin','u_cPud','u_cFog','u_pRoof','u_pStone','u_pGrass','u_pWood','u_pFol','u_pud','u_rain','u_shad','u_riv','u_fog','u_age','u_moss','u_inv'].forEach(n=>U[n]=gl.getUniformLocation(prog,n));
-
-let hasMat=0,time=0,lastT=0,sceneOk=false;
-function loadImg(f,u,t){const i=new Image();i.onload=()=>{gl.activeTexture(gl.TEXTURE0+u);gl.bindTexture(gl.TEXTURE_2D,t);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,i);if(!u){canvas.width=i.width;canvas.height=i.height;gl.viewport(0,0,i.width,i.height);sceneOk=true;}else hasMat=1;};i.src=URL.createObjectURL(f);}
-document.getElementById('f-scene').onchange=e=>{if(e.target.files[0])loadImg(e.target.files[0],0,sTex);};
-document.getElementById('f-mat').onchange=e=>{if(e.target.files[0])loadImg(e.target.files[0],1,mTex);};
-
-function gv(id,d){return+document.getElementById(id).value/d;}
+const canvas=document.getElementById("gl"),gl=canvas.getContext("webgl",{preserveDrawingBuffer:true});
+function cs(s,tp){const sh=gl.createShader(tp);gl.shaderSource(sh,s);gl.compileShader(sh);if(!gl.getShaderParameter(sh,gl.COMPILE_STATUS))console.error(gl.getShaderInfoLog(sh));return sh;}
+const pg=gl.createProgram();gl.attachShader(pg,cs(VS,gl.VERTEX_SHADER));gl.attachShader(pg,cs(FS,gl.FRAGMENT_SHADER));gl.linkProgram(pg);
+if(!gl.getProgramParameter(pg,gl.LINK_STATUS))console.error(gl.getProgramInfoLog(pg));
+gl.useProgram(pg);
+const bf=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,bf);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),gl.STATIC_DRAW);
+const aP=gl.getAttribLocation(pg,"a");gl.enableVertexAttribArray(aP);gl.vertexAttribPointer(aP,2,gl.FLOAT,false,0,0);
+function mkT(u){const tx=gl.createTexture();gl.activeTexture(gl.TEXTURE0+u);gl.bindTexture(gl.TEXTURE_2D,tx);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.NEAREST);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.NEAREST);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,1,1,0,gl.RGBA,gl.UNSIGNED_BYTE,new Uint8Array([128,128,128,255]));return tx;}
+const sT=mkT(0),mT=mkT(1);
+gl.uniform1i(gl.getUniformLocation(pg,"S"),0);gl.uniform1i(gl.getUniformLocation(pg,"M"),1);
+const U={};["t","w","wind","hasMat","cR","cS","cG","cW","cF","cP","cFg","cWn","pR","pS","pG","pW","pF","pud","rain","shad","riv","fog","age","moss","inv"].forEach(n=>U[n]=gl.getUniformLocation(pg,n));
+let hasMat=0,time=0,lastT=0,ok=false;
+function loadI(f,u,tx){const i=new Image();i.onload=()=>{gl.activeTexture(gl.TEXTURE0+u);gl.bindTexture(gl.TEXTURE_2D,tx);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,i);if(!u){canvas.width=i.width;canvas.height=i.height;gl.viewport(0,0,i.width,i.height);ok=true;}else hasMat=1;};i.src=URL.createObjectURL(f);}
+document.getElementById("f-scene").onchange=e=>{if(e.target.files[0])loadI(e.target.files[0],0,sT);};
+document.getElementById("f-mat").onchange=e=>{if(e.target.files[0])loadI(e.target.files[0],1,mT);};
+function gv(id){return+document.getElementById(id).value;}
 function render(now){
   if(!lastT)lastT=now;const dt=(now-lastT)/1000;lastT=now;
-  if(document.getElementById('s-anim').checked)time+=dt;
-  if(playing&&keyframes.length>=2){playT+=dt*0.3;if(playT>keyframes.length-1)playT=0;const i=Math.floor(playT),t=playT-i;const s=lerpState(keyframes[i],keyframes[Math.min(i+1,keyframes.length-1)],t);setState(s);}
-  if(!sceneOk){requestAnimationFrame(render);return;}
-  gl.uniform1f(U.u_time,time);gl.uniform1f(U.u_weather,gv('s-w',100));gl.uniform1f(U.u_wind,gv('s-wind',100));gl.uniform1f(U.u_hasMat,hasMat);
-  gl.uniform1f(U.u_pud,gv('s-pud',100));gl.uniform1f(U.u_rain,gv('s-rain',100));gl.uniform1f(U.u_shad,gv('s-shad',50));
-  gl.uniform1f(U.u_riv,gv('s-riv',100));gl.uniform1f(U.u_fog,gv('s-fog',100)||0.25);
-  gl.uniform1f(U.u_age,gv('s-age',100));gl.uniform1f(U.u_moss,gv('s-moss',100));gl.uniform1f(U.u_inv,gv('s-inv',100));
-  // Material colors + params
-  ['roof','stone','grass','wood','foliage'].forEach((m,i)=>{
-    const pre=m==='foliage'?'fol':m;
-    const r=gv(`s-${pre}-r`,255),g=gv(`s-${pre}-g`,255),b=gv(`s-${pre}-b`,255);
-    const con=gv(`s-${pre}-con`,100),bri=gv(`s-${pre}-bri`,100),blu=gv(`s-${pre}-blu`,100),opa=gv(`s-${pre}-opa`,100);
-    const uC=['u_cRoof','u_cStone','u_cGrass','u_cWood','u_cFol'][i];
-    const uP=['u_pRoof','u_pStone','u_pGrass','u_pWood','u_pFol'][i];
-    gl.uniform3f(U[uC],r,g,b);gl.uniform4f(U[uP],con,bri,blu,opa);
+  if(document.getElementById("s-anim").checked)time+=dt;
+  if(playing&&kfs.length>=2){playT+=dt*.3;if(playT>kfs.length-1)playT=0;setState(lerp(kfs[Math.floor(playT)],kfs[Math.min(Math.floor(playT)+1,kfs.length-1)],playT-Math.floor(playT)));}
+  if(!ok){requestAnimationFrame(render);return;}
+  gl.uniform1f(U.t,time);gl.uniform1f(U.w,gv("s-w")/100);gl.uniform1f(U.wind,gv("s-wind")/100);gl.uniform1f(U.hasMat,hasMat);
+  gl.uniform1f(U.pud,gv("s-pud")/100);gl.uniform1f(U.rain,gv("s-rain")/100);gl.uniform1f(U.shad,gv("s-shad")/100);
+  gl.uniform1f(U.riv,gv("s-riv")/100);gl.uniform1f(U.fog,gv("s-fog")/100);
+  gl.uniform1f(U.age,gv("s-age")/100);gl.uniform1f(U.moss,gv("s-moss")/100);gl.uniform1f(U.inv,gv("s-inv")/100);
+  const ms=["roof","stone","grass","wood","fol"];
+  const uC=["cR","cS","cG","cW","cF"];
+  const uP=["pR","pS","pG","pW","pF"];
+  ms.forEach((m,i)=>{
+    gl.uniform3f(U[uC[i]],gv("s-"+m+"-r")/255,gv("s-"+m+"-g")/255,gv("s-"+m+"-b")/255);
+    gl.uniform4f(U[uP[i]],gv("s-"+m+"-con")/100,gv("s-"+m+"-bri")/100,0,gv("s-"+m+"-opa")/100);
   });
-  const wr=gv('s-window-r',255),wg=gv('s-window-g',255),wb=gv('s-window-b',255);
-  gl.uniform3f(U.u_cWin,wr,wg,wb);
-  const pr=gv('s-puddle-r',255),pg=gv('s-puddle-g',255),pb=gv('s-puddle-b',255);
-  gl.uniform3f(U.u_cPud,pr,pg,pb);
-  const fr=gv('s-fog-r',255),fg2=gv('s-fog-g',255),fb=gv('s-fog-b',255);
-  gl.uniform3f(U.u_cFog,fr,fg2,fb);
+  gl.uniform3f(U.cP,gv("s-puddle-r")/255,gv("s-puddle-g")/255,gv("s-puddle-b")/255);
+  gl.uniform3f(U.cFg,gv("s-fog-r")/255,gv("s-fog-g")/255,gv("s-fog-b")/255);
+  gl.uniform3f(U.cWn,gv("s-win-r")/255,gv("s-win-g")/255,gv("s-win-b")/255);
   gl.drawArrays(gl.TRIANGLE_STRIP,0,4);requestAnimationFrame(render);
 }
 requestAnimationFrame(render);
-
-document.getElementById('btn-png').onclick=()=>{canvas.toBlob(b=>{const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='shader_output.png';a.click();},'image/png');};
-document.getElementById('btn-json').onclick=()=>{const blob=new Blob([JSON.stringify({state:getState(),keyframes},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='shader_params.json';a.click();};
+document.getElementById("btn-png").onclick=()=>{canvas.toBlob(b=>{const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="shader.png";a.click();},"image/png");};
+document.getElementById("btn-json").onclick=()=>{const s=getState();s.keyframes=kfs;const b=new Blob([JSON.stringify(s,null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="shader_params.json";a.click();};
 </script>
 </body></html>
