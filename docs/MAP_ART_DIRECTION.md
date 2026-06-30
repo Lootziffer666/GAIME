@@ -4,6 +4,27 @@ Kanonische Richtlinie für das Erzeugen der **gemalten Quell-Maps**, die GAIMEs
 Pipeline füttern. Sie definiert Stil, Kamera und Layout-Logik so, dass die Bilder
 **spielbar** sind — nicht nur hübsch.
 
+## Große Objekte/Terrain als EIN Objekt lesen, nicht als zig Tiles (locked 2026-06-30)
+
+Tilesheets enthalten Objekte, die **ein Vielfaches des Rasters überspannen** — Drache, Ruine,
+Chapel. Solche Objekte werden **als EIN Objekt** über ihre **opake Bounding-Box** gelesen, nicht
+in Einzel-Tiles zerlegt:
+
+- **Trim auf allen 4 Seiten:** von links (erstes opakes Pixel) bis rechts (letztes opakes), oben
+  bis unten. **Die erste erkannte Kante ist die Achse** (Anker/Ursprung des Objekts).
+- **Belegt einen Multi-Zellen-Footprint** (z.B. Drache `Dragon_body.png`: Bild 96×64, opake Bbox
+  **69×55 ≈ 4,3×3,4 Tiles** — Rand 15px links / 12px rechts / 9px unten ist transparent). Logisch
+  ist es **ein** Blocker/Entity über diesen Zellen, gerendert als **ein** Sprite — nie 16 Tiles.
+- **Einzelobjekt vs. Animations-Sheet zuerst klären** (gleiche Falle wie bei Figuren-Sheets):
+  `Dragon_body.png` = ein Objekt → opake Bbox übers ganze Bild. `Dragon_head.png` (480×64) = eine
+  Sequenz aus mehreren Frames → opake Bbox **pro Frame**, nicht übers ganze Bild (sonst spannt sie
+  alle Frames). Frame-Layout pro Sheet kennen/deklarieren, dann opak messen.
+- Das ist **dieselbe opake-Bounds-Logik wie bei den gerenderten Figuren** (`gaime-shaders`-Skill),
+  nur auf Terrain/Objekte angewandt: Größe/Achse/Footprint kommen aus den opaken Kanten, nicht aus
+  einem angenommenen Raster.
+
+(Gehört in die mapbuilder/Objekt-Platzierungs-Pipeline — Pfeiler 3.)
+
 ## Figuren werden GERENDERT, nicht baked-in (locked 2026-06-30)
 
 Quell-Maps sind **figurenfrei**. Jede Figur — Spieler **und** NPCs — ist ein gerendertes
