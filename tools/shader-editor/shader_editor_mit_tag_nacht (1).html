@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GAIME Shader Editor Pro v4.8 (Day & Night)</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0e0e16;color:#e2e8f0;font-family:'Courier New',monospace;display:flex;height:100vh;overflow:hidden}
+#sidebar{width:380px;padding:12px;overflow-y:auto;background:#151526;border-right:1px solid #2d2d44;flex-shrink:0;box-shadow:4px 0 15px rgba(0,0,0,0.5)}
+#sidebar::-webkit-scrollbar{width:6px}
+#sidebar::-webkit-scrollbar-thumb{background:#00ffcc;border-radius:3px}
+#canvas-wrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#05050a;padding:15px;overflow:hidden}
+h2{color:#00ffcc;margin:12px 0 6px;font-size:11px;text-transform:uppercase;border-top:1px solid #2d2d44;padding-top:8px;letter-spacing:1px}
+.c{margin:4px 0 6px}
+.c label{display:flex;justify-content:space-between;font-size:10px;color:#a0aec0}
+.c input[type=range]{width:100%;height:14px;accent-color:#00ffcc;background:#1a1a2e;outline:none}
+.c .v{color:#00ffcc;min-width:35px;text-align:right;font-weight:bold}
+button{background:#00ffcc;color:#0e0e16;border:none;padding:6px 12px;cursor:pointer;font-weight:bold;margin:2px;border-radius:4px;font-size:10px;transition:all 0.2s}
+button:hover{background:#33ffdd;transform:translateY(-1px)}
+button.active{background:#ff5555;color:#fff}
+input[type=file]{font-size:9px;width:100%;margin:4px 0;background:#1a1a2e;padding:4px;border:1px dashed #444;border-radius:4px;color:#aaa}
+input[type=checkbox]{accent-color:#00ffcc;margin-right:6px;transform:translateY(2px)}
+.checkbox-label{font-size:11px;color:#fff;cursor:pointer;display:block;margin:6px 0;background:#1e1e30;padding:6px;border-radius:4px;border:1px solid #2d2d44}
+.checkbox-label:hover{background:#2a2a40}
+#title{color:#00ffcc;font-size:14px;font-weight:bold;margin-bottom:8px;text-shadow:0 0 5px rgba(0,255,204,0.3)}
+.tabs{display:flex;flex-wrap:wrap;gap:2px;margin:4px 0}
+.tabs button{font-size:9px;padding:5px 8px;border-bottom:2px solid transparent}
+.tabs button.sel{background:#00ffcc;color:#0e0e16;border-color:#0e0e16 !important}
+.tabs button:not(.sel){background:#252538;color:#a0aec0}
+.mat-panel{display:none}
+.mat-panel.active{display:block}
+
+/* Side-by-Side Vergleichs-Layout */
+#view-grid{display:flex;width:100%;height:100%;gap:16px;align-items:center;justify-content:center;transition:all 0.3s ease}
+.view-box{flex:1;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:0;position:relative}
+.view-title{font-size:11px;color:#00ffcc;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px;font-weight:bold;text-shadow:0 0 5px rgba(0,255,204,0.2)}
+
+.canvas-container { position:relative; display:inline-block; max-width:100%; max-height:80vh; }
+canvas{max-width:100%;max-height:80vh;object-fit:contain;border-radius:6px;border:1px solid #2d2d44;box-shadow:0 10px 30px rgba(0,0,0,0.8);touch-action:none}
+canvas.painting{cursor:crosshair !important}
+canvas.vectoring{cursor:cell !important}
+#ui-canvas { position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; border:none; box-shadow:none; }
+
+@media(max-width:800px){
+  body{flex-direction:column;overflow-y:auto;height:auto}
+  #sidebar{width:100%;height:auto;flex-shrink:0}
+  #canvas-wrap{height:60vh}
+  #view-grid{flex-direction:column;gap:8px}
+  .canvas-container, canvas{max-height:25vh}
+}
+</style>
+</head>
+<body>
+<div id="sidebar">
+<div id="title">GAIME Shader Pro v4.8<br><span style="font-size:10px;color:#a0aec0">Sys #19: Tag-/Nacht-Beleuchtung</span></div>
+
+<h2>Bilddateien laden</h2>
+<div>
+  <input type="file" id="f-scene" accept="image/*" title="Szene (Bild 1)">
+  <input type="file" id="f-mat" accept="image/*" title="Farbmittelwertkarte">
+</div>
+
+<h2>💡 Live-Pinsel</h2>
+<div class="tabs" id="brush-tabs">
+  <button class="sel" data-type="none" data-color="none" style="border-color:#444">Bewegen</button>
+  <button data-type="paint" data-color="#22B14C" style="border-bottom-color:#22B14C">Gras</button>
+  <button data-type="flow" data-color="vector" style="border-bottom-color:#ff00cc; color:#ff00cc">↘️ Fließ-Richtung</button>
+  <button data-type="paint" data-color="#0000FF" style="border-bottom-color:#0000FF">💧 Pfütze</button>
+</div>
+<div class="c"><label>Pinselgröße<span class="v" id="d-brush">10</span></label><input type="range" id="s-brush" min="1" max="100" value="10"></div>
+
+<h2>Effekt-Module</h2>
+<label class="checkbox-label"><input type="checkbox" id="opt-color" checked> 🎨 Grundfarben (Base Tint)</label>
+<label class="checkbox-label"><input type="checkbox" id="opt-season" checked> 🍂 Jahreszeiten & Tag/Nacht</label>
+<label class="checkbox-label"><input type="checkbox" id="opt-puddle" checked> 💧 Pfützen, Nässe & Wetter</label>
+
+<h2>Uhrzeit & Beleuchtung (Neu!)</h2>
+<div class="tabs">
+  <button onclick="setTime(6)">Morgengrauen</button>
+  <button onclick="setTime(13)">Mittag</button>
+  <button onclick="setTime(19.5)">Abendröte</button>
+  <button onclick="setTime(0)">Mitternacht</button>
+</div>
+<div class="c"><label style="color:#fcd34d">Uhrzeit (0-24h)<span class="v" id="d-timeofday">13.00</span></label><input type="range" id="s-timeofday" min="0" max="2400" value="1300"></div>
+
+<h2>Zeit, Verfall & Jahreszeiten</h2>
+<div class="tabs">
+  <button onclick="applyAtmospherePreset('spring')">🌸 Frühjahr</button>
+  <button onclick="applyAtmospherePreset('summer')">🍎 Sommer</button>
+  <button onclick="applyAtmospherePreset('autumn')">🍂 Herbst</button>
+  <button onclick="applyAtmospherePreset('winter')">❄️ Winter</button>
+</div>
+<div class="c"><label style="color:#f9a8d4">Jahreszeit (Früh→Sommer→Herbst)<span class="v" id="d-season">50.00</span></label><input type="range" id="s-season" min="0" max="100" value="50"></div>
+<div class="c"><label style="color:#a7f3d0">Globale Alterung<span class="v" id="d-age">0.00</span></label><input type="range" id="s-age" min="0" max="100" value="0"></div>
+
+<h2>Wetter & Naturgewalten</h2>
+<div class="c"><label>Gewitter (Blitze)<span class="v" id="d-lightning">0.00</span></label><input type="range" id="s-lightning" min="0" max="100" value="0"></div>
+<div class="c"><label>Wabernder Bodennebel<span class="v" id="d-rollingfog">0.00</span></label><input type="range" id="s-rollingfog" min="0" max="100" value="0"></div>
+<div class="c"><label>Regen-Intensität<span class="v" id="d-rain">0.00</span></label><input type="range" id="s-rain" min="0" max="100" value="0"></div>
+<div class="c"><label>Windgeschwindigkeit<span class="v" id="d-wind">30.00</span></label><input type="range" id="s-wind" min="0" max="100" value="30"></div>
+<div class="c"><label>Kälte (Frost & Eis)<span class="v" id="d-cold">0.00</span></label><input type="range" id="s-cold" min="0" max="100" value="0"></div>
+
+<div class="c" style="margin-top:10px;"><label><input type="checkbox" id="s-anim" checked> Animation aktiv</label></div>
+
+</div>
+
+<div id="canvas-wrap">
+  <div id="view-grid">
+    <div class="view-box" id="box-shader">
+      <span class="view-title">Dein WebGL Shader (Tag & Nacht Engine)</span>
+      <div class="canvas-container">
+          <canvas id="gl"></canvas>
+          <canvas id="ui-canvas"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// --- LIVE PAINTING & VECTOR TOPOLOGY SETUP ---
+const matCanvas = document.createElement('canvas');
+const matCtx = matCanvas.getContext('2d', {willReadFrequently: true});
+const flowCanvas = document.createElement('canvas');
+const flowCtx = flowCanvas.getContext('2d', {willReadFrequently: true});
+const uiCanvas = document.getElementById('ui-canvas');
+const uiCtx = uiCanvas.getContext('2d');
+
+let activeTool = 'none';
+let activeColor = 'none';
+let isDrawing = false;
+let brushSize = 10;
+let flowStartX = 0, flowStartY = 0;
+
+document.querySelectorAll('#brush-tabs button').forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll('#brush-tabs button').forEach(b => b.classList.remove('sel'));
+    btn.classList.add('sel');
+    activeTool = btn.dataset.type;
+    activeColor = btn.dataset.color;
+    canvas.classList.remove('painting', 'vectoring');
+    if(activeTool === 'paint') canvas.classList.add('painting');
+    if(activeTool === 'flow') canvas.classList.add('vectoring');
+  };
+});
+
+document.getElementById('s-brush').oninput = e => { brushSize = parseInt(e.target.value); document.getElementById('d-brush').textContent = brushSize; };
+
+function getPointerPos(e, canvas) {
+  const rect = canvas.getBoundingClientRect();
+  const scale = Math.min(rect.width / canvas.width, rect.height / canvas.height);
+  const offsetX = (rect.width - canvas.width * scale) / 2;
+  const offsetY = (rect.height - canvas.height * scale) / 2;
+  let clientX = e.clientX, clientY = e.clientY;
+  if (e.touches && e.touches.length > 0) { clientX = e.touches[0].clientX; clientY = e.touches[0].clientY; }
+  return { x: (clientX - rect.left - offsetX) / scale, y: (clientY - rect.top - offsetY) / scale };
+}
+
+function handlePointerDown(e) {
+  if (activeTool === 'none' || !hasMat) return;
+  e.preventDefault(); isDrawing = true;
+  const pos = getPointerPos(e, canvas);
+  if (activeTool === 'paint') paint(pos);
+  else if (activeTool === 'flow') { flowStartX = pos.x; flowStartY = pos.y; }
+}
+
+function handlePointerMove(e) {
+  if (!isDrawing || !hasMat) return;
+  const pos = getPointerPos(e, canvas);
+  if (activeTool === 'paint') paint(pos);
+  else if (activeTool === 'flow') {
+    uiCtx.clearRect(0, 0, uiCanvas.width, uiCanvas.height);
+    uiCtx.strokeStyle = '#ff00cc'; uiCtx.lineWidth = 4; uiCtx.lineCap = 'round';
+    uiCtx.beginPath(); uiCtx.moveTo(flowStartX, flowStartY); uiCtx.lineTo(pos.x, pos.y); uiCtx.stroke();
+    let angle = Math.atan2(pos.y - flowStartY, pos.x - flowStartX);
+    uiCtx.beginPath(); uiCtx.moveTo(pos.x, pos.y);
+    uiCtx.lineTo(pos.x - 15 * Math.cos(angle - Math.PI / 6), pos.y - 15 * Math.sin(angle - Math.PI / 6));
+    uiCtx.lineTo(pos.x - 15 * Math.cos(angle + Math.PI / 6), pos.y - 15 * Math.sin(angle + Math.PI / 6));
+    uiCtx.fillStyle = '#ff00cc'; uiCtx.fill();
+  }
+}
+
+function handlePointerUp(e) {
+  if (!isDrawing || !hasMat) return;
+  isDrawing = false;
+  if (activeTool === 'flow') {
+    const pos = getPointerPos(e, canvas);
+    uiCtx.clearRect(0, 0, uiCanvas.width, uiCanvas.height);
+    let dx = pos.x - flowStartX, dy = pos.y - flowStartY;
+    let len = Math.sqrt(dx*dx + dy*dy);
+    if (len > 5) {
+      dx /= len; dy /= len;
+      let r = Math.floor((dx + 1.0) * 127.5), g = Math.floor((dy + 1.0) * 127.5);
+      flowCtx.strokeStyle = `rgb(${r}, ${g}, 128)`;
+      flowCtx.lineWidth = brushSize * 2; flowCtx.lineCap = 'round'; flowCtx.lineJoin = 'round';
+      flowCtx.shadowColor = `rgb(${r}, ${g}, 128)`; flowCtx.shadowBlur = brushSize;
+      flowCtx.beginPath(); flowCtx.moveTo(flowStartX, flowStartY); flowCtx.lineTo(pos.x, pos.y); flowCtx.stroke();
+      updateFlowTex();
+    }
+  }
+}
+
+function paint(pos) {
+  if(pos.x < 0 || pos.x > matCanvas.width || pos.y < 0 || pos.y > matCanvas.height) return;
+  matCtx.fillStyle = activeColor;
+  matCtx.beginPath(); matCtx.arc(pos.x, pos.y, brushSize, 0, Math.PI * 2); matCtx.fill();
+  updateMatTex();
+}
+
+const canvas=document.getElementById('gl');
+canvas.addEventListener('mousedown', handlePointerDown);
+canvas.addEventListener('mousemove', handlePointerMove);
+window.addEventListener('mouseup', handlePointerUp);
+canvas.addEventListener('touchstart', handlePointerDown, {passive: false});
+canvas.addEventListener('touchmove', handlePointerMove, {passive: false});
+window.addEventListener('touchend', handlePointerUp);
+
+document.querySelectorAll('input[type=range]').forEach(inp=>{
+  inp.oninput=()=>{
+    const did=inp.id.replace('s-','d-');
+    const el=document.getElementById(did);
+    if(el) {
+      if(inp.id === 's-timeofday') el.textContent = (inp.value / 100).toFixed(2);
+      else el.textContent=inp.value;
+    }
+  };
+});
+
+function setTime(h) {
+    document.getElementById('s-timeofday').value = h * 100;
+    document.getElementById('d-timeofday').textContent = h.toFixed(2);
+}
+
+function applyAtmospherePreset(preset) {
+  let state = {};
+  if (preset === 'spring') { 
+    state = { time: 600, cold: 0, season: 0, lightning: 0, rain: 0, rollingfog: 30 }; // Frühlings-Morgen
+  } else if (preset === 'summer') { 
+    state = { time: 1400, cold: 0, season: 50, lightning: 80, rain: 80, rollingfog: 0 }; // Sommer-Gewitter
+  } else if (preset === 'autumn') { 
+    state = { time: 1900, cold: 10, season: 100, lightning: 0, rain: 20, rollingfog: 80 }; // Herbst-Nebel
+  } else if (preset === 'winter') { 
+    state = { time: 1000, cold: 100, season: 0, lightning: 0, rain: 0, rollingfog: 0 }; // Eisig
+  }
+  
+  if(state.time !== undefined) { document.getElementById('s-timeofday').value=state.time; document.getElementById('d-timeofday').textContent=(state.time/100).toFixed(2); }
+  if(state.cold !== undefined) document.getElementById('s-cold').value=state.cold;
+  if(state.season !== undefined) document.getElementById('s-season').value=state.season;
+  if(state.lightning !== undefined) document.getElementById('s-lightning').value=state.lightning;
+  if(state.rain !== undefined) document.getElementById('s-rain').value=state.rain;
+  if(state.rollingfog !== undefined) document.getElementById('s-rollingfog').value=state.rollingfog;
+  
+  document.querySelectorAll('input[type=range]').forEach(inp=>{
+    const el=document.getElementById(inp.id.replace('s-','d-')); 
+    if(el && inp.id !== 's-timeofday') el.textContent=inp.value;
+  });
+}
+
+// === WEBGL ===
+const gl=canvas.getContext('webgl',{preserveDrawingBuffer:true});
+
+function updateMatTex() {
+  if(!hasMat) return;
+  gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, mTex);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, matCanvas);
+}
+function updateFlowTex() {
+  if(!hasMat) return;
+  gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D, fTex);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, flowCanvas);
+}
+
+const VS=`attribute vec2 a_pos;varying vec2 v_uv;void main(){v_uv=a_pos*0.5+0.5;v_uv.y=1.0-v_uv.y;gl_Position=vec4(a_pos,0,1);}`;
+const FS=`precision highp float;
+varying vec2 v_uv;
+uniform sampler2D u_scene, u_mat, u_flow;
+uniform float u_time, u_wind, u_hasMat;
+
+uniform float opt_color, opt_pud, opt_season, opt_decay, opt_rain;
+
+uniform float u_age;
+uniform float u_cold;
+uniform float u_season;
+uniform float u_pud;
+
+// NEUE WETTER & ZEIT UNIFORMS
+uniform float u_timeOfDay; // 0.0 bis 24.0
+uniform float u_lightning;
+uniform float u_rollingFog;
+uniform float u_rain;
+
+float hash(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
+float noise(vec2 p) {
+    vec2 i = floor(p); vec2 f = fract(p);
+    vec2 u = f*f*(3.0-2.0*f);
+    return mix(mix(hash(i + vec2(0.0,0.0)), hash(i + vec2(1.0,0.0)), u.x),
+               mix(hash(i + vec2(0.0,1.0)), hash(i + vec2(1.0,1.0)), u.x), u.y);
+}
+float fbm(vec2 uv) {
+    float f = 0.0;
+    f += 0.5000 * noise(uv); uv *= 2.02;
+    f += 0.2500 * noise(uv); uv *= 2.03;
+    f += 0.1250 * noise(uv); uv *= 2.01;
+    f += 0.0625 * noise(uv);
+    return f;
+}
+
+void main(){
+  vec2 uv = v_uv;
+  vec4 ms = texture2D(u_mat, uv);
+  vec3 cMap = ms.rgb;
+  
+  // Legend
+  vec3 targetRoof   = vec3(249.0/255.0, 114.0/255.0, 22.0/255.0);   
+  vec3 targetStone  = vec3(220.0/255.0, 38.0/255.0, 38.0/255.0);    
+  vec3 targetBase   = vec3(71.0/255.0, 85.0/255.0, 105.0/255.0);    
+  vec3 targetWood   = vec3(133.0/255.0, 77.0/255.0, 14.0/255.0);    
+  vec3 targetFol1   = vec3(170.0/255.0, 0.0/255.0, 170.0/255.0); 
+  vec3 targetFol2   = vec3(6.0/255.0, 182.0/255.0, 212.0/255.0); 
+  vec3 targetWin    = vec3(15.0/255.0, 118.0/255.0, 110.0/255.0);   
+  vec3 targetGrass  = vec3(34.0/255.0, 177.0/255.0, 76.0/255.0);    
+  vec3 targetPud    = vec3(0.0, 0.0, 1.0); 
+  
+  float dR2   = dot(cMap - targetRoof, cMap - targetRoof);
+  float dS1_2 = dot(cMap - targetStone, cMap - targetStone);
+  float dS2_2 = dot(cMap - targetBase, cMap - targetBase);
+  float dW2   = dot(cMap - targetWood, cMap - targetWood);
+  float dF1_2 = dot(cMap - targetFol1, cMap - targetFol1);
+  float dF2_2 = dot(cMap - targetFol2, cMap - targetFol2);
+  float dWin2 = dot(cMap - targetWin, cMap - targetWin);
+  float dG2   = dot(cMap - targetGrass, cMap - targetGrass);
+  float dPud2 = dot(cMap - targetPud, cMap - targetPud);
+  
+  float dS2 = min(dS1_2, dS2_2); float dF2 = min(dF1_2, dF2_2); 
+  
+  float wR = 1.0/(dR2*dR2*dR2*dR2+1e-7); float wS = 1.0/(dS2*dS2*dS2*dS2+1e-7); float wW = 1.0/(dW2*dW2*dW2*dW2+1e-7);
+  float wF = 1.0/(dF2*dF2*dF2*dF2+1e-7); float wWin = 1.0/(dWin2*dWin2*dWin2*dWin2+1e-7); float wG = 1.0/(dG2*dG2*dG2*dG2+1e-7); float wPud = 1.0/(dPud2*dPud2*dPud2*dPud2+1e-7);
+  float totalW = wR + wS + wW + wF + wWin + wG + wPud;
+  
+  float mR = (wR/totalW)*u_hasMat; float mS = (wS/totalW)*u_hasMat; float mW = (wW/totalW)*u_hasMat;
+  float mF = (wF/totalW)*u_hasMat; float isWin = (wWin/totalW)*u_hasMat; float mG = (wG/totalW)*u_hasMat;
+  float mPud = (wPud/totalW)*u_hasMat;
+
+  vec2 readUV = uv;
+  if (opt_season > 0.5) { readUV.x += sin(uv.y * 30.0 + u_time * 2.5) * 0.003 * mF; } // Wind
+  
+  vec3 dry = texture2D(u_scene, readUV).rgb;
+  vec3 fin = dry;
+  float baseLum = dot(dry, vec3(0.299, 0.587, 0.114));
+  
+  // --- SYSTEM #19: TAG- & NACHT-BELEUCHTUNG ---
+  float tOD = u_timeOfDay; // 0.0 bis 24.0
+  float sunHeight = -cos(tOD * 3.14159 / 12.0); // -1.0 Mitternacht, 1.0 Mittag
+  vec3 sunDir = normalize(vec3(sin(tOD * 3.14159 / 12.0), sunHeight, 0.5));
+  
+  // Farbpaletten der Uhrzeiten
+  vec3 dayCol = vec3(1.0, 0.95, 0.90);
+  vec3 dawnCol = vec3(0.9, 0.5, 0.6); // Morgengrauen
+  vec3 duskCol = vec3(1.0, 0.3, 0.1); // Abendröte
+  vec3 nightCol = vec3(0.1, 0.15, 0.35);
+  
+  float isDay = smoothstep(0.1, 0.4, sunHeight);
+  float isNight = 1.0 - smoothstep(-0.4, -0.1, sunHeight);
+  float isDawn = smoothstep(-0.2, 0.2, sunHeight) * smoothstep(12.0, 0.0, tOD); 
+  float isDusk = smoothstep(-0.2, 0.2, sunHeight) * smoothstep(12.0, 24.0, tOD); 
+  
+  vec3 globalLight = nightCol * isNight + dayCol * isDay + dawnCol * isDawn + duskCol * isDusk;
+  
+  // Wende globales Licht auf das Bild an
+  fin *= mix(vec3(1.0), globalLight, 0.85);
+
+  // --- FENSTER-LOGIK (Licht an bei Nacht/Dämmerung) ---
+  float windowOn = 1.0 - isDay; 
+  if (opt_color > 0.5 && isWin > 0.0) {
+      vec3 winGlow = vec3(1.0, 0.7, 0.3) * 2.0; // Warmes Lampenlicht
+      fin = mix(fin, winGlow, isWin * windowOn);
+  }
+
+  // --- SYSTEM #27: JAHRESZEITEN (Obst, Blüten) ---
+  float season = u_season; 
+  float autumnFactor = smoothstep(0.5, 1.0, season);
+  float springFactor = 1.0 - smoothstep(0.0, 0.3, season); 
+  float summerFactor = smoothstep(0.2, 0.5, season) * (1.0 - smoothstep(0.6, 0.8, season));
+  
+  if (opt_season > 0.5) {
+      vec3 autumnColor = mix(vec3(0.95, 0.8, 0.1), vec3(0.85, 0.2, 0.05), fbm(uv * 15.0)); 
+      fin = mix(fin, autumnColor * (baseLum * 2.0 + 0.1) * globalLight, mF * autumnFactor);
+      
+      vec2 grid1 = fract(uv * 70.0) - 0.5; vec2 id1 = floor(uv * 70.0);
+      float isFruit = smoothstep(0.35, 0.15, length(grid1 + vec2(hash(id1+1.)-0.5, hash(id1+2.)-0.5))) * step(0.92, hash(id1));
+      vec3 treeFruitCol = mix(vec3(1.0, 0.8, 0.9), vec3(0.9, 0.1, 0.1), summerFactor / (springFactor + summerFactor + 1e-3));
+      fin = mix(fin, treeFruitCol * globalLight, (springFactor + summerFactor) * isFruit * mF);
+  }
+
+  // --- FRÜHJAHR MORGENTAU (Brechendes Licht in Tropfen) ---
+  float dewMask = isDawn * springFactor;
+  if (dewMask > 0.0 && (mG > 0.0 || mF > 0.0)) {
+      float dewGlint = pow(hash(uv * 300.0 + u_time*0.05), 40.0) * (mG + mF);
+      fin += vec3(dewGlint) * dewMask * dawnCol * 2.5; // Glitzert in der Farbe des Morgengrauens
+  }
+
+  // --- WABERNDER BODENNEBEL (Zwischen Häusern/Wald) ---
+  if (u_rollingFog > 0.0) {
+      // Nebel zieht horizontal und kriecht in die Täler (niedrige Luminanz = Boden/Schatten)
+      float fogNoise = fbm(uv * 5.0 + vec2(u_time * 0.1 * u_wind, 0.0));
+      float fogMask = smoothstep(0.3, 0.8, fogNoise) * (1.0 - baseLum * 0.5); // Meidet helle Dächer leicht
+      
+      // Nebel nimmt die Umgebungsfarbe an (wichtig bei Abendröte!)
+      vec3 fogCol = mix(vec3(0.8, 0.85, 0.9), globalLight, 0.7); 
+      fin = mix(fin, fogCol, fogMask * u_rollingFog);
+  }
+
+  // --- GEWITTER (Blitze) ---
+  if (u_lightning > 0.0) {
+      // Prozeduraler, flackernder Blitz-Trigger
+      float flash = step(0.98, fract(sin(floor(u_time * 5.0)) * 43758.5453));
+      float flashIntensity = flash * u_lightning;
+      // Blitze machen alles extrem hell und kaltweiß
+      fin += vec3(0.8, 0.9, 1.0) * flashIntensity;
+      
+      // Wenn es blitzt, wirft das Licht auch harte Specular-Highlights
+      sunDir = normalize(vec3(-0.5, 1.0, 0.5)); // Blitz kommt von schräg oben
+  }
+
+  // --- 3D KANTEN & NÄSSE-GLANZ (Dynamisch zur Sonne) ---
+  if (opt_pud > 0.5 && (u_rain > 0.0 || u_pud > 0.0)) { 
+      float lR = dot(texture2D(u_scene, readUV + vec2(0.002, 0.0)).rgb, vec3(0.299,0.587,0.114));
+      float lU = dot(texture2D(u_scene, readUV + vec2(0.0, 0.002)).rgb, vec3(0.299,0.587,0.114));
+      vec3 N = normalize(vec3((lR - baseLum) * 12.0, (lU - baseLum) * 12.0, 1.0));
+      
+      vec3 V = vec3(0.0, 0.0, 1.0);
+      vec3 H = normalize(sunDir + V);
+      
+      float specHighlight = pow(max(dot(N, H), 0.0), 12.0);
+      // Im Regen oder nach Regen glänzt alles, bei Nacht nur schwach, bei Blitzen stark!
+      float matGloss = (mR*0.8 + mS*0.5 + mG*0.1 + mW*0.4 + mF*0.3);
+      fin += vec3(0.8,0.9,1.0) * specHighlight * matGloss * (u_rain + u_pud) * (max(isDay, 0.2) + u_lightning); 
+  }
+
+  // --- REGEN & RINNALE ---
+  if (opt_rain > 0.5 && u_rain > 0.0) {
+      vec2 flowData = texture2D(u_flow, uv).rg; vec2 flowDir = flowData * 2.0 - 1.0;
+      float fdx = 0.0, fdy = 1.0; if (length(flowDir) > 0.05) { vec2 nFlow = normalize(flowDir); fdx = nFlow.x; fdy = nFlow.y; }
+      float fProj = uv.x*fdx + uv.y*fdy; float fPerp = uv.x*(-fdy) + uv.y*fdx;
+      float rivX = fract(fPerp*35.0 + sin(fProj*8.0)*0.08);
+      float riv = step(0.44,rivX)*step(rivX,0.56)*step(0.2,fract(fProj*4.0+u_time*3.5))*step(fract(fProj*4.0+u_time*3.5),0.7)*mR;
+      fin += riv * vec3(0.5, 0.6, 0.8) * u_rain * globalLight;
+      
+      float rn = clamp(step(0.993,fract(sin(uv.x*280.0+uv.y*550.0+u_time*18.0+u_wind*uv.x*140.0)*43758.5))+step(0.994,fract(sin(uv.x*180.0+uv.y*400.0+u_time*14.0+u_wind*uv.x*100.0+5.7)*43758.5)),0.0,1.0);
+      fin += rn * vec3(0.7, 0.8, 0.9) * u_rain;
+  }
+  
+  fin = mix(fin, dry * globalLight, vec3((1.0 - u_hasMat)));
+  gl_FragColor = vec4(clamp(fin, 0.0, 1.0), 1.0);
+}`;
+
+function compile(s,t){const sh=gl.createShader(t);gl.shaderSource(sh,s);gl.compileShader(sh);if(!gl.getShaderParameter(sh,gl.COMPILE_STATUS))console.error(gl.getShaderInfoLog(sh));return sh;}
+const prog=gl.createProgram();gl.attachShader(prog,compile(VS,gl.VERTEX_SHADER));gl.attachShader(prog,compile(FS,gl.FRAGMENT_SHADER));gl.linkProgram(prog);
+gl.useProgram(prog);
+const buf=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,buf);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),gl.STATIC_DRAW);
+const aP=gl.getAttribLocation(prog,'a_pos');gl.enableVertexAttribArray(aP);gl.vertexAttribPointer(aP,2,gl.FLOAT,false,0,0);
+
+function mkTex(u){
+  const t=gl.createTexture(); gl.activeTexture(gl.TEXTURE0+u); gl.bindTexture(gl.TEXTURE_2D,t);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
+  gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,1,1,0,gl.RGBA,gl.UNSIGNED_BYTE,new Uint8Array([128,128,128,255])); return t;
+}
+const sTex=mkTex(0), mTex=mkTex(1), fTex=mkTex(2); 
+gl.uniform1i(gl.getUniformLocation(prog,'u_scene'),0); gl.uniform1i(gl.getUniformLocation(prog,'u_mat'),1); gl.uniform1i(gl.getUniformLocation(prog,'u_flow'),2);
+
+const U={};
+['u_time','u_wind','u_hasMat','u_timeOfDay','u_lightning','u_rollingFog','u_rain','u_pud',
+ 'u_cold','u_season','u_age',
+ 'opt_color','opt_pud','opt_season','opt_decay','opt_rain'].forEach(n=>U[n]=gl.getUniformLocation(prog,n));
+
+let hasMat=0,time=0,lastT=0,sceneOk=false;
+function loadImg(f,u,t){
+  const i=new Image(); i.onload=()=>{
+    gl.activeTexture(gl.TEXTURE0+u); gl.bindTexture(gl.TEXTURE_2D,t); gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,i);
+    if(!u){
+      canvas.width=i.width; canvas.height=i.height; uiCanvas.width=i.width; uiCanvas.height=i.height; gl.viewport(0,0,i.width,i.height); sceneOk=true;
+      flowCanvas.width = i.width; flowCanvas.height = i.height; flowCtx.fillStyle = 'rgb(128, 128, 128)'; flowCtx.fillRect(0, 0, i.width, i.height); updateFlowTex();
+      if(!hasMat) { matCanvas.width = i.width; matCanvas.height = i.height; matCtx.fillStyle = '#22B14C'; matCtx.fillRect(0, 0, i.width, i.height); updateMatTex(); hasMat = 1; }
+    } else { matCanvas.width = i.width; matCanvas.height = i.height; matCtx.drawImage(i, 0, 0); updateMatTex(); hasMat=1; }
+  }; i.src=URL.createObjectURL(f);
+}
+document.getElementById('f-scene').onchange=e=>{if(e.target.files[0])loadImg(e.target.files[0],0,sTex);};
+document.getElementById('f-mat').onchange=e=>{if(e.target.files[0])loadImg(e.target.files[0],1,mTex);};
+function gv(id,d){ const el = document.getElementById(id); return el ? (+el.value/d) : 0; }
+
+function render(now){
+  if(!lastT)lastT=now;const dt=(now-lastT)/1000;lastT=now;
+  if(document.getElementById('s-anim').checked)time+=dt;
+  if(!sceneOk){requestAnimationFrame(render);return;}
+  
+  gl.uniform1f(U.opt_color, document.getElementById('opt-color').checked ? 1.0 : 0.0);
+  gl.uniform1f(U.opt_pud, document.getElementById('opt-puddle').checked ? 1.0 : 0.0);
+  gl.uniform1f(U.opt_rain, document.getElementById('opt-puddle').checked ? 1.0 : 0.0); // An Pfützen-Checkbox gebunden, da Option "Regen" aus UI entfernt wurde
+  gl.uniform1f(U.opt_season, document.getElementById('opt-season').checked ? 1.0 : 0.0);
+  // Optionaler Decay falls wieder eingebaut wird
+  const decayCb = document.getElementById('opt-decay');
+  gl.uniform1f(U.opt_decay, decayCb && decayCb.checked ? 1.0 : 0.0);
+  
+  gl.uniform1f(U.u_time,time); 
+  gl.uniform1f(U.u_hasMat,hasMat);
+  
+  gl.uniform1f(U.u_timeOfDay,gv('s-timeofday',100)); // 0.0 - 24.0
+  gl.uniform1f(U.u_lightning,gv('s-lightning',100));
+  gl.uniform1f(U.u_rollingFog,gv('s-rollingfog',100));
+  gl.uniform1f(U.u_rain,gv('s-rain',100));
+  gl.uniform1f(U.u_pud,gv('s-pud',100));
+  gl.uniform1f(U.u_wind,gv('s-wind',100));
+  
+  gl.uniform1f(U.u_cold,gv('s-cold',100)); 
+  gl.uniform1f(U.u_season,gv('s-season',100)); 
+  gl.uniform1f(U.u_age,gv('s-age',100)); 
+  
+  gl.drawArrays(gl.TRIANGLE_STRIP,0,4); requestAnimationFrame(render);
+}
+requestAnimationFrame(render);
+</script>
+</body></html>

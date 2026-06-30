@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GAIME Shader Editor v2</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#1a1a2e;color:#e0e0e0;font-family:monospace;display:flex;height:100vh;overflow:hidden}
+#sidebar{width:340px;padding:8px;overflow-y:auto;background:#16213e;border-right:1px solid #333;flex-shrink:0}
+#canvas-wrap{flex:1;display:flex;align-items:center;justify-content:center;background:#0f0f0f}
+canvas{max-width:100%;max-height:100%;display:block}
+h2{color:#00d4aa;margin:8px 0 4px;font-size:11px;text-transform:uppercase;border-top:1px solid #333;padding-top:6px}
+.c{margin:2px 0 5px}
+.c label{display:flex;justify-content:space-between;font-size:10px;color:#999}
+.c input[type=range]{width:100%;height:14px}
+.c .v{color:#00d4aa;min-width:30px;text-align:right}
+button{background:#00d4aa;color:#1a1a2e;border:none;padding:5px 10px;cursor:pointer;font-weight:bold;margin:2px;border-radius:3px;font-size:10px}
+button:hover{background:#00ffcc}
+button.active{background:#ff6b6b;color:#fff}
+input[type=file]{font-size:9px;width:100%;margin:2px 0}
+#title{color:#00d4aa;font-size:13px;font-weight:bold;margin-bottom:6px}
+.tabs{display:flex;flex-wrap:wrap;gap:2px;margin:4px 0}
+.tabs button{font-size:9px;padding:3px 5px}
+.tabs button.sel{background:#00d4aa;color:#1a1a2e}
+.tabs button:not(.sel){background:#333;color:#aaa}
+.mp{display:none}.mp.active{display:block}
+#kf-bar .k{display:inline-block;width:18px;height:18px;background:#333;border:1px solid #555;margin:1px;cursor:pointer;border-radius:2px;font-size:8px;text-align:center;line-height:18px}
+#kf-bar .k.set{background:#00d4aa;color:#1a1a2e}
+@media(max-width:700px){#sidebar{width:100%;height:55vh;order:2}#canvas-wrap{height:45vh;order:1}body{flex-direction:column}}
+</style>
+</head>
+<body>
+<div id="sidebar">
+<div id="title">GAIME Shader Editor v2</div>
+<input type="file" id="f-scene" accept="image/*">
+<input type="file" id="f-mat" accept="image/*">
+<h2>Global</h2>
+<div class="c"><label>Weather<span class="v" id="d-w">0</span></label><input type="range" id="s-w" min="0" max="100" value="0"></div>
+<div class="c"><label>Wind<span class="v" id="d-wind">30</span></label><input type="range" id="s-wind" min="0" max="100" value="30"></div>
+<div class="c"><label>Shadow Lift<span class="v" id="d-shad">12</span></label><input type="range" id="s-shad" min="0" max="50" value="12"></div>
+<div class="c"><label>Puddles<span class="v" id="d-pud">55</span></label><input type="range" id="s-pud" min="0" max="100" value="55"></div>
+<div class="c"><label>Rain<span class="v" id="d-rain">20</span></label><input type="range" id="s-rain" min="0" max="100" value="20"></div>
+<div class="c"><label>Rivulets<span class="v" id="d-riv">12</span></label><input type="range" id="s-riv" min="0" max="100" value="12"></div>
+<div class="c"><label>Fog<span class="v" id="d-fog">25</span></label><input type="range" id="s-fog" min="0" max="100" value="25"></div>
+<div class="c"><label>Age<span class="v" id="d-age">0</span></label><input type="range" id="s-age" min="0" max="100" value="0"></div>
+<div class="c"><label>Moss<span class="v" id="d-moss">50</span></label><input type="range" id="s-moss" min="0" max="100" value="50"></div>
+<div class="c"><label>Invasion<span class="v" id="d-inv">50</span></label><input type="range" id="s-inv" min="0" max="100" value="50"></div>
+<div class="c"><label><input type="checkbox" id="s-anim" checked> Animate</label></div>
+<h2>Materials</h2>
+<div class="tabs" id="tabs"></div>
+<div id="panels"></div>
+<h2>Keyframes</h2>
+<div id="kf-bar"></div>
+<button id="btn-kf-set">Set</button><button id="btn-kf-play">Play</button><button id="btn-kf-clear">Clear</button>
+<h2>Export</h2>
+<button id="btn-png">PNG</button><button id="btn-json">JSON</button>
+</div>
+<div id="canvas-wrap"><canvas id="gl"></canvas></div>
+<script>
+const MATS={roof:[84,46,30],stone:[74,69,64],grass:[45,69,36],wood:[46,25,16],fol:[26,46,22],puddle:[43,42,41],fog:[112,120,128],win:[217,148,65]};
+const NAMES={roof:"Roof",stone:"Stone",grass:"Grass",wood:"Wood",fol:"Foliage",puddle:"Puddle",fog:"Fog",win:"Window"};
+// Build tabs + panels
+const tabsEl=document.getElementById("tabs"),panelsEl=document.getElementById("panels");
+let first=true;
+Object.keys(MATS).forEach(m=>{
+  const btn=document.createElement("button");btn.textContent=NAMES[m];btn.dataset.m=m;if(first)btn.classList.add("sel");
+  btn.onclick=()=>{document.querySelectorAll(".tabs button").forEach(b=>b.classList.remove("sel"));btn.classList.add("sel");document.querySelectorAll(".mp").forEach(p=>p.classList.remove("active"));document.getElementById("p-"+m).classList.add("active");};
+  tabsEl.appendChild(btn);
+  const d=MATS[m];
+  const p=document.createElement("div");p.className="mp"+(first?" active":"");p.id="p-"+m;
+  p.innerHTML=`<div class="c"><label>R<span class="v" id="d-${m}-r">${d[0]}</span></label><input type="range" id="s-${m}-r" min="0" max="255" value="${d[0]}"></div>
+<div class="c"><label>G<span class="v" id="d-${m}-g">${d[1]}</span></label><input type="range" id="s-${m}-g" min="0" max="255" value="${d[1]}"></div>
+<div class="c"><label>B<span class="v" id="d-${m}-b">${d[2]}</span></label><input type="range" id="s-${m}-b" min="0" max="255" value="${d[2]}"></div>
+<div class="c"><label>Contrast<span class="v" id="d-${m}-con">50</span></label><input type="range" id="s-${m}-con" min="0" max="100" value="50"></div>
+<div class="c"><label>Brightness<span class="v" id="d-${m}-bri">50</span></label><input type="range" id="s-${m}-bri" min="0" max="100" value="50"></div>
+<div class="c"><label>Opacity<span class="v" id="d-${m}-opa">100</span></label><input type="range" id="s-${m}-opa" min="0" max="100" value="100"></div>`;
+  panelsEl.appendChild(p);first=false;
+});
+// Display update
+document.querySelectorAll("input[type=range]").forEach(i=>{i.oninput=()=>{const e=document.getElementById(i.id.replace("s-","d-"));if(e)e.textContent=i.value;};});
+// KF
+const kfs=[];const kfBar=document.getElementById("kf-bar");
+for(let i=0;i<10;i++){const d=document.createElement("span");d.className="k";d.textContent=i;kfBar.appendChild(d);}
+function getState(){const s={};document.querySelectorAll("input[type=range]").forEach(i=>{s[i.id]=+i.value;});return s;}
+function setState(s){Object.keys(s).forEach(k=>{const el=document.getElementById(k);if(el){el.value=s[k];const d=document.getElementById(k.replace("s-","d-"));if(d)d.textContent=Math.round(s[k]);}});}
+function lerp(a,b,t){const r={};Object.keys(a).forEach(k=>{r[k]=a[k]+(b[k]-a[k])*t;});return r;}
+document.getElementById("btn-kf-set").onclick=()=>{if(kfs.length>=10)return;kfs.push(getState());kfBar.children[kfs.length-1].classList.add("set");};
+document.getElementById("btn-kf-clear").onclick=()=>{kfs.length=0;document.querySelectorAll(".k").forEach(k=>k.classList.remove("set"));};
+let playing=false,playT=0;
+document.getElementById("btn-kf-play").onclick=()=>{if(kfs.length<2)return;playing=!playing;};
+
+// WEBGL
+const VS=`attribute vec2 a;varying vec2 v;void main(){v=a*0.5+0.5;v.y=1.0-v.y;gl_Position=vec4(a,0,1);}`;
+const FS=`precision highp float;
+varying vec2 v;
+uniform sampler2D S,M;
+uniform float t,w,wind,hasMat;
+uniform vec3 cR,cS,cG,cW,cF,cP,cFg,cWn;
+uniform vec4 pR,pS,pG,pW,pF;
+uniform float pud,rain,shad,riv,fog,age,moss,inv;
+vec3 grade(vec3 c,vec3 tgt,vec4 p,float mask){
+  float lum=dot(c,vec3(.299,.587,.114));
+  float rb=clamp(lum*2.5,.3,1.5);
+  vec3 wet=tgt*rb;
+  float opa=p.w;
+  vec3 g2=mix(c,wet,opa);
+  float con=(p.x-.5)*2.0;
+  g2=mix(vec3(dot(g2,vec3(.299,.587,.114))),g2,1.0+con);
+  float bri=(p.y-.5);
+  g2+=vec3(bri*.5);
+  return mix(c,g2,mask);
+}
+void main(){
+  vec2 uv=v;vec3 dry=texture2D(S,uv).rgb;
+  vec4 ms=texture2D(M,uv);
+  float id=floor(ms.r*7.0+0.5);
+  float fa=ms.g*6.2832,bCh=ms.b;
+  float drip=clamp(bCh/.71,0.,1.)*step(bCh,.75);
+  float isW2=step(.8,bCh)*step(bCh,.92)*hasMat;
+  float mGr=step(id,.5)*hasMat;
+  float mSt=step(.5,id)*step(id,1.5)*hasMat;
+  float mWo=step(1.5,id)*step(id,2.5)*hasMat;
+  float mRo=step(2.5,id)*step(id,3.5)*hasMat;
+  float mFo=step(3.5,id)*step(id,4.5)*hasMat;
+  float nm=1.-hasMat;
+  float lum=dot(dry,vec3(.299,.587,.114));
+  vec3 fin=dry+vec3((1.-lum)*w*shad);
+  fin=grade(fin,cR,pR,mRo*w);
+  fin=grade(fin,cS,pS,mSt*w);
+  fin=grade(fin,cG,pG,mGr*w);
+  fin=grade(fin,cW,pW,mWo*w);
+  fin=grade(fin,cF,pF,mFo*w);
+  fin=mix(fin,dry*(1.-.4*w),vec3(nm*w));
+  // Puddles
+  float pn=sin(uv.x*19.+uv.y*13.+1.7)*sin(uv.x*29.-uv.y*7.)+sin(uv.x*5.+uv.y*37.+3.1)*.7;
+  float pFld=clamp(pn*.4+.4,0.,1.);
+  float pTh=mix(w*pud,w*1.3,drip*hasMat);
+  float hp=clamp(mSt*step(pFld,pTh)+mGr*drip*hasMat*step(pFld,w*.8),0.,1.);
+  float rpl=sin(uv.x*90.+t*2.5)*sin(uv.y*70.+t*1.8);rpl=clamp(rpl*rpl,0.,1.)*.1;
+  fin=mix(fin,cP+vec3(rpl),hp*w);
+  // Rivulets
+  float fdx=cos(fa),fdy=sin(fa);
+  float fp=uv.x*fdx+uv.y*fdy,fpp=uv.x*(-fdy)+uv.y*fdx;
+  float rv=step(.44,fract(fpp*35.+sin(fp*8.)*.08))*step(fract(fpp*35.+sin(fp*8.)*.08),.56);
+  rv*=step(.2,fract(fp*4.+t*3.5))*step(fract(fp*4.+t*3.5),.7)*mRo*w*riv;
+  fin+=rv*vec3(.3,.4,.6);
+  // Window
+  fin=mix(fin,cWn,isW2*w*.7);
+  // Fog
+  float fz=clamp((uv.y-.55)*3.,0.,1.);
+  fin=mix(fin,cFg,w*w*fz*fog);
+  // Rain
+  float rn=clamp(step(.993,fract(sin(uv.x*280.+uv.y*550.+t*18.+wind*uv.x*140.)*43758.5))+step(.994,fract(sin(uv.x*180.+uv.y*400.+t*14.+wind*uv.x*100.+5.7)*43758.5)),0.,1.)*w*w*rain;
+  fin+=rn*vec3(.5,.6,.8);
+  // Decay
+  float mn=fract(sin(uv.x*127.1+uv.y*311.7)*43758.5)*.5+sin(uv.x*23.+uv.y*17.)*.3+.2;
+  fin=mix(fin,vec3(.12,.28,.08),mRo*age*moss*step(.4,mn)*.7);
+  float ivn=fract(sin(uv.x*97.+uv.y*53.)*43758.5)*.5+sin(uv.x*11.-uv.y*7.)*.3+.2;
+  fin=mix(fin,vec3(.08,.22,.05),mSt*age*inv*step(.35,ivn)*.6);
+  fin=mix(fin,fin*vec3(.5,.6,.4),mWo*age*.5);
+  gl_FragColor=vec4(clamp(fin,0.,1.),1.);
+}`;
+const canvas=document.getElementById("gl"),gl=canvas.getContext("webgl",{preserveDrawingBuffer:true});
+function cs(s,tp){const sh=gl.createShader(tp);gl.shaderSource(sh,s);gl.compileShader(sh);if(!gl.getShaderParameter(sh,gl.COMPILE_STATUS))console.error(gl.getShaderInfoLog(sh));return sh;}
+const pg=gl.createProgram();gl.attachShader(pg,cs(VS,gl.VERTEX_SHADER));gl.attachShader(pg,cs(FS,gl.FRAGMENT_SHADER));gl.linkProgram(pg);
+if(!gl.getProgramParameter(pg,gl.LINK_STATUS))console.error(gl.getProgramInfoLog(pg));
+gl.useProgram(pg);
+const bf=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,bf);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),gl.STATIC_DRAW);
+const aP=gl.getAttribLocation(pg,"a");gl.enableVertexAttribArray(aP);gl.vertexAttribPointer(aP,2,gl.FLOAT,false,0,0);
+function mkT(u){const tx=gl.createTexture();gl.activeTexture(gl.TEXTURE0+u);gl.bindTexture(gl.TEXTURE_2D,tx);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.NEAREST);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.NEAREST);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,1,1,0,gl.RGBA,gl.UNSIGNED_BYTE,new Uint8Array([128,128,128,255]));return tx;}
+const sT=mkT(0),mT=mkT(1);
+gl.uniform1i(gl.getUniformLocation(pg,"S"),0);gl.uniform1i(gl.getUniformLocation(pg,"M"),1);
+const U={};["t","w","wind","hasMat","cR","cS","cG","cW","cF","cP","cFg","cWn","pR","pS","pG","pW","pF","pud","rain","shad","riv","fog","age","moss","inv"].forEach(n=>U[n]=gl.getUniformLocation(pg,n));
+let hasMat=0,time=0,lastT=0,ok=false;
+function loadI(f,u,tx){const i=new Image();i.onload=()=>{gl.activeTexture(gl.TEXTURE0+u);gl.bindTexture(gl.TEXTURE_2D,tx);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,i);if(!u){canvas.width=i.width;canvas.height=i.height;gl.viewport(0,0,i.width,i.height);ok=true;}else hasMat=1;};i.src=URL.createObjectURL(f);}
+document.getElementById("f-scene").onchange=e=>{if(e.target.files[0])loadI(e.target.files[0],0,sT);};
+document.getElementById("f-mat").onchange=e=>{if(e.target.files[0])loadI(e.target.files[0],1,mT);};
+function gv(id){return+document.getElementById(id).value;}
+function render(now){
+  if(!lastT)lastT=now;const dt=(now-lastT)/1000;lastT=now;
+  if(document.getElementById("s-anim").checked)time+=dt;
+  if(playing&&kfs.length>=2){playT+=dt*.3;if(playT>kfs.length-1)playT=0;setState(lerp(kfs[Math.floor(playT)],kfs[Math.min(Math.floor(playT)+1,kfs.length-1)],playT-Math.floor(playT)));}
+  if(!ok){requestAnimationFrame(render);return;}
+  gl.uniform1f(U.t,time);gl.uniform1f(U.w,gv("s-w")/100);gl.uniform1f(U.wind,gv("s-wind")/100);gl.uniform1f(U.hasMat,hasMat);
+  gl.uniform1f(U.pud,gv("s-pud")/100);gl.uniform1f(U.rain,gv("s-rain")/100);gl.uniform1f(U.shad,gv("s-shad")/100);
+  gl.uniform1f(U.riv,gv("s-riv")/100);gl.uniform1f(U.fog,gv("s-fog")/100);
+  gl.uniform1f(U.age,gv("s-age")/100);gl.uniform1f(U.moss,gv("s-moss")/100);gl.uniform1f(U.inv,gv("s-inv")/100);
+  const ms=["roof","stone","grass","wood","fol"];
+  const uC=["cR","cS","cG","cW","cF"];
+  const uP=["pR","pS","pG","pW","pF"];
+  ms.forEach((m,i)=>{
+    gl.uniform3f(U[uC[i]],gv("s-"+m+"-r")/255,gv("s-"+m+"-g")/255,gv("s-"+m+"-b")/255);
+    gl.uniform4f(U[uP[i]],gv("s-"+m+"-con")/100,gv("s-"+m+"-bri")/100,0,gv("s-"+m+"-opa")/100);
+  });
+  gl.uniform3f(U.cP,gv("s-puddle-r")/255,gv("s-puddle-g")/255,gv("s-puddle-b")/255);
+  gl.uniform3f(U.cFg,gv("s-fog-r")/255,gv("s-fog-g")/255,gv("s-fog-b")/255);
+  gl.uniform3f(U.cWn,gv("s-win-r")/255,gv("s-win-g")/255,gv("s-win-b")/255);
+  gl.drawArrays(gl.TRIANGLE_STRIP,0,4);requestAnimationFrame(render);
+}
+requestAnimationFrame(render);
+document.getElementById("btn-png").onclick=()=>{canvas.toBlob(b=>{const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="shader.png";a.click();},"image/png");};
+document.getElementById("btn-json").onclick=()=>{const s=getState();s.keyframes=kfs;const b=new Blob([JSON.stringify(s,null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="shader_params.json";a.click();};
+</script>
+</body></html>

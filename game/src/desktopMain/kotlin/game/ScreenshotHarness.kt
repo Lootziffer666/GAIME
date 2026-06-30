@@ -127,6 +127,10 @@ fun main() {
     captureWeatherTriptych()
     // Material-aware weather (one shader, three states, material-differentiated)
     captureMaterialWeather()
+    // Village material-weather pipeline (Dorf-Bild with baked material segmentation)
+    captureVillageMaterialWeather()
+    // Guild house material-weather
+    captureGuildMaterialWeather()
 }
 
 private fun captureWorld(config: MapConfig, name: String, withDialog: Boolean) {
@@ -2902,5 +2906,95 @@ private fun captureMaterialWeather() {
         bg.smoothing = true
         bg.filter = game.shader.MaterialWeatherFilter(time = 5.0f, weatherState = 1.0f, windAngle = 0.5f)
         save("material_weather_storm")
+    }
+}
+
+/**
+ * Village Material-Weather Pipeline proof:
+ * Uses the GAIME village image (ResizedImage_2026-06-30_10-29-19_2317[41].png)
+ * with the calibrated MaterialWeatherFilter to demonstrate per-material weather
+ * effects: stone→puddles, grass→satter, wood→dunkler, roof→Abperlen.
+ *
+ * Now uses MULTI-TEXTURE: the full-resolution material map
+ * (assets/materials/village_material_fullres.png) is bound as a second texture.
+ * The shader reads material IDs from the R channel — no HSV heuristics needed.
+ */
+private fun captureVillageMaterialWeather() {
+    val villagePath = "ResizedImage_2026-06-30_10-29-19_2317[41].png"
+    val materialMapPath = "assets/materials/village_material_fullres.png"
+
+    // Sun (dry, clear day)
+    korgeScreenshotTest(Size(2560.0, 1440.0)) {
+        val bgBitmap = resourcesVfs[villagePath].readBitmap()
+        val matBitmap = resourcesVfs[materialMapPath].readBitmap()
+        val bg = image(bgBitmap)
+        bg.smoothing = true
+        val filter = game.shader.MaterialWeatherFilter(time = 1.0f, weatherState = 0.0f)
+        filter.setMaterialMap(matBitmap.toBMP32())
+        bg.filter = filter
+        save("village_weather_v8_sun")
+    }
+
+    // Rain (moderate, wind from left)
+    korgeScreenshotTest(Size(2560.0, 1440.0)) {
+        val bgBitmap = resourcesVfs[villagePath].readBitmap()
+        val matBitmap = resourcesVfs[materialMapPath].readBitmap()
+        val bg = image(bgBitmap)
+        bg.smoothing = true
+        val filter = game.shader.MaterialWeatherFilter(time = 4.0f, weatherState = 0.6f, windAngle = 0.3f)
+        filter.setMaterialMap(matBitmap.toBMP32())
+        bg.filter = filter
+        save("village_weather_v8_rain")
+    }
+
+    // Storm (heavy rain, strong wind, maximum effects)
+    korgeScreenshotTest(Size(2560.0, 1440.0)) {
+        val bgBitmap = resourcesVfs[villagePath].readBitmap()
+        val matBitmap = resourcesVfs[materialMapPath].readBitmap()
+        val bg = image(bgBitmap)
+        bg.smoothing = true
+        val filter = game.shader.MaterialWeatherFilter(time = 7.0f, weatherState = 1.0f, windAngle = 0.5f)
+        filter.setMaterialMap(matBitmap.toBMP32())
+        bg.filter = filter
+        save("village_weather_v8_storm")
+    }
+}
+
+// Guild house material weather test
+private fun captureGuildMaterialWeather() {
+    val guildPath = "ResizedImage_2026-06-30_10-36-27_1077[2].png"
+    val guildMatPath = "assets/materials/guild_material_fullres.png"
+
+    korgeScreenshotTest(Size(2560.0, 1440.0)) {
+        val bgBitmap = resourcesVfs[guildPath].readBitmap()
+        val matBitmap = resourcesVfs[guildMatPath].readBitmap()
+        val bg = image(bgBitmap)
+        bg.smoothing = true
+        val filter = game.shader.MaterialWeatherFilter(time = 1.0f, weatherState = 0.0f)
+        filter.setMaterialMap(matBitmap.toBMP32())
+        bg.filter = filter
+        save("guild_weather_v7_sun")
+    }
+
+    korgeScreenshotTest(Size(2560.0, 1440.0)) {
+        val bgBitmap = resourcesVfs[guildPath].readBitmap()
+        val matBitmap = resourcesVfs[guildMatPath].readBitmap()
+        val bg = image(bgBitmap)
+        bg.smoothing = true
+        val filter = game.shader.MaterialWeatherFilter(time = 4.0f, weatherState = 0.6f, windAngle = 0.3f)
+        filter.setMaterialMap(matBitmap.toBMP32())
+        bg.filter = filter
+        save("guild_weather_v7_rain")
+    }
+
+    korgeScreenshotTest(Size(2560.0, 1440.0)) {
+        val bgBitmap = resourcesVfs[guildPath].readBitmap()
+        val matBitmap = resourcesVfs[guildMatPath].readBitmap()
+        val bg = image(bgBitmap)
+        bg.smoothing = true
+        val filter = game.shader.MaterialWeatherFilter(time = 7.0f, weatherState = 1.0f, windAngle = 0.5f)
+        filter.setMaterialMap(matBitmap.toBMP32())
+        bg.filter = filter
+        save("guild_weather_v7_storm")
     }
 }
