@@ -144,6 +144,20 @@ canvas.vectoring{cursor:cell!important}
 </div>
 <div id="mat-panels"></div>
 
+<!-- PARTICLES -->
+<div class="section">
+<div class="section-title">Particle Physics</div>
+<div class="tabs" id="particle-tabs">
+  <button class="sel" data-ptype="off">Off</button>
+  <button data-ptype="leaf">Leaves</button>
+  <button data-ptype="snow">Snow</button>
+</div>
+<div class="c"><label>Spawn Rate<span class="v" id="d-pRate">50</span></label><input type="range" id="s-pRate" min="0" max="100" value="50"></div>
+<div class="c"><label>Wind Force<span class="v" id="d-pWind">30</span></label><input type="range" id="s-pWind" min="0" max="100" value="30"></div>
+<div class="c"><label>Particle Count<span class="v" id="d-pCount">0</span></label></div>
+<div style="font-size:9px;color:#666;margin-top:4px">Click canvas to disturb particles</div>
+</div>
+
 <h2>Options</h2>
 <div class="c"><label><input type="checkbox" id="s-anim" checked> Animation Active</label></div>
 
@@ -159,6 +173,7 @@ canvas.vectoring{cursor:cell!important}
   </div>
 </div>
 
+<script src="particle_sim.js"></script>
 <script>
 // ============================================================
 // GAIME Shader Editor v5.0 — All PR #56-#66 findings fixed:
@@ -971,5 +986,73 @@ try {
     });
   }
 } catch(e) { /* localStorage unavailable */ }
+
+// ============================================================
+// PARTICLE SYSTEM INTEGRATION
+// ============================================================
+const particleSys = new ParticleSystem(uiCanvas, matCanvas, flowCanvas);
+
+// Particle type switching
+document.querySelectorAll('#particle-tabs button').forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll('#particle-tabs button').forEach(b => b.classList.remove('sel'));
+    btn.classList.add('sel');
+    const ptype = btn.dataset.ptype;
+    if (ptype === 'off') {
+      particleSys.config.enabled = false;
+    } else {
+      particleSys.config.enabled = true;
+      particleSys.config.type = ptype;
+      // Rebuild maps when switching
+      if (particleSys.width > 0) {
+        particleSys.buildCollisionMap();
+        particleSys.findSpawnZones();
+      }
+    }
+  };
+});
+
+// Click to disturb
+canvas.addEventListener('click', (e) => {
+  if (!particleSys.config.enabled) return;
+  if (activeTool !== 'none') return; // don't interfere with painting
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  const cx = (e.clientX - rect.left) * scaleX;
+  const cy = (e.clientY - rect.top) * scaleY;
+  particleSys.disturb(cx, cy, 40, 3.0);
+});
+
+// Hook into existing render loop — inject particle update after WebGL draw
+const originalRender = render;
+// Patch: add particle update to animation frame
+function particleFrame() {
+  // Sync particle config with editor sliders
+  particleSys.config.windX = (gv('s-wind', 100) - 0.5) * 2.0;
+  particleSys.config.windStrength = gv('s-pWind', 100);
+  particleSys.config.season = gv('s-season', 100);
+  particleSys.config.wetness = gv('s-wetness', 100);
+  particleSys.config.cold = gv('s-cold', 100);
+  particleSys.config.age = gv('s-age', 100);
+
+  // Resize if canvas changed
+  if (particleSys.width !== canvas.width || particleSys.height !== canvas.height) {
+    if (canvas.width > 10 && canvas.height > 10) {
+      particleSys.resize(canvas.width, canvas.height);
+    }
+  }
+
+  // Update and render particles
+  particleSys.update();
+  particleSys.render();
+
+  // Update particle count display
+  const countEl = document.getElementById('d-pCount');
+  if (countEl) countEl.textContent = particleSys.particles.length;
+
+  requestAnimationFrame(particleFrame);
+}
+requestAnimationFrame(particleFrame);
 </script>
 </body></html>
