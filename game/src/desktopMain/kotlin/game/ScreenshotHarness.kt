@@ -121,6 +121,8 @@ fun main() {
     captureShaderCaustic()
     captureShaderWetSurface()
     captureShaderDecay()
+    // Weather composition triptych (same image, 3 weather states)
+    captureWeatherTriptych()
 }
 
 private fun captureWorld(config: MapConfig, name: String, withDialog: Boolean) {
@@ -2638,5 +2640,91 @@ private fun captureShaderDecay() {
         bg.filter = decay
 
         save("shader_decay_moss")
+    }
+}
+
+// =============================================================================
+// Weather Composition — same image, 3 states (sun / rain / storm)
+// Proves: "Zeit wirkt auf Materie" via shader composition alone.
+// =============================================================================
+
+private fun captureWeatherTriptych() {
+    val bgPath = "assets/HD/backgrounds/landscapes/28-19_1.png"
+
+    // State 1: Sunny (no weather effects)
+    korgeScreenshotTest(Size(2560.0, 1440.0)) {
+        val bgBitmap = resourcesVfs[bgPath].readBitmap()
+        val bg = image(bgBitmap)
+        bg.smoothing = true
+        // No filters — pristine sunny day
+        save("weather_sun")
+    }
+
+    // State 2: Rain (moderate wetness + fog + slight darkening + caustics on puddles)
+    korgeScreenshotTest(Size(2560.0, 1440.0)) {
+        val bgBitmap = resourcesVfs[bgPath].readBitmap()
+        val worldLayer = container {}
+        addChild(worldLayer)
+        val bg = worldLayer.image(bgBitmap)
+        bg.smoothing = true
+
+        val effects = game.shader.ShaderEffects()
+        // Wet surface: 60% soaked
+        effects.wetSurfaceFilter.wetness = 0.6f
+        effects.wetSurfaceFilter.time = 2.0f
+        effects.enable(worldLayer, effects.wetSurfaceFilter)
+        // Fog: light mist
+        effects.fogFilter.density = 0.2f
+        effects.fogFilter.time = 1.5f
+        effects.enable(worldLayer, effects.fogFilter)
+        // Rain particles
+        effects.rainFilter.intensity = 0.5f
+        effects.rainFilter.time = 3.0f
+        effects.enable(worldLayer, effects.rainFilter)
+        // Slight darkening via lighting (overcast sky)
+        effects.lightingFilter.ambientDarkness = 0.6f
+        effects.lightingFilter.time = 2.0f
+        effects.enable(worldLayer, effects.lightingFilter)
+        // Caustics on wet ground
+        effects.causticFilter.intensity = 0.15f
+        effects.causticFilter.time = 2.5f
+        effects.causticFilter.scale = 60f
+        effects.enable(worldLayer, effects.causticFilter)
+
+        save("weather_rain")
+    }
+
+    // State 3: Storm (heavy wetness + dense fog + strong darkening + caustics + rain)
+    korgeScreenshotTest(Size(2560.0, 1440.0)) {
+        val bgBitmap = resourcesVfs[bgPath].readBitmap()
+        val worldLayer = container {}
+        addChild(worldLayer)
+        val bg = worldLayer.image(bgBitmap)
+        bg.smoothing = true
+
+        val effects = game.shader.ShaderEffects()
+        // Heavy wetness
+        effects.wetSurfaceFilter.wetness = 0.95f
+        effects.wetSurfaceFilter.time = 4.0f
+        effects.enable(worldLayer, effects.wetSurfaceFilter)
+        // Dense fog
+        effects.fogFilter.density = 0.45f
+        effects.fogFilter.time = 3.0f
+        effects.enable(worldLayer, effects.fogFilter)
+        // Heavy rain
+        effects.rainFilter.intensity = 0.9f
+        effects.rainFilter.time = 5.0f
+        effects.enable(worldLayer, effects.rainFilter)
+        // Strong darkening (storm clouds)
+        effects.lightingFilter.ambientDarkness = 0.35f
+        effects.lightingFilter.time = 4.0f
+        effects.enable(worldLayer, effects.lightingFilter)
+        // Strong caustics (deep puddles reflecting)
+        effects.causticFilter.intensity = 0.3f
+        effects.causticFilter.time = 4.5f
+        effects.causticFilter.scale = 45f
+        effects.enable(worldLayer, effects.causticFilter)
+
+        save("weather_storm")
     }
 }
