@@ -63,3 +63,22 @@ Die Architektur-Spine für Pfeiler 2 steht. Ab jetzt kostet "ein System sichtbar
 > 1 WorldSystem (core, getestet) + 1 GridOverlay-Konfig + 1 Registry-Zeile.
 
 **Bestätigt.** Das ist Pfeiler 2.
+
+## Integration-Review (Claude)
+
+Verifiziert, nicht nur Behauptungen vertraut:
+- `:core:desktopTest` + `:game`/`:composeApp`-Compile + `:game:screenshot` **grün**, neue
+  `WaterSystemTest`/`DrunkSystemTest` laufen mit.
+- **PNGs angesehen** (Skill „render ≠ logic"): `unified_systems` zeigt **sichtbare Pfützen
+  im Unified Runtime** (WaterSystem → GridOverlay → SystemRegistry) — die erste Physik in
+  DoodleWorldScene. Regressionsprobe (`spring_approach`/`autumn_approach`/`world_rain_puddles`/
+  `material_fatigue`) angesehen: gleiche Farben/Hues, **kein visueller Regress**.
+- **Saubere Engineering-Entscheidung von Kiro:** 7/8 Overlays → `GridOverlay`; `MaterialFatigueOverlay`
+  bleibt manuell, weil Risse orientierte Linien sind (H/V), kein gefülltes-Zellen-Modell. Korrekt —
+  nicht alles in GridOverlay pressen.
+- Scope sauber, **keine** Out-of-Scope-Dateien, B007 intakt.
+
+Architektur im `gaime-shaders`-Skill festgehalten (WorldSystem/WorldContext + GridOverlay +
+SystemRegistry) — damit Pfeiler 2 das Muster nutzt, nicht neu erfindet.
+
+Gallery: `docs/screenshots/step15-unified-systems.png`.

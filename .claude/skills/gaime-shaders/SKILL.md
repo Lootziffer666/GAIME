@@ -71,6 +71,28 @@ A `Container` has exactly ONE `filter`. `target.filter = x` followed by
   character layer doodled). This is how the render vision works.
 - The legacy `attach*` helpers still exist as single-filter convenience wrappers.
 
+## WorldSystem + GridOverlay architecture (Step 15 — use this, don't re-derive)
+
+The system spine that Pfeiler 2+ builds on. A "system" = simulation in `:core` +
+rendering in `:game`, joined by a registry. Adding a new visible physics system is
+now **1 `WorldSystem` + 1 `GridOverlay` config + 1 `registry.register(...)` line.**
+
+- **`:core` `rpg.systems`** — `WorldSystem { val id; fun tick(dt, ctx) }` (pure, tested);
+  `WorldContext` (slim: player/inventory/playerCell/isIdle — the only state systems may
+  touch). Logic that needs no screen lives HERE (e.g. `DrunkSystem` owns `DrunkState`,
+  applies HP/gold via `ctx`). Renderer reads system state via system-specific accessors.
+- **`:game` `game.overlay.GridOverlay`** — the ONE generic grid renderer. Replaced 8
+  near-identical `*Overlay` files. Params: `sizeFraction` (1=full cell, 0.5=centered half)
+  + `colorOf:(value,wx,wy)->RGBA?` (null skips). `update(w,h,offX,offY, valueAt)` does
+  pooling + placement + the alpha floor. The 8 overlays are now ~10-line configs that keep
+  their old public API (`ctor(parent,tw,th)` + `update(grid)`) so callers compile unchanged.
+  - **Two passes for multi-rect cells** (e.g. SpringOverlay flowers + blossoms) = two
+    `GridOverlay`s. **Oriented/line shapes don't fit** the filled-cell model — `MaterialFatigueOverlay`
+    (cracks with H/V orientation) correctly stays manual. Don't force everything into GridOverlay.
+- **`:game` `game.systems.SystemRegistry`** — holds `(WorldSystem, render?)` pairs;
+  `tickAll(dt,ctx)` then `renderAll()` each frame. Overlays go in `worldLayer` (scroll with
+  camera), never the scene root. `registry.get<T>(id)` to read a system's state for shaders.
+
 ## Rendering state overlays (the Step 7d/8/9 recurring bug)
 
 `*Overlay` draws rects from a `:core` grid (`WaterOverlay.kt` is the reference).
