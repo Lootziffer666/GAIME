@@ -55,3 +55,5 @@ Thumbs.db
 .extracted/
 tools/mapbuilder/__pycache__/
 graphify-out/
+.tmp
+node_modules
