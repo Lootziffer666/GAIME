@@ -117,6 +117,10 @@ fun main() {
     // Step 17: Figures via normalized sheets
     captureFiguresTavern()
     captureFiguresMarkerCheck()
+    // Shader palette expansion
+    captureShaderCaustic()
+    captureShaderWetSurface()
+    captureShaderDecay()
 }
 
 private fun captureWorld(config: MapConfig, name: String, withDialog: Boolean) {
@@ -2587,5 +2591,52 @@ private fun captureFiguresMarkerCheck() {
         HudOverlay(this, hero, Inventory(initialGold = 50), "MARKER CHECK (baked-in bg)")
 
         save("figures_marker_check")
+    }
+}
+
+// =============================================================================
+// Shader Palette Expansion — Caustic, WetSurface, Decay
+// =============================================================================
+
+private fun captureShaderCaustic() {
+    korgeScreenshotTest(Size(2560.0, 1440.0)) {
+        // Use a landscape image as base
+        val bgBitmap = resourcesVfs["assets/HD/backgrounds/landscapes/28-19_1.png"].readBitmap()
+        val bg = image(bgBitmap)
+        bg.smoothing = true
+
+        // Apply caustic filter (underwater light dance)
+        val caustic = game.shader.CausticFilter(time = 3.0f, intensity = 0.4f, scale = 50f, speed = 1.5f)
+        bg.filter = caustic
+
+        save("shader_caustic")
+    }
+}
+
+private fun captureShaderWetSurface() {
+    korgeScreenshotTest(Size(2560.0, 1440.0)) {
+        val bgBitmap = resourcesVfs["assets/HD/backgrounds/landscapes/28-21_2.png"].readBitmap()
+        val bg = image(bgBitmap)
+        bg.smoothing = true
+
+        // Apply wet surface (heavy rain)
+        val wet = game.shader.WetSurfaceFilter(time = 2.0f, wetness = 0.8f, specularStrength = 0.5f)
+        bg.filter = wet
+
+        save("shader_wet_surface")
+    }
+}
+
+private fun captureShaderDecay() {
+    korgeScreenshotTest(Size(2560.0, 1440.0)) {
+        val bgBitmap = resourcesVfs["assets/HD/backgrounds/landscapes/28-22_3.png"].readBitmap()
+        val bg = image(bgBitmap)
+        bg.smoothing = true
+
+        // Apply decay: moss (type=1) at 60% coverage
+        val decay = game.shader.DecayFilter(time = 0f, decayLevel = 0.6f, decayType = 1)
+        bg.filter = decay
+
+        save("shader_decay_moss")
     }
 }
