@@ -13,14 +13,16 @@ canvas{max-width:100%;max-height:100%;display:block}
 h2{color:#00d4aa;margin:10px 0 4px;font-size:12px;text-transform:uppercase;border-top:1px solid #333;padding-top:8px}
 h2:first-child{border-top:none}
 .c{margin:3px 0 6px}
-.c label{display:flex;justify-content:space-between;font-size:10px;color:#999;margin-bottom:1px}
+.c label{display:flex;justify-content:space-between;align-items:center;font-size:10px;color:#999;margin-bottom:1px}
 .c input[type=range]{width:100%;height:16px}
+.c input[type=color]{width:50px;height:24px;border:1px solid #555;cursor:pointer;background:#000}
 .c .v{color:#00d4aa}
 button{background:#00d4aa;color:#1a1a2e;border:none;padding:6px 12px;cursor:pointer;font-weight:bold;margin:3px 2px;border-radius:3px;font-size:11px}
 button:hover{background:#00ffcc}
 input[type=file]{font-size:10px;width:100%;margin:3px 0}
-select{background:#0d1b2a;color:#e0e0e0;border:1px solid #333;padding:3px;width:100%;font-size:11px}
 #title{color:#00d4aa;font-size:14px;font-weight:bold;margin-bottom:8px}
+.color-row{display:flex;align-items:center;gap:8px;margin:4px 0}
+.color-row label{flex:1;font-size:10px;color:#999}
 @media(max-width:700px){#sidebar{width:100%;height:50vh;order:2}#canvas-wrap{height:50vh;order:1}body{flex-direction:column}}
 </style>
 </head>
@@ -33,26 +35,26 @@ select{background:#0d1b2a;color:#e0e0e0;border:1px solid #333;padding:3px;width:
 <h2>Weather</h2>
 <div class="c"><label>Rain Intensity<span class="v" id="d-w">0.00</span></label><input type="range" id="s-w" min="0" max="100" value="0"></div>
 <div class="c"><label>Wind<span class="v" id="d-wind">0.30</span></label><input type="range" id="s-wind" min="0" max="100" value="30"></div>
-<div class="c"><label><input type="checkbox" id="s-anim" checked> Auto-animate time</label></div>
+<div class="c"><label><input type="checkbox" id="s-anim" checked> Auto-animate</label></div>
 
-<h2>Material Transforms</h2>
-<div class="c"><label>Roof slope<span class="v" id="d-ra">0.17</span></label><input type="range" id="s-ra" min="0" max="100" value="17"></div>
-<div class="c"><label>Roof offset<span class="v" id="d-rb">0.13</span></label><input type="range" id="s-rb" min="0" max="50" value="13"></div>
-<div class="c"><label>Stone slope<span class="v" id="d-sa">0.20</span></label><input type="range" id="s-sa" min="0" max="100" value="20"></div>
-<div class="c"><label>Stone offset<span class="v" id="d-sb">0.15</span></label><input type="range" id="s-sb" min="0" max="50" value="15"></div>
-<div class="c"><label>Grass slope<span class="v" id="d-ga">0.09</span></label><input type="range" id="s-ga" min="0" max="100" value="9"></div>
-<div class="c"><label>Grass offset<span class="v" id="d-gb">0.17</span></label><input type="range" id="s-gb" min="0" max="50" value="17"></div>
-<div class="c"><label>Wood slope<span class="v" id="d-wa">0.08</span></label><input type="range" id="s-wa" min="0" max="100" value="8"></div>
-<div class="c"><label>Wood offset<span class="v" id="d-wb">0.20</span></label><input type="range" id="s-wb" min="0" max="50" value="20"></div>
-<div class="c"><label>Foliage slope<span class="v" id="d-fa">0.01</span></label><input type="range" id="s-fa" min="0" max="100" value="1"></div>
-<div class="c"><label>Foliage offset<span class="v" id="d-fb">0.25</span></label><input type="range" id="s-fb" min="0" max="50" value="25"></div>
+<h2>Material Wet Colors</h2>
+<div class="color-row"><label>Roof</label><input type="color" id="c-roof" value="#542E1E"></div>
+<div class="color-row"><label>Stone</label><input type="color" id="c-stone" value="#4A4540"></div>
+<div class="color-row"><label>Grass</label><input type="color" id="c-grass" value="#2D4524"></div>
+<div class="color-row"><label>Wood</label><input type="color" id="c-wood" value="#2E1910"></div>
+<div class="color-row"><label>Foliage</label><input type="color" id="c-fol" value="#1A2E16"></div>
+<div class="color-row"><label>Window glow</label><input type="color" id="c-win" value="#D99441"></div>
+<div class="color-row"><label>Puddle</label><input type="color" id="c-pud" value="#2B2A29"></div>
+<div class="color-row"><label>Puddle highlight</label><input type="color" id="c-pudhi" value="#8C8782"></div>
+<div class="color-row"><label>Fog</label><input type="color" id="c-fog" value="#707880"></div>
 
 <h2>Effects</h2>
 <div class="c"><label>Puddles<span class="v" id="d-pud">0.55</span></label><input type="range" id="s-pud" min="0" max="100" value="55"></div>
-<div class="c"><label>Fog<span class="v" id="d-fog">0.25</span></label><input type="range" id="s-fog" min="0" max="100" value="25"></div>
+<div class="c"><label>Fog density<span class="v" id="d-fog">0.25</span></label><input type="range" id="s-fog" min="0" max="100" value="25"></div>
 <div class="c"><label>Window Glow<span class="v" id="d-glow">0.70</span></label><input type="range" id="s-glow" min="0" max="100" value="70"></div>
 <div class="c"><label>Rain Streaks<span class="v" id="d-rain">0.20</span></label><input type="range" id="s-rain" min="0" max="100" value="20"></div>
 <div class="c"><label>Shadow Lift<span class="v" id="d-shad">0.12</span></label><input type="range" id="s-shad" min="0" max="50" value="12"></div>
+<div class="c"><label>Rivulets<span class="v" id="d-riv">0.12</span></label><input type="range" id="s-riv" min="0" max="100" value="12"></div>
 
 <h2>Time / Decay</h2>
 <div class="c"><label>Age<span class="v" id="d-age">0.00</span></label><input type="range" id="s-age" min="0" max="100" value="0"></div>
@@ -64,75 +66,89 @@ select{background:#0d1b2a;color:#e0e0e0;border:1px solid #333;padding:3px;width:
 <button id="btn-json">Save Params</button>
 </div>
 <div id="canvas-wrap"><canvas id="gl"></canvas></div>
+
 <script>
 const VS=`attribute vec2 a_pos;varying vec2 v_uv;void main(){v_uv=a_pos*0.5+0.5;v_uv.y=1.0-v_uv.y;gl_Position=vec4(a_pos,0,1);}`;
 const FS=`precision highp float;
 varying vec2 v_uv;
 uniform sampler2D u_scene,u_mat;
 uniform float u_time,u_weather,u_wind,u_hasMat;
-uniform float u_ra,u_rb,u_sa,u_sb,u_ga,u_gb,u_wa2,u_wb2,u_fa,u_fb;
-uniform float u_pud,u_fog,u_glow,u_rain,u_shad;
+uniform vec3 u_cRoof,u_cStone,u_cGrass,u_cWood,u_cFol,u_cWin,u_cPud,u_cPudHi,u_cFog;
+uniform float u_pud,u_fog,u_glow,u_rain,u_shad,u_riv;
 uniform float u_age,u_moss,u_inv;
 
 void main(){
   vec2 uv=v_uv;
   vec4 orig=texture2D(u_scene,uv);
-  float r=orig.r,g=orig.g,b=orig.b;
-  // Material map
+  vec3 dry=orig.rgb;
+  float r=dry.r,g=dry.g,b=dry.b;
+
+  // === MATERIAL MAP ===
   vec4 ms=texture2D(u_mat,uv);
   float matId=floor(ms.r*7.0+0.5);
   float flowAng=ms.g*6.2832;
   float bCh=ms.b;
   float dripInt=clamp(bCh/0.71,0.0,1.0)*step(bCh,0.75);
   float isWin=step(0.8,bCh)*step(bCh,0.92)*u_hasMat;
-  // Masks
+
   float mG=step(matId,0.5)*u_hasMat;
   float mS=step(0.5,matId)*step(matId,1.5)*u_hasMat;
   float mW=step(1.5,matId)*step(matId,2.5)*u_hasMat;
   float mR=step(2.5,matId)*step(matId,3.5)*u_hasMat;
   float mF=step(3.5,matId)*step(matId,4.5)*u_hasMat;
   float noMat=1.0-u_hasMat;
-  // Empirical transforms: wet = a*dry + b
-  float roofR=r*u_ra+u_rb, roofG=g*(u_ra+0.12)+u_rb-0.06, roofB=b*0.70-0.04;
-  float grassR=r*u_ga+u_gb, grassG=g*(u_ga+0.01)+(u_gb+0.04), grassB=b*0.22+0.15;
-  float folR=max(r*(-0.19)+u_fb-0.01,0.0), folG=g*u_fa+u_fb, folB=b*0.06+0.22;
-  float woodR=r*u_wa2+u_wb2, woodG=g*(u_wa2+0.06)+(u_wb2-0.03), woodB=b*0.15+0.15;
-  float stoneR=r*u_sa+u_sb, stoneG=g*(u_sa+0.05)+(u_sb-0.03), stoneB=b*0.35+0.10;
-  float fallR=r*0.19+0.17, fallG=g*0.22+0.17, fallB=b*0.34+0.13;
-  // Blend
-  float wetR=fallR,wetG=fallG,wetB=fallB;
-  wetR=mix(wetR,roofR,mR);wetG=mix(wetG,roofG,mR);wetB=mix(wetB,roofB,mR);
-  wetR=mix(wetR,grassR,mG);wetG=mix(wetG,grassG,mG);wetB=mix(wetB,grassB,mG);
-  wetR=mix(wetR,folR,mF);wetG=mix(wetG,folG,mF);wetB=mix(wetB,folB,mF);
-  wetR=mix(wetR,woodR,mW);wetG=mix(wetG,woodG,mW);wetB=mix(wetB,woodB,mW);
-  wetR=mix(wetR,stoneR,mS);wetG=mix(wetG,stoneG,mS);wetB=mix(wetB,stoneB,mS);
-  // Shadow lift
+
+  // === COLOR TRANSFORM ===
+  // Per material: mix original toward the user-chosen wet color
+  // Preserve texture detail by using pixel luminance as brightness modulator
   float lum=r*0.299+g*0.587+b*0.114;
-  float lift=(1.0-lum)*u_weather*u_shad;
-  float fR=mix(r,wetR,u_weather)+lift;
-  float fG=mix(g,wetG,u_weather)+lift;
-  float fB=mix(b,wetB,u_weather)+lift;
-  // Puddles
+  float relBr=clamp(lum*2.5,0.3,1.5);
+
+  vec3 wetRoof=u_cRoof*relBr;
+  vec3 wetStone=u_cStone*relBr;
+  vec3 wetGrass=u_cGrass*relBr;
+  vec3 wetWood=u_cWood*relBr;
+  vec3 wetFol=u_cFol*relBr;
+
+  // Build wet target per pixel based on material
+  vec3 wet=dry*0.6; // fallback: just darken
+  wet=mix(wet,wetRoof,mR);
+  wet=mix(wet,wetStone,mS);
+  wet=mix(wet,wetGrass,mG);
+  wet=mix(wet,wetWood,mW);
+  wet=mix(wet,wetFol,mF);
+
+  float w=u_weather;
+
+  // Shadow lift (overcast diffuse)
+  float lift=(1.0-lum)*w*u_shad;
+
+  // Interpolate dry → wet
+  vec3 fin=mix(dry,wet,w)+vec3(lift);
+
+  // === PUDDLES ===
   float pn=sin(uv.x*19.0+uv.y*13.0+1.7)*sin(uv.x*29.0-uv.y*7.0)+sin(uv.x*5.0+uv.y*37.0+3.1)*0.7;
   float pField=clamp(pn*0.4+0.4,0.0,1.0);
-  float pTh=mix(u_weather*u_pud,u_weather*1.3,dripInt*u_hasMat);
+  float pTh=mix(w*u_pud,w*1.3,dripInt*u_hasMat);
   float hasPud=mS*step(pField,pTh);
-  // Puddle bleed onto grass
-  float nearS=0.0;
-  float tx=4.0/1280.0;
-  nearS+=step(0.5,floor(texture2D(u_mat,uv+vec2(tx,0)).r*7.0+0.5))*step(floor(texture2D(u_mat,uv+vec2(tx,0)).r*7.0+0.5),1.5);
-  nearS+=step(0.5,floor(texture2D(u_mat,uv-vec2(tx,0)).r*7.0+0.5))*step(floor(texture2D(u_mat,uv-vec2(tx,0)).r*7.0+0.5),1.5);
-  nearS=clamp(nearS,0.0,1.0);
-  hasPud=clamp(hasPud+mG*nearS*u_hasMat*step(pField,pTh*0.8)+mG*dripInt*u_hasMat*step(pField,u_weather*0.8),0.0,1.0);
+  // Bleed onto grass
+  float tx=6.0/1280.0;
+  float nearS=clamp(
+    step(0.5,floor(texture2D(u_mat,uv+vec2(tx,0)).r*7.0+0.5))*step(floor(texture2D(u_mat,uv+vec2(tx,0)).r*7.0+0.5),1.5)+
+    step(0.5,floor(texture2D(u_mat,uv-vec2(tx,0)).r*7.0+0.5))*step(floor(texture2D(u_mat,uv-vec2(tx,0)).r*7.0+0.5),1.5)+
+    step(0.5,floor(texture2D(u_mat,uv+vec2(0,tx)).r*7.0+0.5))*step(floor(texture2D(u_mat,uv+vec2(0,tx)).r*7.0+0.5),1.5)+
+    step(0.5,floor(texture2D(u_mat,uv-vec2(0,tx)).r*7.0+0.5))*step(floor(texture2D(u_mat,uv-vec2(0,tx)).r*7.0+0.5),1.5)
+  ,0.0,1.0);
+  hasPud=clamp(hasPud+mG*nearS*u_hasMat*step(pField,pTh*0.8)+mG*dripInt*u_hasMat*step(pField,w*0.8),0.0,1.0);
+  // Puddle rendering
   float ripple=sin(uv.x*90.0+u_time*2.5)*sin(uv.y*70.0+u_time*1.8);
-  ripple=clamp(ripple*ripple,0.0,1.0)*0.08;
+  ripple=clamp(ripple*ripple,0.0,1.0)*0.1;
   float cloud=sin((uv.x+u_time*0.02)*3.0)*sin((uv.y+u_time*0.015)*2.0);
-  cloud=clamp(cloud*0.4+0.2,0.0,0.35)*0.1;
-  float pudW=hasPud*u_weather;
-  fR=mix(fR,0.12+ripple*0.2+cloud*0.4,pudW);
-  fG=mix(fG,0.14+ripple*0.25+cloud*0.45,pudW);
-  fB=mix(fB,0.18+ripple*0.35+cloud*0.5,pudW);
-  // Roof rivulets
+  cloud=clamp(cloud*0.4+0.2,0.0,0.4)*0.15;
+  vec3 pudColor=u_cPud+ripple*vec3(0.1)+cloud*u_cPudHi;
+  fin=mix(fin,pudColor,hasPud*w);
+
+  // === ROOF RIVULETS ===
   float fdx=cos(flowAng),fdy=sin(flowAng);
   float fProj=uv.x*fdx+uv.y*fdy;
   float fPerp=uv.x*(-fdy)+uv.y*fdx;
@@ -140,72 +156,64 @@ void main(){
   float isRiv=step(0.44,rivX)*step(rivX,0.56);
   float rivFlow=fract(fProj*4.0+u_time*3.5);
   float rivV=step(0.2,rivFlow)*step(rivFlow,0.7);
-  float riv=isRiv*rivV*mR*u_weather*0.12;
-  fR+=riv*0.3;fG+=riv*0.4;fB+=riv*0.6;
-  // Window glow
-  float wGlow=isWin*u_weather*u_glow;
-  fR=mix(fR,0.78,wGlow*0.7);fG=mix(fG,0.53,wGlow*0.6);fB=mix(fB,0.20,wGlow*0.5);
-  // Fog (ground only)
+  float riv=isRiv*rivV*mR*w*u_riv;
+  fin+=riv*vec3(0.3,0.4,0.6);
+
+  // === WINDOW GLOW ===
+  float wGlow=isWin*w*u_glow;
+  fin=mix(fin,u_cWin,wGlow);
+
+  // === FOG (ground only) ===
   float fogZ=clamp((uv.y-0.55)*3.0,0.0,1.0);
-  float fogD=u_weather*u_weather*fogZ*u_fog;
-  fR=mix(fR,0.45,fogD);fG=mix(fG,0.48,fogD);fB=mix(fB,0.55,fogD);
-  // Rain
-  float rainD=u_weather*u_weather*u_rain;
+  float fogD=w*w*fogZ*u_fog;
+  fin=mix(fin,u_cFog,fogD);
+
+  // === RAIN STREAKS ===
+  float rainD=w*w*u_rain;
   float rn1=step(0.993,fract(sin(uv.x*280.0+uv.y*550.0+u_time*18.0+u_wind*uv.x*140.0)*43758.5));
   float rn2=step(0.994,fract(sin(uv.x*180.0+uv.y*400.0+u_time*14.0+u_wind*uv.x*100.0+5.7)*43758.5));
   float rnT=clamp(rn1+rn2,0.0,1.0)*rainD;
-  fR+=rnT*0.5;fG+=rnT*0.6;fB+=rnT*0.8;
-  // === DECAY / AGE ===
+  fin+=rnT*vec3(0.5,0.6,0.8);
+
+  // === AGE / DECAY ===
   float age=u_age;
   // Moss on roof
   float mossN=fract(sin(uv.x*127.1+uv.y*311.7)*43758.5)*0.5+sin(uv.x*23.0+uv.y*17.0)*0.3+0.2;
   float mossActive=mR*age*u_moss*step(0.4,mossN);
-  fR=mix(fR,0.12,mossActive*0.7);fG=mix(fG,0.28,mossActive*0.5);fB=mix(fB,0.08,mossActive*0.6);
+  fin=mix(fin,vec3(0.12,0.28,0.08),mossActive*0.7);
   // Grass invasion on stone
   float invN=fract(sin(uv.x*97.0+uv.y*53.0)*43758.5)*0.5+sin(uv.x*11.0-uv.y*7.0)*0.3+0.2;
   float invActive=mS*age*u_inv*step(0.35,invN);
-  fR=mix(fR,0.08,invActive*0.6);fG=mix(fG,0.22,invActive*0.5);fB=mix(fB,0.05,invActive*0.6);
-  // Wood darkening with age
+  fin=mix(fin,vec3(0.08,0.22,0.05),invActive*0.6);
+  // Wood darkening
   float woodAge=mW*age*0.5;
-  fR=mix(fR,fR*0.5,woodAge);fG=mix(fG,fG*0.6+0.02,woodAge);fB=mix(fB,fB*0.4,woodAge);
+  fin=mix(fin,fin*vec3(0.5,0.6,0.4),woodAge);
+
   // No-map fallback
-  fR=mix(fR,r*(1.0-u_weather*0.4),noMat*u_weather);
-  fG=mix(fG,g*(1.0-u_weather*0.4),noMat*u_weather);
-  fB=mix(fB,b*(1.0-u_weather*0.35),noMat*u_weather);
-  gl_FragColor=vec4(clamp(fR,0.0,1.0),clamp(fG,0.0,1.0),clamp(fB,0.0,1.0),1.0);
+  fin=mix(fin,dry*(1.0-w*0.4),vec3(noMat*w));
+
+  gl_FragColor=vec4(clamp(fin,0.0,1.0),1.0);
 }`;
 
-// WebGL setup
 const canvas=document.getElementById('gl');
 const gl=canvas.getContext('webgl',{preserveDrawingBuffer:true});
 if(!gl){document.body.innerHTML='<h1 style="color:red;padding:20px">WebGL not supported</h1>';}
 
-function compileShader(src,type){
-  const s=gl.createShader(type);
-  gl.shaderSource(s,src);gl.compileShader(s);
-  if(!gl.getShaderParameter(s,gl.COMPILE_STATUS)){console.error(gl.getShaderInfoLog(s));return null;}
-  return s;
-}
-const vs=compileShader(VS,gl.VERTEX_SHADER);
-const fs=compileShader(FS,gl.FRAGMENT_SHADER);
+function compile(src,type){const s=gl.createShader(type);gl.shaderSource(s,src);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS)){console.error(gl.getShaderInfoLog(s));return null;}return s;}
 const prog=gl.createProgram();
-gl.attachShader(prog,vs);gl.attachShader(prog,fs);gl.linkProgram(prog);
+gl.attachShader(prog,compile(VS,gl.VERTEX_SHADER));
+gl.attachShader(prog,compile(FS,gl.FRAGMENT_SHADER));
+gl.linkProgram(prog);
 if(!gl.getProgramParameter(prog,gl.LINK_STATUS))console.error(gl.getProgramInfoLog(prog));
 gl.useProgram(prog);
 
-// Fullscreen quad
-const buf=gl.createBuffer();
-gl.bindBuffer(gl.ARRAY_BUFFER,buf);
+const buf=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,buf);
 gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),gl.STATIC_DRAW);
 const aPos=gl.getAttribLocation(prog,'a_pos');
-gl.enableVertexAttribArray(aPos);
-gl.vertexAttribPointer(aPos,2,gl.FLOAT,false,0,0);
+gl.enableVertexAttribArray(aPos);gl.vertexAttribPointer(aPos,2,gl.FLOAT,false,0,0);
 
-// Textures
 function createTex(unit){
-  const t=gl.createTexture();
-  gl.activeTexture(gl.TEXTURE0+unit);
-  gl.bindTexture(gl.TEXTURE_2D,t);
+  const t=gl.createTexture();gl.activeTexture(gl.TEXTURE0+unit);gl.bindTexture(gl.TEXTURE_2D,t);
   gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);
   gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
   gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.NEAREST);
@@ -213,83 +221,77 @@ function createTex(unit){
   gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,1,1,0,gl.RGBA,gl.UNSIGNED_BYTE,new Uint8Array([128,128,128,255]));
   return t;
 }
-const sceneTex=createTex(0);
-const matTex=createTex(1);
+const sceneTex=createTex(0),matTex=createTex(1);
 gl.uniform1i(gl.getUniformLocation(prog,'u_scene'),0);
 gl.uniform1i(gl.getUniformLocation(prog,'u_mat'),1);
 
-// Uniform locations
 const U={};
-['u_time','u_weather','u_wind','u_hasMat','u_ra','u_rb','u_sa','u_sb','u_ga','u_gb',
- 'u_wa2','u_wb2','u_fa','u_fb','u_pud','u_fog','u_glow','u_rain','u_shad','u_age','u_moss','u_inv'
+['u_time','u_weather','u_wind','u_hasMat',
+ 'u_pud','u_fog','u_glow','u_rain','u_shad','u_riv',
+ 'u_age','u_moss','u_inv',
+ 'u_cRoof','u_cStone','u_cGrass','u_cWood','u_cFol','u_cWin','u_cPud','u_cPudHi','u_cFog'
 ].forEach(n=>U[n]=gl.getUniformLocation(prog,n));
 
-let hasMat=0,time=0,lastT=0;
-let sceneLoaded=false;
+let hasMat=0,time=0,lastT=0,sceneLoaded=false;
 
-function loadImage(file,unit,tex,cb){
+function loadImage(file,unit,tex){
   const img=new Image();
   img.onload=()=>{
-    gl.activeTexture(gl.TEXTURE0+unit);
-    gl.bindTexture(gl.TEXTURE_2D,tex);
+    gl.activeTexture(gl.TEXTURE0+unit);gl.bindTexture(gl.TEXTURE_2D,tex);
     gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,img);
     if(unit===0){canvas.width=img.width;canvas.height=img.height;gl.viewport(0,0,img.width,img.height);sceneLoaded=true;}
     if(unit===1)hasMat=1;
-    if(cb)cb();
   };
   img.src=URL.createObjectURL(file);
 }
-
 document.getElementById('f-scene').onchange=e=>{if(e.target.files[0])loadImage(e.target.files[0],0,sceneTex);};
 document.getElementById('f-mat').onchange=e=>{if(e.target.files[0])loadImage(e.target.files[0],1,matTex);};
 
-// Slider → uniform mapping
-const sliders=[
-  ['s-w','d-w',100,'u_weather'],['s-wind','d-wind',100,'u_wind'],
-  ['s-ra','d-ra',100,'u_ra'],['s-rb','d-rb',50,'u_rb'],
-  ['s-sa','d-sa',100,'u_sa'],['s-sb','d-sb',50,'u_sb'],
-  ['s-ga','d-ga',100,'u_ga'],['s-gb','d-gb',50,'u_gb'],
-  ['s-wa','d-wa',100,'u_wa2'],['s-wb','d-wb',50,'u_wb2'],
-  ['s-fa','d-fa',100,'u_fa'],['s-fb','d-fb',50,'u_fb'],
-  ['s-pud','d-pud',100,'u_pud'],['s-fog','d-fog',100,'u_fog'],
-  ['s-glow','d-glow',100,'u_glow'],['s-rain','d-rain',100,'u_rain'],
-  ['s-shad','d-shad',50,'u_shad'],
-  ['s-age','d-age',100,'u_age'],['s-moss','d-moss',100,'u_moss'],['s-inv','d-inv',100,'u_inv'],
-];
+function hexToRGB(hex){const h=hex.replace('#','');return[parseInt(h.substr(0,2),16)/255,parseInt(h.substr(2,2),16)/255,parseInt(h.substr(4,2),16)/255];}
+function getSlider(id,div){return parseInt(document.getElementById(id).value)/div;}
 
-function getVal(id,div){return parseInt(document.getElementById(id).value)/div;}
-function updateDisplays(){sliders.forEach(([sid,did,div])=>{document.getElementById(did).textContent=(getVal(sid,div)).toFixed(2);});}
+const sliders=[['s-w','d-w',100],['s-wind','d-wind',100],['s-pud','d-pud',100],['s-fog','d-fog',100],['s-glow','d-glow',100],['s-rain','d-rain',100],['s-shad','d-shad',50],['s-riv','d-riv',100],['s-age','d-age',100],['s-moss','d-moss',100],['s-inv','d-inv',100]];
+function updateDisplays(){sliders.forEach(([sid,did,div])=>{document.getElementById(did).textContent=getSlider(sid,div).toFixed(2);});}
 sliders.forEach(([sid])=>{document.getElementById(sid).oninput=updateDisplays;});
 updateDisplays();
 
 function render(now){
-  if(!lastT)lastT=now;
-  const dt=(now-lastT)/1000;lastT=now;
+  if(!lastT)lastT=now;const dt=(now-lastT)/1000;lastT=now;
   if(document.getElementById('s-anim').checked)time+=dt;
   if(!sceneLoaded){requestAnimationFrame(render);return;}
 
   gl.uniform1f(U.u_time,time);
-  gl.uniform1f(U.u_weather,getVal('s-w',100));
-  gl.uniform1f(U.u_wind,getVal('s-wind',100));
+  gl.uniform1f(U.u_weather,getSlider('s-w',100));
+  gl.uniform1f(U.u_wind,getSlider('s-wind',100));
   gl.uniform1f(U.u_hasMat,hasMat);
-  gl.uniform1f(U.u_ra,getVal('s-ra',100));
-  gl.uniform1f(U.u_rb,getVal('s-rb',50));
-  gl.uniform1f(U.u_sa,getVal('s-sa',100));
-  gl.uniform1f(U.u_sb,getVal('s-sb',50));
-  gl.uniform1f(U.u_ga,getVal('s-ga',100));
-  gl.uniform1f(U.u_gb,getVal('s-gb',50));
-  gl.uniform1f(U.u_wa2,getVal('s-wa',100));
-  gl.uniform1f(U.u_wb2,getVal('s-wb',50));
-  gl.uniform1f(U.u_fa,getVal('s-fa',100));
-  gl.uniform1f(U.u_fb,getVal('s-fb',50));
-  gl.uniform1f(U.u_pud,getVal('s-pud',100));
-  gl.uniform1f(U.u_fog,getVal('s-fog',100));
-  gl.uniform1f(U.u_glow,getVal('s-glow',100));
-  gl.uniform1f(U.u_rain,getVal('s-rain',100));
-  gl.uniform1f(U.u_shad,getVal('s-shad',50));
-  gl.uniform1f(U.u_age,getVal('s-age',100));
-  gl.uniform1f(U.u_moss,getVal('s-moss',100));
-  gl.uniform1f(U.u_inv,getVal('s-inv',100));
+  gl.uniform1f(U.u_pud,getSlider('s-pud',100));
+  gl.uniform1f(U.u_fog,getSlider('s-fog',100));
+  gl.uniform1f(U.u_glow,getSlider('s-glow',100));
+  gl.uniform1f(U.u_rain,getSlider('s-rain',100));
+  gl.uniform1f(U.u_shad,getSlider('s-shad',50));
+  gl.uniform1f(U.u_riv,getSlider('s-riv',100));
+  gl.uniform1f(U.u_age,getSlider('s-age',100));
+  gl.uniform1f(U.u_moss,getSlider('s-moss',100));
+  gl.uniform1f(U.u_inv,getSlider('s-inv',100));
+
+  const cr=hexToRGB(document.getElementById('c-roof').value);
+  const cs=hexToRGB(document.getElementById('c-stone').value);
+  const cg=hexToRGB(document.getElementById('c-grass').value);
+  const cw=hexToRGB(document.getElementById('c-wood').value);
+  const cf=hexToRGB(document.getElementById('c-fol').value);
+  const cwi=hexToRGB(document.getElementById('c-win').value);
+  const cp=hexToRGB(document.getElementById('c-pud').value);
+  const cph=hexToRGB(document.getElementById('c-pudhi').value);
+  const cfg=hexToRGB(document.getElementById('c-fog').value);
+  gl.uniform3f(U.u_cRoof,cr[0],cr[1],cr[2]);
+  gl.uniform3f(U.u_cStone,cs[0],cs[1],cs[2]);
+  gl.uniform3f(U.u_cGrass,cg[0],cg[1],cg[2]);
+  gl.uniform3f(U.u_cWood,cw[0],cw[1],cw[2]);
+  gl.uniform3f(U.u_cFol,cf[0],cf[1],cf[2]);
+  gl.uniform3f(U.u_cWin,cwi[0],cwi[1],cwi[2]);
+  gl.uniform3f(U.u_cPud,cp[0],cp[1],cp[2]);
+  gl.uniform3f(U.u_cPudHi,cph[0],cph[1],cph[2]);
+  gl.uniform3f(U.u_cFog,cfg[0],cfg[1],cfg[2]);
 
   gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
   requestAnimationFrame(render);
@@ -301,9 +303,15 @@ document.getElementById('btn-png').onclick=()=>{
   canvas.toBlob(b=>{const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='shader_output.png';a.click();},'image/png');
 };
 document.getElementById('btn-json').onclick=()=>{
-  const params={};
-  sliders.forEach(([sid,,div,uname])=>{params[uname||sid]=getVal(sid,div);});
-  params.time=time;
+  const params={weather:getSlider('s-w',100),wind:getSlider('s-wind',100),
+    puddles:getSlider('s-pud',100),fog:getSlider('s-fog',100),glow:getSlider('s-glow',100),
+    rain:getSlider('s-rain',100),shadow:getSlider('s-shad',50),rivulets:getSlider('s-riv',100),
+    age:getSlider('s-age',100),moss:getSlider('s-moss',100),invasion:getSlider('s-inv',100),
+    colors:{roof:document.getElementById('c-roof').value,stone:document.getElementById('c-stone').value,
+      grass:document.getElementById('c-grass').value,wood:document.getElementById('c-wood').value,
+      foliage:document.getElementById('c-fol').value,window:document.getElementById('c-win').value,
+      puddle:document.getElementById('c-pud').value,puddleHighlight:document.getElementById('c-pudhi').value,
+      fog:document.getElementById('c-fog').value}};
   const blob=new Blob([JSON.stringify(params,null,2)],{type:'application/json'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='shader_params.json';a.click();
 };
