@@ -23,6 +23,12 @@ Kanonisches figurenfreies Set: `assets/HD/backgrounds/figurefree/`
   gemalten Figur derselben Skala rendern und vergleichen (Referenz:
   `docs/screenshots/quality-marker-figure-vs-baked.png`). Abweichung „zu kräftig/zu stark
   getuscht" → Linienstärke/Proportion justieren, bis sie zur gemalten Familie passt.
+  **Ist-Stand (2026-06-30, ehrlich gemessen): unsere Figur erfüllt den Marker NOCH NICHT —
+  sie rendert zu klein und zu dunkel** (siehe Vergleichsbild). Zwei Ursachen + Fixe für den
+  Figuren-Brief: (1) der CraftPix-Sprite füllt nur ~die halbe 64px-Zelle (transparenter Rand) →
+  `÷64`-Skala unterskaliert; **nach den opaken Pixel-Grenzen skalieren, nicht nach 64px**.
+  (2) Der Doodle-Filter dunkelt ab → **Kontrast/Helligkeit anheben** (Outline statt Flächen-
+  Abdunklung), damit die Figur wie die gemalten liest.
 - **NPCs sind damit gerenderte Figuren, keine unsichtbaren Hotspots mehr** (das alte
   Hotspot-Modell hing an den baked-in Figuren). Interaktion bleibt grid-basiert.
 

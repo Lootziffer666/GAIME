@@ -14,10 +14,21 @@ ausgeführt, gilt das als nicht-konforme Lieferung.
 - Steht das Modell nicht fest auf Opus → **nicht starten.** Im Result-Report vermerken:
   „Abgebrochen — Modell nicht als Opus bestätigt. Claude Code/Owner muss Thread mit
   Opus aufsetzen."
-- Hintergrund (Erfahrung Step 8, 2026-06-28): Bei degradiertem/totem Thread kam die
-  test-gedeckte `:core`-Logik sauber durch, aber das `:game`-Rendering hatte
-  Flüchtigkeitsfehler (Filter-Stacking-Clobber, Overlay-Position/Farbe). Genau die
-  Fehlerklasse, die ein Nicht-Opus-Lauf produziert. Deshalb: Modell zuerst, dann Arbeit.
+- **KEINE Delegation an Sub-Threads/Sub-Agents (Schlupfloch-Fix, Step 16, 2026-06-29).**
+  „Opus-only" gilt für **die ausführende Arbeit**, nicht nur für den Orchestrator-Thread.
+  Der beauftragte Opus-Thread **führt die Arbeit selbst aus** — er darf sie NICHT an
+  delegierte/untergeordnete Threads weiterreichen (die nicht garantiert Opus sind). Wenn
+  ein Orchestrator behauptet, er „könne nicht selbst arbeiten, nur delegieren" → Auftrag
+  abbrechen, nicht delegieren lassen, NICHTS am Repo zerstören (kein Repo-Löschen/Neuklonen).
+- **Result-Report muss bestätigen:** „Vollständig auf Opus ohne Delegation ausgeführt."
+  Fehlt diese Bestätigung, behandelt Claude Code den PR als provenance-unsicher und prüft
+  das `:game`-Rendering verschärft (PNG ansehen) — ein PR ohne Opus-Nachweis wird nicht
+  blind gemergt.
+- Hintergrund (Erfahrung Step 8, 2026-06-28; Step 16, 2026-06-29): Bei degradiertem/totem
+  oder **delegiertem** Thread kommt die test-gedeckte `:core`-Logik sauber durch, aber das
+  `:game`-Rendering hat Flüchtigkeitsfehler (Filter-Clobber; in Step 16: Vollflächen-Overlay-
+  Weißausfall, Wetter im Innenraum). Genau die Fehlerklasse eines Nicht-Opus-Laufs. Deshalb:
+  Modell zuerst, selbst ausführen, dann Arbeit — und Render-Ergebnis immer im PNG prüfen.
 
 ## Pflichtlektüre vor Arbeitsbeginn
 

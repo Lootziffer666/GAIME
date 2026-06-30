@@ -195,8 +195,13 @@ bash scripts/setup-gl.sh          # one-time: Mesa EGL headless GL
   derive per map (`charScale = tilesTall*screenTile/64`). **Quality marker:** the previously
   baked-in painted figures are the bar — render the doodle figure next to a painted figure of
   the same map scale and check size/style match (`docs/screenshots/quality-marker-figure-vs-baked.png`).
-  Current state: scale matches, our figure is slightly chunkier / more inked than the smooth
-  painted ones → tune line strength/proportion toward the painted family.
+  **Current state (honest, 2026-06-30): FAILS the marker — our figure renders too small and too
+  dark.** Two causes/fixes: (1) the CraftPix sprite fills only ~half its 64px frame (transparent
+  padding) → `÷64` scaling undersizes it; **scale by the sprite's opaque bounds, not the nominal
+  64px**. (2) the doodle filter darkens the fill → **raise contrast/brightness** (outline, not
+  area-darkening). NOTE: in a screenshot the baked-in figures look like "our figures" — they are
+  NOT; isolate the rendered sprite at the spawn cell before judging (don't mislabel a painted
+  figure as ours).
 - **Donor policy:** Anime4K & co. reimplemented from concept, NEVER copy foreign
   code into the tree (KORGE_MIGRATION_PLAN §1).
 
