@@ -127,6 +127,8 @@ fun main() {
     captureWeatherTriptych()
     // Material-aware weather (one shader, three states, material-differentiated)
     captureMaterialWeather()
+    // Village material-weather pipeline (Dorf-Bild with baked material segmentation)
+    captureVillageMaterialWeather()
 }
 
 private fun captureWorld(config: MapConfig, name: String, withDialog: Boolean) {
@@ -2902,5 +2904,47 @@ private fun captureMaterialWeather() {
         bg.smoothing = true
         bg.filter = game.shader.MaterialWeatherFilter(time = 5.0f, weatherState = 1.0f, windAngle = 0.5f)
         save("material_weather_storm")
+    }
+}
+
+/**
+ * Village Material-Weather Pipeline proof:
+ * Uses the GAIME village image (ResizedImage_2026-06-30_10-29-19_2317[41].png)
+ * with the calibrated MaterialWeatherFilter to demonstrate per-material weather
+ * effects: stone→puddles, grass→satter, wood→dunkler, roof→Abperlen.
+ *
+ * The offline segmentation (tools/mapbuilder/material_segment.py) generated
+ * assets/materials/village_material_grid.json and material_bitmap.png which
+ * serve as ground-truth calibration for the shader's HSV classification.
+ */
+private fun captureVillageMaterialWeather() {
+    // The village image is at repo root — on classpath via the Gradle task config
+    val villagePath = "ResizedImage_2026-06-30_10-29-19_2317[41].png"
+
+    // Sun (dry, clear day)
+    korgeScreenshotTest(Size(2560.0, 1440.0)) {
+        val bgBitmap = resourcesVfs[villagePath].readBitmap()
+        val bg = image(bgBitmap)
+        bg.smoothing = true
+        bg.filter = game.shader.MaterialWeatherFilter(time = 1.0f, weatherState = 0.0f)
+        save("village_weather_sun")
+    }
+
+    // Rain (moderate, wind from left)
+    korgeScreenshotTest(Size(2560.0, 1440.0)) {
+        val bgBitmap = resourcesVfs[villagePath].readBitmap()
+        val bg = image(bgBitmap)
+        bg.smoothing = true
+        bg.filter = game.shader.MaterialWeatherFilter(time = 4.0f, weatherState = 0.6f, windAngle = 0.3f)
+        save("village_weather_rain")
+    }
+
+    // Storm (heavy rain, strong wind, maximum effects)
+    korgeScreenshotTest(Size(2560.0, 1440.0)) {
+        val bgBitmap = resourcesVfs[villagePath].readBitmap()
+        val bg = image(bgBitmap)
+        bg.smoothing = true
+        bg.filter = game.shader.MaterialWeatherFilter(time = 7.0f, weatherState = 1.0f, windAngle = 0.5f)
+        save("village_weather_storm")
     }
 }
