@@ -202,6 +202,14 @@ bash scripts/setup-gl.sh          # one-time: Mesa EGL headless GL
   area-darkening). NOTE: in a screenshot the baked-in figures look like "our figures" — they are
   NOT; isolate the rendered sprite at the spawn cell before judging (don't mislabel a painted
   figure as ours).
+- **NEVER assume one sheet's raster fits the next.** `SpriteLoader` hardcoded `DEFAULT_FRAME_SIZE=64`
+  for all sheets — wrong: each CraftPix character sheet can have a different frame size AND a
+  different opaque character height within the frame. Per sheet: declare its frame size
+  (`SpriteSheetSpec`, don't assume 64), measure THAT sheet's opaque bounds, and normalize to a
+  **physical target body height** (96px at the 1254 gameplay map, 3:1) via
+  `charScale = targetBodyPx / opaqueHeight`. Then player and every NPC render at the same physical
+  size regardless of source sheet. Wrong frame size ⇒ wrong opaque measure ⇒ wrong size, so slice
+  correctly first. Anchor the opaque feet to the cell (foot offset) so figures stand, not float.
 - **Donor policy:** Anime4K & co. reimplemented from concept, NEVER copy foreign
   code into the tree (KORGE_MIGRATION_PLAN §1).
 

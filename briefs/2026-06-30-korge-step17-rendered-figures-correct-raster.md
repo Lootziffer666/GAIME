@@ -23,30 +23,43 @@ in diesem 64er-Frame. Folglich rendert der Körper bei `tilesTall=5` nur ~30px s
 ~96px, und weil der transparente Rand nicht zur Zelle ausgerichtet ist, steht die Figur nicht auf
 der Zelle.
 
-**Zielgröße (Owner-Spec):** Körperhöhe **96px bei 1254²-Map** (≈ **6 Zellen** im 78er-Grid),
-Körperbreite ~**32px** → **3:1**, klassischer 16-Bit-Standard. Pro Map aus dem Raster abgeleitet
-(Reise-Maps 1366×768 → kleiner), nie hartkodiert.
+**Zielgröße (Owner-Spec):** Körper-Zielhöhe **96px bei 1254²-Map** (≈ **6 Zellen** im 78er-Grid),
+Breite ~**32px** → **3:1**. **Das ist eine physische Ziel-Höhe in Map-Pixeln — KEINE Frame-/
+Zellen-Annahme.** Pro Map aus dem Raster abgeleitet (Reise-Maps kleiner), nie hartkodiert.
 
 ---
 
-## Teil A — Figuren-Skalierung nach OPAKEN Bounds (Kern-Fix)
+## Teil A — Pro-Sheet-Normalisierung (KEINE Cross-Sheet-Raster-Annahme!)
 
-In `CharacterSprite` (oder einem schlanken Helfer): beim Laden die **opaken Pixel-Grenzen** des
-Idle-Frames bestimmen (transparenten Rand wegmessen) → `opaqueHeight`, `opaqueWidth`, und den
-**Fuß-Offset** (Abstand opake Unterkante ↔ Frame-Unterkante).
+**Kernprinzip (vom Owner, gestern + heute bekräftigt): Das Raster eines Sheets passt NICHT auf das
+nächste.** `SpriteLoader` verdrahtet aktuell `DEFAULT_FRAME_SIZE = 64` und nimmt quadratische 64er-
+Frames für ALLE Sheets an — falsch. Jeder Charakter-Sheet (Swordsman, Vampire, jeder NPC) kann eine
+**andere Frame-Größe** und eine **andere Figurenhöhe im Frame** haben. Die Größe darf nie aus „64"
+oder aus den Werten eines anderen Sheets abgeleitet werden — sie wird **pro Sheet gemessen und auf
+die physische Zielhöhe normalisiert**.
 
-- **Skala:** `charScale = (targetCellsTall * screenTile) / opaqueHeight`
-  mit `targetCellsTall ≈ 6` (96px/16px-Zelle bei 1254). Damit wird der **Körper** 96px hoch,
-  nicht der leere 64-Frame. (Nicht mehr `/64`.)
-- **Fuß-Verankerung:** Figur so positionieren, dass die **opake Unterkante** auf der Grid-Zelle
-  sitzt (Frame-Padding über den `footOffset` herausrechnen) — kein Schweben mehr.
-- **Pro Map:** `targetCellsTall` bzw. die Ableitung gilt für die Gameplay-Skala; Reise-Maps
-  (kleinere Figuren) bekommen entsprechend weniger — aus dem jeweiligen Raster ableiten.
-- Verifizieren: gerenderte opake Körperhöhe ≈ 96px (bei 1254-Map) bzw. ~110px auf dem 1440-Screen.
+1. **Frame-Größe pro Sheet deklarieren, nicht annehmen.** Eine `SpriteSheetSpec` einführen
+   (`sheetPath`, `frameW`, `frameH`, `rows`, `cols` — bzw. `rows`/`cols` aus den deklarierten
+   Frame-Maßen + Bitmap-Größe abgeleitet). Jeder Charakter referenziert seine eigene Spec.
+   `SpriteLoader.load/sliceAllRows` bekommt die Frame-Maße **aus der Spec** (Default 64 nur als
+   Fallback, nicht als Wahrheit). Falsche Frame-Größe ⇒ falsche opake Messung ⇒ falsche Größe —
+   deshalb zuerst korrekt slicen.
+2. **Opake Bounds pro Sheet messen.** Aus dem Idle-Frame des jeweiligen Sheets die opaken Pixel-
+   Grenzen bestimmen → `opaqueHeight`, `opaqueWidth`, **Fuß-Offset** (opake Unterkante ↔ Frame-
+   Unterkante). Diese Werte sind **pro Sheet verschieden** und werden gemessen, nicht angenommen.
+3. **Auf physische Zielhöhe normalisieren:**
+   `charScale = targetBodyPx_screen / opaqueHeight`,
+   wobei `targetBodyPx_screen = targetBodyPx_map * (OUTPUT_H / mapHeightPx)` und
+   `targetBodyPx_map = 96` für die Gameplay-Skala (1254). So rendert **jeder** Charakter — egal von
+   welchem Sheet, egal welche Frame-Größe — den **Körper auf dieselbe physische Höhe**.
+4. **Fuß-Verankerung:** Figur so positionieren, dass die opake Unterkante auf der Grid-Zelle sitzt
+   (Frame-Padding via `footOffset` herausrechnen) — kein Schweben.
+5. Verifizieren: opake Körperhöhe im PNG ≈ Ziel (≈110px auf dem 1440-Screen bei der 1254-Map) —
+   für Spieler **und** NPCs, auch wenn deren Sheets unterschiedliche Frame-Größen haben.
 
-> `CharacterSprite`-Konstruktor/-API möglichst kompatibel halten; wenn eine Signatur-Erweiterung
-> nötig ist (z.B. Ziel-Höhe statt tileWidth), sauber umstellen und alle Aufrufer (DoodleWorldScene,
-> ScreenshotHarness) mitziehen — aber WorldScene/BattleScene nicht brechen.
+> `CharacterSprite`/`SpriteLoader`-API kompatibel erweitern (Frame-Maße + Ziel-Höhe pro Sprite);
+> alle Aufrufer (DoodleWorldScene, ScreenshotHarness) mitziehen — WorldScene/BattleScene NICHT
+> brechen (Default-Fallback 64 behalten, nur nicht mehr als feste Wahrheit).
 
 ---
 
@@ -63,8 +76,10 @@ Aktuell dunkelt der `DoodleLineFilter` die Fläche ab → Figur säuft auf dunkl
 ## Teil C — NPCs als GERENDERTE Doodle-Figuren (nicht mehr Hotspots)
 
 Die figurenfreien Maps haben keine gemalten Figuren mehr → NPCs müssen gerendert werden.
-- `ImageNpcHotspot` → trägt zusätzlich einen **Sprite** (Idle-Sheet-Pfad + Facing). Jeder NPC wird
-  als `CharacterSprite` (gleiche opake Skala + Doodle-Filter + Kontrast) auf seiner Zelle gerendert.
+- `ImageNpcHotspot` → trägt zusätzlich eine **`SpriteSheetSpec`** (Sheet-Pfad + dessen eigene
+  Frame-Maße) + Facing. Jeder NPC wird als `CharacterSprite` gerendert — **mit seiner eigenen
+  Sheet-Spec**, opak gemessen und auf dieselbe physische Zielhöhe normalisiert (Teil A), Doodle +
+  Kontrast. So sind NPCs gleich groß wie der Spieler, egal von welchem Sheet sie stammen.
 - Interaktion bleibt grid-basiert (E auf Blickrichtungs-Zelle) wie bisher.
 - Verschiedene Idle-Sheets nutzen, die schon im Repo liegen (`assets/HD/characters/*`), damit NPCs
   sich optisch unterscheiden (Barkeep/Patron/Guard).
@@ -107,7 +122,8 @@ gerenderte ist die mit Doodle-Kontur an der Spawn-Zelle.)
 
 ```
 modify:
-  - game/src/desktopMain/kotlin/game/CharacterSprite.kt        (opake Bounds: Skala + Fuß-Anker)
+  - game/src/desktopMain/kotlin/game/SpriteLoader.kt           (Frame-Maße pro Sheet, 64 nur Fallback)
+  - game/src/desktopMain/kotlin/game/CharacterSprite.kt        (opake Bounds: Skala + Fuß-Anker, pro Sheet)
   - game/src/desktopMain/kotlin/game/DoodleWorldScene.kt       (Spieler+NPC gerendert, neue Skala, figurefree bg)
   - game/src/desktopMain/kotlin/game/world/ImageWorldDef.kt    (NPC-Sprite-Feld; tavern → figurefree)
   - game/src/desktopMain/kotlin/game/shader/DoodleLineFilter.kt(Kontrast: Outline statt Flächen-Abdunklung)
@@ -146,9 +162,11 @@ Bei GL „Too many callbacks" einmal wiederholen. Sandbox ggf. `LD_LIBRARY_PATH=
 
 ## Kontext / Querverweise
 
-- **Gemessen:** Idle-Frame opak ≈ 9px Körper × 24px Höhe (Schwert macht Bbox bis 19 breit) in der
-  64×64-Zelle. `÷64`-Skala war der Fehler → nach opaker Höhe skalieren.
-- **Zielspec (Owner):** 96×32 bei 1254², 3:1. ≈6 Zellen hoch im 78er-Grid.
+- **Gemessen (NUR Swordsman):** Idle-Frame opak ≈ 9px Körper × 24px Höhe (Schwert macht Bbox bis 19
+  breit) in einer 64×64-Zelle. Diese Zahlen gelten **nur für dieses Sheet** — für jedes andere Sheet
+  neu messen. `÷64`-Skala + Cross-Sheet-Annahme war der Fehler → pro Sheet opak messen + auf die
+  physische Zielhöhe normalisieren.
+- **Zielspec (Owner):** 96×32 bei 1254², 3:1 — physische Map-Pixel, keine Frame-Annahme.
 - **Qualitätsmarker:** gemalte (baked-in) Figuren sind der Maßstab — `figures_marker_check` ist die
   wiederholbare Prüfung. Aktuell: zu klein/zu dunkel → dieser Brief behebt beides.
 - **Nächste Stufen (NICHT hier):** figurenfreie Wildwood/Exterior/Village + Grids (mapbuilder,
