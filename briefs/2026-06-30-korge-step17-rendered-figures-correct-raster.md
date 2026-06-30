@@ -52,10 +52,21 @@ die physische Zielhöhe normalisiert**.
    wobei `targetBodyPx_screen = targetBodyPx_map * (OUTPUT_H / mapHeightPx)` und
    `targetBodyPx_map = 96` für die Gameplay-Skala (1254). So rendert **jeder** Charakter — egal von
    welchem Sheet, egal welche Frame-Größe — den **Körper auf dieselbe physische Höhe**.
-4. **Fuß-Verankerung:** Figur so positionieren, dass die opake Unterkante auf der Grid-Zelle sitzt
-   (Frame-Padding via `footOffset` herausrechnen) — kein Schweben.
-5. Verifizieren: opake Körperhöhe im PNG ≈ Ziel (≈110px auf dem 1440-Screen bei der 1254-Map) —
-   für Spieler **und** NPCs, auch wenn deren Sheets unterschiedliche Frame-Größen haben.
+4. **Skala an EINE Referenz-Pose koppeln, NICHT pro Frame neu normalisieren.** `opaqueHeight` /
+   `footOffset` **einmal aus der Idle-/Steh-Referenz** des Sheets messen; den daraus gewonnenen
+   `charScale` + Fuß-Anker auf **alle** Frames desselben Sheets anwenden. Sonst „atmet" die Figur
+   (schrumpft beim Ausholen), weil Attack-/Death-Frames eine andere opake Bbox haben.
+5. **Multi-Zellen-Frames dürfen überhängen.** Manche Sheets haben Posen (Schwertschwung, Tod,
+   große Kreaturen), deren Inhalt **ein Vielfaches des Rasters** überspannt. Bei fester Referenz-
+   Skala ragt so ein Frame korrekt über die Nachbarzellen — **nicht** zurück in die Zelle quetschen.
+   **Logisch belegt die Figur immer genau EINE Zelle** (Bewegung/Kollision/Fußspur = 1 Zelle),
+   egal wie weit der Sprite visuell ragt (Bild = Haut, Grid = Logik — auf Figurenebene).
+6. **Fuß-Verankerung:** Figur so positionieren, dass die (Referenz-)opake Unterkante auf der Grid-
+   Zelle sitzt (Frame-Padding via `footOffset` herausrechnen) — kein Schweben, kein Springen
+   zwischen Animationsframes.
+7. Verifizieren: opake Körperhöhe im PNG ≈ Ziel (≈110px auf dem 1440-Screen bei der 1254-Map) —
+   für Spieler **und** NPCs, auch wenn deren Sheets unterschiedliche Frame-Größen haben; und die
+   Figur bleibt über die Animation **größenstabil** (kein Atmen).
 
 > `CharacterSprite`/`SpriteLoader`-API kompatibel erweitern (Frame-Maße + Ziel-Höhe pro Sprite);
 > alle Aufrufer (DoodleWorldScene, ScreenshotHarness) mitziehen — WorldScene/BattleScene NICHT

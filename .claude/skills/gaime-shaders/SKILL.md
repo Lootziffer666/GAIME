@@ -210,6 +210,13 @@ bash scripts/setup-gl.sh          # one-time: Mesa EGL headless GL
   `charScale = targetBodyPx / opaqueHeight`. Then player and every NPC render at the same physical
   size regardless of source sheet. Wrong frame size ⇒ wrong opaque measure ⇒ wrong size, so slice
   correctly first. Anchor the opaque feet to the cell (foot offset) so figures stand, not float.
+- **Lock scale to ONE reference pose; don't re-normalize per frame.** Some sheets have poses
+  (sword swing, death, big creatures) whose opaque content spans a MULTIPLE of the raster. Measure
+  `opaqueHeight`/`footOffset` once from the idle/standing reference, apply that fixed scale + anchor
+  to all frames — else the figure "breathes" (shrinks when winding up). Multi-cell frames are
+  allowed to OVERHANG neighbor cells; don't squeeze them back. The figure always occupies exactly
+  ONE logical cell (movement/collision/footprint), no matter how far the sprite visually extends —
+  image = skin, grid = logic, at the figure level too.
 - **Donor policy:** Anime4K & co. reimplemented from concept, NEVER copy foreign
   code into the tree (KORGE_MIGRATION_PLAN §1).
 
