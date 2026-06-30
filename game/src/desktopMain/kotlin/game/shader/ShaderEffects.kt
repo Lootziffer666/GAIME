@@ -33,6 +33,7 @@ class ShaderEffects {
     val rainFilter = RainFilter()
     val fogFilter = FogFilter()
     val doodleLineFilter = DoodleLineFilter()
+    val worldMaterialFilter = WorldMaterialFilter()
 
     private var time = 0f
 
@@ -142,6 +143,7 @@ class ShaderEffects {
             rainFilter.time = time
             fogFilter.time = time
             doodleLineFilter.time = time
+            worldMaterialFilter.time = time
         }
     }
 }
