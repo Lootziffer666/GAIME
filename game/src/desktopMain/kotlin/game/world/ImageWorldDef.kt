@@ -3,6 +3,7 @@ package game.world
 import game.DialogLine
 import game.Facing
 import rpg.bark.BarkEvent
+import rpg.weather.Season
 
 /**
  * Step 14: Data definitions for the Bild+Grid (Image World) runtime.
@@ -62,6 +63,7 @@ data class ImageWorldDef(
     val spawn: Pair<Int, Int>?,
     val npcs: List<ImageNpcHotspot>,
     val exits: List<ImageMapExit>,
+    val season: Season? = null,
 ) {
     companion object {
         /**

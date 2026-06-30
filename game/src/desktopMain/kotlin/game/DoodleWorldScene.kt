@@ -33,6 +33,17 @@ import game.systems.SystemRegistry
 import rpg.systems.WorldContext
 import rpg.systems.WaterSystem
 import rpg.systems.DrunkSystem
+import rpg.systems.SnowSystem
+import rpg.systems.BloodSystem
+import rpg.systems.FootprintSystem
+import rpg.systems.SeasonSystem
+import rpg.systems.MaterialFatigueSystem
+import rpg.weather.BloodGrid
+import rpg.weather.FootprintGrid
+import rpg.weather.MaterialFatigue
+import rpg.weather.Season
+import rpg.weather.SeasonalGrid
+import rpg.weather.SnowGrid
 import rpg.weather.WaterGrid
 
 /**
@@ -228,12 +239,58 @@ class DoodleWorldScene : Scene() {
         val waterSystem = WaterSystem(waterGrid, isRaining = false)
         val drunkSystem = DrunkSystem()
 
+        val snowGrid = SnowGrid(
+            width = grid.cols, height = grid.rows,
+            offsetX = grid.offsetX, offsetY = grid.offsetY
+        )
+        val bloodGrid = BloodGrid(
+            width = grid.cols, height = grid.rows,
+            offsetX = grid.offsetX, offsetY = grid.offsetY
+        )
+        val footprintGrid = FootprintGrid(
+            width = grid.cols, height = grid.rows,
+            offsetX = grid.offsetX, offsetY = grid.offsetY
+        )
+        val seasonalGrid = SeasonalGrid(
+            width = grid.cols, height = grid.rows,
+            offsetX = grid.offsetX, offsetY = grid.offsetY
+        )
+        val fatigueGrid = MaterialFatigue(
+            width = grid.cols, height = grid.rows,
+            offsetX = grid.offsetX, offsetY = grid.offsetY
+        )
+
+        val currentSeason = def.season ?: Season.SUMMER
+        val isSnowing = currentSeason == Season.WINTER
+
+        val snowSystem = SnowSystem(snowGrid, isSnowing = isSnowing)
+        val bloodSystem = BloodSystem(bloodGrid)
+        val footprintSystem = FootprintSystem(footprintGrid)
+        val seasonSystem = SeasonSystem(seasonalGrid, season = currentSeason)
+        val fatigueSystem = MaterialFatigueSystem(fatigueGrid)
+
+        // Initialize seasonal grid based on season
+        if (currentSeason == Season.SPRING) seasonalGrid.initFlowers()
+
         // Tile size for overlays in the worldLayer: screenTile (pixels per grid cell)
         val overlayTileSize = screenTile.toInt().coerceAtLeast(1)
+
+        // Overlays in worldLayer (render order: Water > Blood > Snow > Footprints > Season > MaterialFatigue)
         val waterOverlay = WaterOverlay(worldLayer, overlayTileSize, overlayTileSize)
+        val bloodOverlay = BloodOverlay(worldLayer, overlayTileSize, overlayTileSize)
+        val snowOverlay = SnowOverlay(worldLayer, overlayTileSize, overlayTileSize)
+        val footprintOverlay = FootprintOverlay(worldLayer, overlayTileSize, overlayTileSize)
+        val springOverlay = SpringOverlay(worldLayer, overlayTileSize, overlayTileSize)
+        val fatigueOverlay = MaterialFatigueOverlay(worldLayer, overlayTileSize, overlayTileSize)
 
         val registry = SystemRegistry()
+        // Register in render order
         registry.register(waterSystem) { waterOverlay.update(waterGrid) }
+        registry.register(bloodSystem) { bloodOverlay.update(bloodGrid, snowGrid) }
+        registry.register(snowSystem) { snowOverlay.update(snowGrid, footprintGrid) }
+        registry.register(footprintSystem) { footprintOverlay.update(footprintGrid) }
+        registry.register(seasonSystem) { springOverlay.update(seasonalGrid) }
+        registry.register(fatigueSystem) { fatigueOverlay.update(fatigueGrid) }
         registry.register(drunkSystem)
 
         // =====================================================================
