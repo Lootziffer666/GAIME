@@ -529,5 +529,82 @@ function render(now){
   gl.drawArrays(gl.TRIANGLE_STRIP,0,4); requestAnimationFrame(render);
 }
 requestAnimationFrame(render);
+
+// ============================================================
+// PARTICLE SYSTEM INTEGRATION
+// ============================================================
+const particleScript = document.createElement('script');
+particleScript.src = 'particle_sim.js';
+particleScript.onload = () => {
+  const particleSys = new ParticleSystem(uiCanvas, matCanvas, flowCanvas);
+
+  // Add particle UI controls
+  const sidebar = document.querySelector('#sidebar');
+  const particleHTML = `
+    <h2>Particles</h2>
+    <div class="tabs" id="particle-tabs">
+      <button class="sel" data-ptype="off">Off</button>
+      <button data-ptype="leaf">Leaves</button>
+      <button data-ptype="snow">Snow</button>
+    </div>
+    <div class="c"><label>Particle Count<span class="v" id="d-pCount">0</span></label></div>
+    <div style="font-size:9px;color:#666;margin-top:4px">Click canvas to disturb</div>
+  `;
+  sidebar.insertAdjacentHTML('beforeend', particleHTML);
+
+  document.querySelectorAll('#particle-tabs button').forEach(btn => {
+    btn.onclick = () => {
+      document.querySelectorAll('#particle-tabs button').forEach(b => b.classList.remove('sel'));
+      btn.classList.add('sel');
+      const ptype = btn.dataset.ptype;
+      if (ptype === 'off') {
+        particleSys.config.enabled = false;
+      } else {
+        particleSys.config.enabled = true;
+        particleSys.config.type = ptype;
+        if (particleSys.width > 0) {
+          particleSys.buildCollisionMap();
+          particleSys.findSpawnZones();
+        }
+      }
+    };
+  });
+
+  // Click to disturb
+  canvas.addEventListener('click', (e) => {
+    if (!particleSys.config.enabled) return;
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const cx = (e.clientX - rect.left) * scaleX;
+    const cy = (e.clientY - rect.top) * scaleY;
+    particleSys.disturb(cx, cy, 40, 3.0);
+  });
+
+  // Particle render loop
+  function particleFrame() {
+    particleSys.config.windX = (gv('s-wind', 100) - 0.5) * 2.0;
+    particleSys.config.windStrength = gv('s-wind', 100);
+    particleSys.config.season = gv('s-season', 100);
+    particleSys.config.cold = gv('s-cold', 100);
+    particleSys.config.wetness = gv('s-rain', 100);
+
+    if (particleSys.width !== canvas.width || particleSys.height !== canvas.height) {
+      if (canvas.width > 10 && canvas.height > 10) {
+        particleSys.resize(canvas.width, canvas.height);
+      }
+    }
+
+    particleSys.update();
+    particleSys.render();
+
+    const countEl = document.getElementById('d-pCount');
+    if (countEl) countEl.textContent = particleSys.particles.length;
+
+    requestAnimationFrame(particleFrame);
+  }
+  requestAnimationFrame(particleFrame);
+};
+document.head.appendChild(particleScript);
 </script>
 </body></html>
